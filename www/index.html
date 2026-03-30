@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>⚡ ElecTrain 3D</title>
+<script src="cordova.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Courier New',monospace;touch-action:none}
+#c{display:block;width:100%;height:100%}
+#overlay{position:fixed;inset:0;background:linear-gradient(135deg,#07090f,#0d1520);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;color:#e8d5a3}
+#overlay h1{font-size:clamp(28px,8vw,54px);font-weight:900;letter-spacing:.1em;color:#f0c060;text-shadow:0 0 40px #f0c06088;margin-bottom:6px}
+#overlay .sub{font-size:11px;color:#4466aa;letter-spacing:.2em;margin-bottom:32px}
+.qbar{display:flex;align-items:center;gap:8px;margin-bottom:26px;font-size:11px;color:#5588bb;letter-spacing:.1em}
+.qbtn{background:#111825;border:1px solid #334;color:#5588bb;padding:6px 16px;border-radius:4px;font-family:inherit;font-size:10px;font-weight:700;letter-spacing:.12em;cursor:pointer;text-transform:uppercase;transition:all .15s}
+.qbtn:hover{border-color:#6699cc;color:#99ccff}
+.qbtn.active{background:#1a2e4a;border-color:#f0c060;color:#f0c060;box-shadow:0 0 10px rgba(240,192,96,.25)}
+#startBtn{background:#f0c060;color:#070910;border:none;padding:18px 52px;font-size:15px;font-weight:800;letter-spacing:.15em;border-radius:6px;cursor:pointer;font-family:inherit;text-transform:uppercase;transition:all .2s}
+#startBtn:hover{background:#ffd270;transform:scale(1.03)}
+#startBtn:active{transform:scale(.97)}
+.badge{display:inline-flex;align-items:center;gap:8px;background:#111825;border:1px solid #223;border-radius:4px;padding:5px 14px;font-size:11px;color:#5588bb;letter-spacing:.15em;margin-bottom:10px}
+#hud{position:fixed;inset:0;pointer-events:none;z-index:10;display:none}
+#crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px}
+#crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,.8)}
+#crosshair::before{width:2px;height:24px;left:11px;top:0}
+#crosshair::after{width:24px;height:2px;top:11px;left:0}
+#topbar{position:absolute;top:0;left:0;right:0;background:linear-gradient(180deg,#000a,transparent);padding:14px 18px;display:flex;align-items:center;gap:12px}
+#logo{font-size:12px;font-weight:700;letter-spacing:.12em;color:#f0c060}
+#roomname{font-size:11px;color:#6699cc;padding:3px 10px;background:#1a2233cc;border:1px solid #334;border-radius:20px;letter-spacing:.08em}
+#pwrdot{width:7px;height:7px;border-radius:50%;background:#44ff88;box-shadow:0 0 6px #44ff88;animation:pulse 2s infinite;margin-left:auto}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+#notification{position:absolute;top:68px;left:50%;transform:translateX(-50%);background:#000c;border:1px solid #334;color:#e8d5a3;padding:8px 20px;border-radius:6px;font-size:12px;display:none;backdrop-filter:blur(6px);max-width:80vw;text-align:center;pointer-events:none}
+#prompt{position:absolute;bottom:210px;left:50%;transform:translateX(-50%);background:#f0c06022;border:1px solid #f0c06055;color:#f0c060;padding:8px 22px;border-radius:24px;font-size:13px;display:none;white-space:nowrap;pointer-events:none}
+#ptrMsg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#88aacc;font-size:13px;letter-spacing:.1em;text-align:center;display:none;pointer-events:none;line-height:2}
+#objective{position:absolute;top:68px;left:12px;background:#0a0e1acc;border:1px solid #223355;color:#99bbdd;padding:8px 12px;border-radius:6px;font-size:11px;line-height:1.6;max-width:200px}
+#objective .obj-title{color:#f0c060;font-size:10px;letter-spacing:.1em;margin-bottom:3px}
+#controls{position:fixed;bottom:0;left:0;right:0;height:200px;pointer-events:none;z-index:20;display:none}
+#joystickZone{position:absolute;bottom:20px;left:20px;width:140px;height:140px;pointer-events:all}
+#joystickBase{position:absolute;inset:0;border-radius:50%;background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.2)}
+#joystickKnob{position:absolute;top:50%;left:50%;width:52px;height:52px;border-radius:50%;background:rgba(240,192,96,.78);border:2px solid rgba(240,192,96,.95);transform:translate(-50%,-50%);box-shadow:0 0 16px rgba(240,192,96,.45)}
+#rightBtns{position:absolute;bottom:20px;right:20px;display:flex;flex-direction:column;gap:12px;pointer-events:all}
+.btn3d{width:64px;height:64px;border-radius:50%;border:2px solid rgba(255,255,255,.25);background:rgba(10,14,26,.8);color:#e8d5a3;font-size:10px;font-family:inherit;font-weight:700;letter-spacing:.08em;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;backdrop-filter:blur(4px);-webkit-tap-highlight-color:transparent}
+.btn3d span.icon{font-size:20px;line-height:1}
+.btn3d:active,.btn3d.pressed{background:rgba(240,192,96,.3);border-color:#f0c060;box-shadow:0 0 14px rgba(240,192,96,.5)}
+#lookZone{position:fixed;top:0;right:0;bottom:200px;width:60%;z-index:15;pointer-events:all}
+#fpsCounter{position:absolute;top:52px;right:12px;font-size:9px;color:#334}
+#powerPanel{position:absolute;top:88px;right:12px;background:#0a0e1acc;border:1px solid #223355;color:#6699cc;padding:8px 10px;border-radius:6px;font-size:10px;line-height:1.9;min-width:130px}
+#powerPanel .pv{color:#f0c060;float:right;margin-left:8px}
+.sep{border-top:1px solid #1a2233;margin:4px 0;clear:both}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="overlay">
+  <div class="badge">⚡ ELECTRICAL TRAINING v4.0</div>
+  <h1>⚡ ElecTrain</h1>
+  <p class="sub">MOBILE FACILITY SIMULATOR</p>
+  <button id="startBtn">ENTER FACILITY</button>
+  <div class="qbar">
+    GRAPHICS:
+    <button class="qbtn active" id="qNorm">NORMAL</button>
+    <button class="qbtn" id="qGood">GOOD</button>
+    <button class="qbtn" id="qHigh">HIGH</button>
+  </div>
+  <p style="margin-top:4px;font-size:10px;color:#334455;letter-spacing:.12em">TOUCH · SWIPE · JOYSTICK · MOUSE</p>
+</div>
+<div id="hud">
+  <div id="crosshair"></div>
+  <div id="topbar">
+    <div id="logo">⚡ ELECTRAIN</div>
+    <div id="roomname">LOBBY</div>
+    <div id="pwrdot"></div>
+  </div>
+  <div id="fpsCounter">-- fps</div>
+  <div id="objective">
+    <div class="obj-title">📋 OBJECTIVES</div>
+    <div id="objText">Explore the facility.<br>Find switches &amp; panels.<br>Press <b>E</b> or tap ⚡ to interact.</div>
+  </div>
+  <div id="powerPanel">
+    MAINS <span class="pv" id="pMains" style="color:#44ff88">ON</span><br>
+    WORKSHOP <span class="pv" id="pWork" style="color:#44ff88">ON</span><br>
+    LAB <span class="pv" id="pLab" style="color:#44ff88">ON</span><br>
+    <div class="sep"></div>
+    VOLTAGE <span class="pv">480V</span><br>
+    FREQ <span class="pv">60Hz</span>
+  </div>
+  <div id="notification"></div>
+  <div id="prompt">⚡ Press E / Tap to interact</div>
+  <div id="ptrMsg">🖱 Click to look around<br><span style="font-size:10px;color:#446">ESC to release mouse</span></div>
+</div>
+<div id="controls">
+  <div id="joystickZone">
+    <div id="joystickBase"></div>
+    <div id="joystickKnob"></div>
+  </div>
+  <div id="rightBtns">
+    <button class="btn3d" id="btnInteract"><span class="icon">⚡</span>ACT</button>
+    <button class="btn3d" id="btnSprint"><span class="icon">🏃</span>RUN</button>
+  </div>
+</div>
+<div id="lookZone"></div>
+<script>window.GAME_QUALITY='normal';</script>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.electrain.game" version="1.0.0"
+  xmlns="http://www.w3.org/ns/widgets"
+  xmlns:cdv="http://cordova.apache.org/ns/1.0"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <name>ElecTrain 3D</name>
+  <description>A first-person electrical facility simulator</description>
+  <author email="dev@electrain.game" href="https://electrain.game">ElecTrain Dev</author>
+
+  <content src="index.html" />
+
+  <access origin="*" />
+  <allow-intent href="http://*/*" />
+  <allow-intent href="https://*/*" />
+
+  <!-- Display -->
+  <preference name="Fullscreen" value="true" />
+  <preference name="Orientation" value="landscape" />
+  <preference name="DisallowOverscroll" value="true" />
+  <preference name="BackgroundColor" value="0xff000000" />
+  <preference name="SplashScreenDelay" value="0" />
+  <preference name="AutoHideSplashScreen" value="true" />
+  <preference name="ShowSplashScreenSpinner" value="false" />
+
+  <!-- Android specific -->
+  <preference name="android-minSdkVersion" value="24" />
+  <preference name="android-targetSdkVersion" value="34" />
+  <preference name="AndroidPersistentFileLocation" value="Internal" />
+  <preference name="GradlePluginKotlinEnabled" value="true" />
+  <preference name="GradlePluginKotlinVersion" value="1.9.10" />
+
+  <!-- Performance -->
+  <preference name="AndroidWindowSoftInputMode" value="adjustPan" />
+  <preference name="webviewbounce" value="false" />
+  <preference name="EnableViewportScale" value="false" />
+  <preference name="MediaPlaybackRequiresUserAction" value="false" />
+  <preference name="AllowInlineMediaPlayback" value="true" />
+
+  <!-- Android permissions -->
+  <config-file target="AndroidManifest.xml" parent="/manifest">
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+  </config-file>
+
+  <!-- Immersive fullscreen for Android -->
+  <config-file target="AndroidManifest.xml" parent="/manifest/application/activity">
+    <intent-filter>
+      <action android:name="android.intent.action.MAIN" />
+      <category android:name="android.intent.category.LAUNCHER" />
+    </intent-filter>
+  </config-file>
+
+  <!-- Plugins -->
+  <plugin name="cordova-plugin-statusbar" spec="^4.0.0" />
+  <plugin name="cordova-plugin-splashscreen" spec="^6.0.2" />
+  <plugin name="cordova-plugin-screen-orientation" spec="^3.0.3" />
+
+  <platform name="android">
+    <allow-intent href="market:*" />
+    <preference name="Fullscreen" value="true" />
+    <preference name="Orientation" value="landscape" />
+  </platform>
+
+</widget>
