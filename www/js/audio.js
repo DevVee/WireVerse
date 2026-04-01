@@ -1,6 +1,10 @@
 export const Audio = (() => {
   let ctx = null;
-  function init() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+  let humNode = null;
+  function init() { 
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); 
+    if (ctx.state === 'suspended') ctx.resume();
+  }
 
   function tone(freq, type, dur, vol, endFreq) {
     if (!ctx || ctx.state === 'suspended') return;
@@ -34,16 +38,35 @@ export const Audio = (() => {
   return {
     init,
     click()     { tone(700,'square',.05,.4); setTimeout(()=>tone(350,'square',.04,.2),25); },
-    door(open)  { tone(open?160:280,'sawtooth',.4,.25,open?70:180); },
-    breaker(on) { tone(on?900:500,'square',.08,.5); setTimeout(()=>tone(on?1100:300,'square',.06,.3),45); },
+    door(open) {
+      tone(open ? 120 : 220, 'sawtooth', 0.6, 0.2, open ? 80 : 160);
+      setTimeout(() => tone(open ? 440 : 330, 'square', 0.05, 0.1), 10);
+    },
+    clack() { 
+      tone(150, 'sawtooth', .1, .6); 
+      setTimeout(() => tone(100, 'sawtooth', .1, .4), 30); 
+    },
+    chirp() { 
+      tone(880, 'square', .05, .2); 
+      setTimeout(() => tone(1320, 'square', .05, .2), 50); 
+    },
+    breaker(on) { 
+      this.clack(); 
+      setTimeout(()=>tone(on?900:500,'square',.08,.5), 20); 
+    },
     alert()     { [0,140,280].forEach(d=>setTimeout(()=>tone(880,'square',.1,.4),d)); },
-    hum() {
+    hum(on) {
       if (!ctx) return;
-      [60,120].forEach((f,i)=>{
-        const o=ctx.createOscillator(), g=ctx.createGain();
-        o.type='sine'; o.frequency.value=f; g.gain.value=i?0.018:0.04;
-        o.connect(g); g.connect(ctx.destination); o.start();
-      });
+      if (!on) { if (humNode) { humNode.stop(); humNode = null; } return; }
+      if (humNode) return;
+      humNode = ctx.createOscillator();
+      const gain = ctx.createGain();
+      humNode.type = 'triangle';
+      humNode.frequency.value = 50; // Industrial 50Hz hum
+      gain.gain.value = 0.04;
+      humNode.connect(gain);
+      gain.connect(ctx.destination);
+      humNode.start();
     },
     step(sprinting) {
       if (!ctx || ctx.state === 'suspended') return;
