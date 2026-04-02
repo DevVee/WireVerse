@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VireVerse - Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Bangers&family=Bebas+Neue&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Bebas Neue', cursive;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+            background: #1a2332;
+        }
+
+        /* Realistic Background with Electrical Room */
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #2d3e50 0%, #1a2332 50%, #0f1419 100%);
+            z-index: 0;
+        }
+
+        .electrical-room {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(ellipse at 30% 40%, rgba(100, 120, 140, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 60%, rgba(80, 100, 120, 0.1) 0%, transparent 50%);
+        }
+
+        /* Electrical Panels */
+        .panel {
+            position: absolute;
+            background: linear-gradient(135deg, #3a4a5c 0%, #2d3640 100%);
+            border: 2px solid #4a5a6c;
+            box-shadow:
+                inset 2px 2px 10px rgba(0, 0, 0, 0.5),
+                0 5px 20px rgba(0, 0, 0, 0.7);
+            border-radius: 4px;
+        }
+
+        .panel-left {
+            width: 180px;
+            height: 280px;
+            top: 20%;
+            left: 8%;
+            transform: perspective(600px) rotateY(10deg);
+        }
+
+        .panel-right {
+            width: 200px;
+            height: 320px;
+            top: 15%;
+            right: 8%;
+            transform: perspective(600px) rotateY(-10deg);
+        }
+
+        /* Wires and Conduits */
+        .conduit {
+            position: absolute;
+            background: linear-gradient(90deg, #5a6a7a 0%, #4a5a6a 50%, #5a6a7a 100%);
+            box-shadow:
+                inset 0 2px 4px rgba(0, 0, 0, 0.5),
+                0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .conduit-1 {
+            width: 12px;
+            height: 150px;
+            top: 15%;
+            left: 18%;
+            border-radius: 6px;
+        }
+
+        .conduit-2 {
+            width: 200px;
+            height: 12px;
+            top: 25%;
+            left: 10%;
+            border-radius: 6px;
+        }
+
+        .conduit-3 {
+            width: 12px;
+            height: 200px;
+            top: 10%;
+            right: 20%;
+            border-radius: 6px;
+        }
+
+        .conduit-4 {
+            width: 180px;
+            height: 12px;
+            top: 30%;
+            right: 10%;
+            border-radius: 6px;
+        }
+
+        /* Colored Wires */
+        .wire {
+            position: absolute;
+            height: 6px;
+            border-radius: 3px;
+            opacity: 0.8;
+        }
+
+        .wire-red {
+            background: linear-gradient(90deg, #c62828 0%, #e53935 50%, #c62828 100%);
+            width: 120px;
+            top: 23%;
+            left: 15%;
+            transform: rotate(-15deg);
+        }
+
+        .wire-yellow {
+            background: linear-gradient(90deg, #f9a825 0%, #fbc02d 50%, #f9a825 100%);
+            width: 100px;
+            top: 26%;
+            left: 16%;
+            transform: rotate(-10deg);
+        }
+
+        .wire-green {
+            background: linear-gradient(90deg, #2e7d32 0%, #43a047 50%, #2e7d32 100%);
+            width: 90px;
+            top: 28%;
+            left: 17%;
+            transform: rotate(-5deg);
+        }
+
+        .wire-blue {
+            background: linear-gradient(90deg, #1565c0 0%, #1976d2 50%, #1565c0 100%);
+            width: 110px;
+            top: 32%;
+            right: 18%;
+            transform: rotate(12deg);
+        }
+
+        /* Circuit Breaker Details */
+        .breaker {
+            position: absolute;
+            width: 30px;
+            height: 40px;
+            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+            border: 1px solid #444;
+            border-radius: 3px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        .panel-left .breaker:nth-child(1) {
+            top: 30px;
+            left: 20px;
+        }
+
+        .panel-left .breaker:nth-child(2) {
+            top: 80px;
+            left: 20px;
+        }
+
+        .panel-left .breaker:nth-child(3) {
+            top: 130px;
+            left: 20px;
+        }
+
+        .panel-right .breaker:nth-child(1) {
+            top: 40px;
+            right: 25px;
+        }
+
+        .panel-right .breaker:nth-child(2) {
+            top: 100px;
+            right: 25px;
+        }
+
+        .panel-right .breaker:nth-child(3) {
+            top: 160px;
+            right: 25px;
+        }
+
+        /* LED Indicators */
+        .led {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: ledBlink 2s infinite;
+        }
+
+        .led-green {
+            background: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+            top: 50px;
+            right: 30px;
+        }
+
+        .led-red {
+            background: #f44336;
+            box-shadow: 0 0 10px #f44336;
+            top: 70px;
+            right: 30px;
+            animation-delay: 1s;
+        }
+
+        .led-yellow {
+            background: #ffc107;
+            box-shadow: 0 0 10px #ffc107;
+            top: 90px;
+            right: 30px;
+            animation-delay: 0.5s;
+        }
+
+        @keyframes ledBlink {
+
+            0%,
+            50%,
+            100% {
+                opacity: 1;
+            }
+
+            25%,
+            75% {
+                opacity: 0.3;
+            }
+        }
+
+        /* Ceiling Lights */
+        .ceiling-light {
+            position: absolute;
+            width: 200px;
+            height: 40px;
+            background: linear-gradient(180deg, #e0e0e0 0%, #bdbdbd 100%);
+            border-radius: 20px;
+            box-shadow:
+                0 10px 30px rgba(255, 255, 255, 0.3),
+                inset 0 2px 5px rgba(0, 0, 0, 0.2);
+            top: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .light-glow {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(ellipse, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+            top: 0%;
+            left: 50%;
+            transform: translate(-50%, -20%);
+            pointer-events: none;
+        }
+
+        /* Floating Particles */
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: float 15s infinite ease-in-out;
+        }
+
+        .particle:nth-child(1) {
+            top: 20%;
+            left: 30%;
+            animation-delay: 0s;
+        }
+
+        .particle:nth-child(2) {
+            top: 50%;
+            left: 60%;
+            animation-delay: 3s;
+        }
+
+        .particle:nth-child(3) {
+            top: 70%;
+            left: 20%;
+            animation-delay: 6s;
+        }
+
+        .particle:nth-child(4) {
+            top: 40%;
+            left: 80%;
+            animation-delay: 9s;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+                opacity: 0.3;
+            }
+
+            50% {
+                transform: translate(30px, -50px);
+                opacity: 0.6;
+            }
+        }
+
+        .game-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Version */
+        .version {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.3);
+            z-index: 150;
+            font-family: 'Bebas Neue', cursive;
+        }
+
+        /* Branding */
+        .branding {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 150;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+            filter: drop-shadow(0 4px 10px rgba(255, 215, 0, 0.5));
+            animation: brandPulse 2s infinite;
+        }
+
+        @keyframes brandPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .brand-text {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            font-family: 'Bebas Neue', cursive;
+            letter-spacing: 2px;
+        }
+
+        /* Main Menu */
+        .main-menu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.6s ease, transform 0.6s ease;
+            z-index: 200;
+        }
+
+        .main-menu.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+        }
+
+        .logo-container {
+            margin-bottom: 60px;
+            animation: slideDown 1s ease-out;
+            text-align: center;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-100px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .game-logo {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 90px;
+            color: #ffd700;
+            text-align: center;
+            text-shadow:
+                4px 4px 0 #1a2332,
+                -2px -2px 0 #1a2332,
+                2px -2px 0 #1a2332,
+                -2px 2px 0 #1a2332,
+                2px 2px 0 #1a2332,
+                6px 6px 30px rgba(255, 215, 0, 0.8);
+            letter-spacing: 8px;
+            line-height: 1;
+            animation: logoGlow 3s infinite;
+        }
+
+        @keyframes logoGlow {
+
+            0%,
+            100% {
+                text-shadow:
+                    4px 4px 0 #1a2332,
+                    -2px -2px 0 #1a2332,
+                    2px -2px 0 #1a2332,
+                    -2px 2px 0 #1a2332,
+                    2px 2px 0 #1a2332,
+                    6px 6px 30px rgba(255, 215, 0, 0.8);
+            }
+
+            50% {
+                text-shadow:
+                    4px 4px 0 #1a2332,
+                    -2px -2px 0 #1a2332,
+                    2px -2px 0 #1a2332,
+                    -2px 2px 0 #1a2332,
+                    2px 2px 0 #1a2332,
+                    6px 6px 50px rgba(255, 215, 0, 1);
+            }
+        }
+
+        .game-subtitle {
+            font-size: 26px;
+            color: rgba(255, 255, 255, 0.7);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            margin-top: 10px;
+            font-family: 'Bebas Neue', cursive;
+            letter-spacing: 3px;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeInUp 1s ease-out 0.3s backwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .menu-button {
+            background: linear-gradient(135deg, #2c3e50 0%, #1a2533 100%);
+            border: 4px solid rgba(255, 215, 0, 0.6);
+            border-radius: 50px;
+            padding: 20px 60px;
+            cursor: pointer;
+            box-shadow:
+                0 8px 0 rgba(0, 0, 0, 0.3),
+                0 12px 30px rgba(0, 0, 0, 0.5),
+                inset 0 2px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-width: 350px;
+        }
+
+        .menu-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .menu-button:hover::before {
+            left: 100%;
+        }
+
+        .menu-button:hover {
+            transform: translateY(-5px);
+            border-color: #ffd700;
+            box-shadow:
+                0 12px 0 rgba(0, 0, 0, 0.3),
+                0 18px 35px rgba(0, 0, 0, 0.6),
+                inset 0 2px 0 rgba(255, 255, 255, 0.2),
+                0 0 30px rgba(255, 215, 0, 0.3);
+        }
+
+        .menu-button:active {
+            transform: translateY(5px);
+            box-shadow:
+                0 3px 0 rgba(0, 0, 0, 0.3),
+                0 6px 20px rgba(0, 0, 0, 0.4),
+                inset 0 2px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .menu-button.primary {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2e 100%);
+            border-color: #ffd700;
+        }
+
+        .button-icon {
+            width: 35px;
+            height: 35px;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+        }
+
+        .icon-lightning {
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 25px solid #ffd700;
+            position: relative;
+        }
+
+        .icon-lightning::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: -5px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 18px solid #ffd700;
+            transform: rotate(180deg);
+        }
+
+        .icon-clipboard {
+            width: 28px;
+            height: 32px;
+            background: #ffd700;
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .icon-clipboard::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 6px;
+            background: #ffd700;
+            border-radius: 3px 3px 0 0;
+        }
+
+        .icon-clipboard::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 5px;
+            width: 3px;
+            height: 3px;
+            background: #1a2332;
+            box-shadow:
+                0 5px 0 #1a2332,
+                0 10px 0 #1a2332,
+                6px 0 0 #1a2332,
+                6px 5px 0 #1a2332,
+                6px 10px 0 #1a2332;
+        }
+
+        .icon-briefcase {
+            width: 32px;
+            height: 26px;
+            background: #ffd700;
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .icon-briefcase::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 8px;
+            background: #ffd700;
+            border-radius: 3px 3px 0 0;
+        }
+
+        .icon-briefcase::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #4caf50;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .icon-gear {
+            width: 32px;
+            height: 32px;
+            background: #ffd700;
+            clip-path: polygon(50% 0%, 58% 8%, 70% 5%, 72% 17%, 84% 20%,
+                    83% 32%, 95% 38%, 90% 50%, 95% 62%, 83% 68%,
+                    84% 80%, 72% 83%, 70% 95%, 58% 92%, 50% 100%,
+                    42% 92%, 30% 95%, 28% 83%, 16% 80%, 17% 68%,
+                    5% 62%, 10% 50%, 5% 38%, 17% 32%, 16% 20%,
+                    28% 17%, 30% 5%, 42% 8%);
+            position: relative;
+        }
+
+        .icon-gear::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: #1a2332;
+            border-radius: 50%;
+        }
+
+        .menu-button-text {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 32px;
+            color: #ffffff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            letter-spacing: 3px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Game Screen */
+        .game-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
+            z-index: 100;
+        }
+
+        .game-screen.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Top Left Stats */
+        .top-left-stats {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            animation: slideInLeft 0.8s ease-out;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-100px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .race-banner {
+            background: linear-gradient(90deg, #1e3a5f 0%, #2c4a6f 100%);
+            padding: 10px 18px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            margin-bottom: 12px;
+            border: 2px solid rgba(255, 215, 0, 0.4);
+        }
+
+        .race-icon {
+            width: 26px;
+            height: 26px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+            filter: drop-shadow(0 2px 6px rgba(255, 215, 0, 0.6));
+        }
+
+        .race-text {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 18px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .stat-box {
+            background: rgba(30, 58, 95, 0.8);
+            border: 3px solid rgba(255, 215, 0, 0.5);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .stat-box:hover {
+            transform: scale(1.05);
+            border-color: #ffd700;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: rgba(255, 215, 0, 0.8);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            font-family: 'Bebas Neue', cursive;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 32px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-icon {
+            width: 28px;
+            height: 28px;
+            background: #fff;
+            border-radius: 50%;
+        }
+
+        /* Top Right Icons */
+        .top-right-icons {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+            animation: slideInRight 0.8s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .circle-icon {
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, #2c4a6f 0%, #1a2e47 100%);
+            border: 4px solid rgba(255, 215, 0, 0.6);
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .circle-icon:hover {
+            transform: scale(1.1) rotate(5deg);
+            border-color: #ffd700;
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .circle-icon:active {
+            transform: scale(0.95);
+        }
+
+        .icon-inner {
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 215, 0, 0.2);
+            border-radius: 50%;
+        }
+
+        /* Center Banner */
+        .center-banner-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 90%;
+            max-width: 600px;
+            z-index: 50;
+            animation: popIn 0.8s ease-out 0.4s forwards;
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(-15deg);
+                opacity: 0;
+            }
+
+            70% {
+                transform: translate(-50%, -50%) scale(1.1) rotate(5deg);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .main-banner {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2e 100%);
+            border: 5px solid #ffd700;
+            border-radius: 20px;
+            padding: 28px 45px;
+            box-shadow:
+                0 10px 0 rgba(0, 0, 0, 0.3),
+                0 15px 40px rgba(0, 0, 0, 0.6),
+                inset 0 3px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+
+        .banner-title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 48px;
+            color: #ffd700;
+            text-shadow:
+                3px 3px 0 #0d1b2e,
+                -1px -1px 0 #0d1b2e,
+                1px -1px 0 #0d1b2e,
+                -1px 1px 0 #0d1b2e,
+                1px 1px 0 #0d1b2e,
+                5px 5px 15px rgba(0, 0, 0, 0.7);
+            letter-spacing: 4px;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .banner-subtitle {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 22px;
+            color: rgba(255, 255, 255, 0.8);
+            text-shadow:
+                2px 2px 4px rgba(0, 0, 0, 0.7);
+            letter-spacing: 2px;
+        }
+
+        .notification-box {
+            background: rgba(44, 62, 80, 0.95);
+            border: 3px solid rgba(255, 215, 0, 0.5);
+            border-radius: 12px;
+            padding: 12px 24px;
+            margin-top: -25px;
+            position: relative;
+            z-index: 1;
+            box-shadow:
+                0 6px 0 rgba(0, 0, 0, 0.3),
+                0 10px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .notification-text {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 16px;
+            color: rgba(255, 215, 0, 0.9);
+            text-align: center;
+            margin-bottom: 8px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+            letter-spacing: 1px;
+        }
+
+        .chat-button {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2e 100%);
+            border: 3px solid rgba(255, 215, 0, 0.6);
+            border-radius: 50px;
+            padding: 14px 0;
+            cursor: pointer;
+            box-shadow:
+                0 5px 0 rgba(0, 0, 0, 0.3),
+                0 8px 20px rgba(0, 0, 0, 0.4),
+                inset 0 2px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .chat-button:hover {
+            transform: translateY(-3px);
+            border-color: #ffd700;
+            box-shadow:
+                0 8px 0 rgba(0, 0, 0, 0.3),
+                0 12px 25px rgba(0, 0, 0, 0.5),
+                inset 0 2px 0 rgba(255, 255, 255, 0.15),
+                0 0 20px rgba(255, 215, 0, 0.2);
+        }
+
+        .chat-button:active {
+            transform: translateY(3px);
+            box-shadow:
+                0 2px 0 rgba(0, 0, 0, 0.3),
+                0 4px 15px rgba(0, 0, 0, 0.3),
+                inset 0 2px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-icon {
+            width: 28px;
+            height: 28px;
+            background: #ffd700;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .chat-text {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 22px;
+            color: #ffffff;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+            letter-spacing: 2px;
+        }
+
+        .loading-bar {
+            margin-top: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700, #ffed4e);
+            width: 60%;
+            border-radius: 4px;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+            animation: progressPulse 2s infinite;
+        }
+
+        @keyframes progressPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        /* Bottom Controls */
+        .bottom-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 280px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0 40px 40px 40px;
+            z-index: 100;
+        }
+
+        /* Left Joystick */
+        .joystick {
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 70%, transparent 100%);
+            border: 5px solid rgba(255, 215, 0, 0.4);
+            border-radius: 50%;
+            position: relative;
+            box-shadow:
+                inset 0 5px 25px rgba(0, 0, 0, 0.4),
+                0 5px 25px rgba(255, 215, 0, 0.2);
+            animation: slideInLeft 0.8s ease-out 0.6s backwards;
+        }
+
+        .joystick-inner {
+            width: 75px;
+            height: 75px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.15) 100%);
+            border: 5px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow:
+                0 3px 15px rgba(0, 0, 0, 0.4),
+                inset 0 -3px 10px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .joystick-inner:active {
+            transform: translate(-50%, -50%) scale(0.92);
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.25) 100%);
+            border-color: rgba(255, 215, 0, 0.7);
+        }
+
+        /* Right Action Button */
+        .action-button {
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.25) 0%, rgba(255, 215, 0, 0.12) 70%, transparent 100%);
+            border: 5px solid rgba(255, 215, 0, 0.5);
+            border-radius: 50%;
+            position: relative;
+            box-shadow:
+                inset 0 5px 25px rgba(0, 0, 0, 0.4),
+                0 5px 25px rgba(255, 215, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            animation: slideInRight 0.8s ease-out 0.6s backwards;
+        }
+
+        .action-button:active {
+            transform: scale(0.92);
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 70%, transparent 100%);
+            border-color: #ffd700;
+        }
+
+        .arrow-icon {
+            width: 65px;
+            height: 65px;
+            border-left: 10px solid rgba(255, 255, 255, 0.6);
+            border-top: 10px solid rgba(255, 255, 255, 0.6);
+            transform: rotate(135deg);
+            margin-bottom: 12px;
+            filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+            transition: all 0.2s;
+        }
+
+        .action-button:active .arrow-icon {
+            border-color: rgba(255, 215, 0, 0.9);
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
+        }
+
+        /* Menu Icon in Game */
+        .menu-icon {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, #2c4a6f 0%, #1a2e47 100%);
+            border: 4px solid rgba(255, 215, 0, 0.6);
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 101;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        .menu-icon:hover {
+            transform: translateX(-50%) scale(1.1);
+            border-color: #ffd700;
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .menu-icon:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+
+        .menu-line {
+            width: 28px;
+            height: 4px;
+            background: #ffd700;
+            border-radius: 2px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .game-logo {
+                font-size: 56px;
+            }
+
+            .game-subtitle {
+                font-size: 18px;
+            }
+
+            .menu-button {
+                padding: 16px 45px;
+                min-width: 280px;
+            }
+
+            .menu-button-text {
+                font-size: 26px;
+            }
+
+            .banner-title {
+                font-size: 36px;
+            }
+
+            .banner-subtitle {
+                font-size: 18px;
+            }
+
+            .main-banner {
+                padding: 22px 32px;
+            }
+
+            .bottom-controls {
+                padding: 0 25px 25px 25px;
+            }
+
+            .joystick,
+            .action-button {
+                width: 130px;
+                height: 130px;
+            }
+
+            .joystick-inner {
+                width: 65px;
+                height: 65px;
+            }
+
+            .arrow-icon {
+                width: 55px;
+                height: 55px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Realistic Electrical Room Background -->
+    <div class="background">
+        <div class="electrical-room">
+            <!-- Ceiling Light -->
+            <div class="ceiling-light"></div>
+            <div class="light-glow"></div>
+
+            <!-- Left Panel -->
+            <div class="panel panel-left">
+                <div class="breaker"></div>
+                <div class="breaker"></div>
+                <div class="breaker"></div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="panel panel-right">
+                <div class="breaker"></div>
+                <div class="breaker"></div>
+                <div class="breaker"></div>
+                <div class="led led-green"></div>
+                <div class="led led-red"></div>
+                <div class="led led-yellow"></div>
+            </div>
+
+            <!-- Conduits -->
+            <div class="conduit conduit-1"></div>
+            <div class="conduit conduit-2"></div>
+            <div class="conduit conduit-3"></div>
+            <div class="conduit conduit-4"></div>
+
+            <!-- Colored Wires -->
+            <div class="wire wire-red"></div>
+            <div class="wire wire-yellow"></div>
+            <div class="wire wire-green"></div>
+            <div class="wire wire-blue"></div>
+
+            <!-- Floating Particles -->
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+    </div>
+
+    <!-- Version and Branding -->
+    <div class="version">v1.0</div>
+    <div class="branding">
+        <div class="brand-icon"></div>
+        <div class="brand-text">VireVerse</div>
+    </div>
+
+    <div class="game-container">
+        <!-- Main Menu -->
+        <div class="main-menu" id="mainMenu">
+            <div class="logo-container">
+                <div class="game-logo">VIREVERSE</div>
+                <div class="game-subtitle">Virtual Reality Experience</div>
+            </div>
+
+            <div class="menu-buttons">
+                <button class="menu-button primary" onclick="startGame()">
+                    <div class="button-icon">
+                        <div class="icon-lightning"></div>
+                    </div>
+                    <span class="menu-button-text">PLAY</span>
+                </button>
+                <button class="menu-button">
+                    <div class="button-icon">
+                        <div class="icon-clipboard"></div>
+                    </div>
+                    <span class="menu-button-text">TUTORIALS</span>
+                </button>
+                <button class="menu-button">
+                    <div class="button-icon">
+                        <div class="icon-briefcase"></div>
+                    </div>
+                    <span class="menu-button-text">JOBS</span>
+                </button>
+                <button class="menu-button">
+                    <div class="button-icon">
+                        <div class="icon-gear"></div>
+                    </div>
+                    <span class="menu-button-text">SETTINGS</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div class="game-screen" id="gameScreen">
+            <!-- Menu Icon -->
+            <div class="menu-icon" onclick="returnToMenu()">
+                <div class="menu-line"></div>
+                <div class="menu-line"></div>
+                <div class="menu-line"></div>
+            </div>
+
+            <!-- Top Left Stats -->
+            <div class="top-left-stats">
+                <div class="race-banner">
+                    <div class="race-icon"></div>
+                    <div class="race-text">RACE TO THE FINISH</div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-label">Passed</div>
+                    <div class="stat-value">
+                        <span>0</span>
+                        <span style="font-size: 22px; color: rgba(255, 215, 0, 0.8);">/12</span>
+                    </div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-label">Kills</div>
+                    <div class="stat-value">
+                        <div class="stat-icon"></div>
+                        <span>1</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Right Icons -->
+            <div class="top-right-icons">
+                <div class="circle-icon">
+                    <div class="icon-inner"></div>
+                </div>
+                <div class="circle-icon">
+                    <div class="icon-inner"></div>
+                </div>
+            </div>
+
+            <!-- Center Banner -->
+            <div class="center-banner-container">
+                <div class="main-banner">
+                    <div class="banner-title">Race to the Finish</div>
+                    <div class="banner-subtitle">Keep Climbing to the Top</div>
+                </div>
+
+                <div class="notification-box">
+                    <div class="notification-text">🎮 DivineDad: SKX HVD join guys</div>
+
+                    <button class="chat-button">
+                        <div class="chat-icon">💬</div>
+                        <div class="chat-text">Chat</div>
+                    </button>
+
+                    <div class="loading-bar">
+                        <div class="loading-progress"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Controls -->
+            <div class="bottom-controls">
+                <!-- Left Joystick -->
+                <div class="joystick">
+                    <div class="joystick-inner"></div>
+                </div>
+
+                <!-- Right Action Button -->
+                <div class="action-button">
+                    <div class="arrow-icon"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function startGame() {
+            const menu = document.getElementById('mainMenu');
+            const game = document.getElementById('gameScreen');
+
+            menu.classList.add('hidden');
+            setTimeout(() => {
+                game.classList.add('active');
+            }, 400);
+        }
+
+        function returnToMenu() {
+            const menu = document.getElementById('mainMenu');
+            const game = document.getElementById('gameScreen');
+
+            game.classList.remove('active');
+            setTimeout(() => {
+                menu.classList.remove('hidden');
+            }, 400);
+        }
+    </script>
+</body>
+
+</html>

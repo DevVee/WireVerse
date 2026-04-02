@@ -1,98 +1,3227 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>⚡ ElecTrain 3D</title>
-<script src="cordova.js"></script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
-html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Courier New',monospace;touch-action:none}
-#c{display:block;width:100%;height:100%}
-#overlay{position:fixed;inset:0;background:linear-gradient(135deg,#07090f,#0d1520);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;color:#e8d5a3}
-#overlay h1{font-size:clamp(28px,8vw,54px);font-weight:900;letter-spacing:.1em;color:#f0c060;text-shadow:0 0 40px #f0c06088;margin-bottom:6px}
-#overlay .sub{font-size:11px;color:#4466aa;letter-spacing:.2em;margin-bottom:32px}
-#startBtn{background:#f0c060;color:#070910;border:none;padding:18px 52px;font-size:15px;font-weight:800;letter-spacing:.15em;border-radius:6px;cursor:pointer;font-family:inherit;text-transform:uppercase;transition:all .2s}
-#startBtn:hover{background:#ffd270;transform:scale(1.03)}
-#startBtn:active{transform:scale(.97)}
-.badge{display:inline-flex;align-items:center;gap:8px;background:#111825;border:1px solid #223;border-radius:4px;padding:5px 14px;font-size:11px;color:#5588bb;letter-spacing:.15em;margin-bottom:10px}
-#hud{position:fixed;inset:0;pointer-events:none;z-index:10;display:none}
-#crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px}
-#crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,.8)}
-#crosshair::before{width:2px;height:24px;left:11px;top:0}
-#crosshair::after{width:24px;height:2px;top:11px;left:0}
-#topbar{position:absolute;top:0;left:0;right:0;background:linear-gradient(180deg,#000a,transparent);padding:14px 18px;display:flex;align-items:center;gap:12px}
-#logo{font-size:12px;font-weight:700;letter-spacing:.12em;color:#f0c060}
-#roomname{font-size:11px;color:#6699cc;padding:3px 10px;background:#1a2233cc;border:1px solid #334;border-radius:20px;letter-spacing:.08em}
-#pwrdot{width:7px;height:7px;border-radius:50%;background:#44ff88;box-shadow:0 0 6px #44ff88;animation:pulse 2s infinite;margin-left:auto}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-#notification{position:absolute;top:68px;left:50%;transform:translateX(-50%);background:#000c;border:1px solid #334;color:#e8d5a3;padding:8px 20px;border-radius:6px;font-size:12px;display:none;backdrop-filter:blur(6px);max-width:80vw;text-align:center;pointer-events:none}
-#prompt{position:absolute;bottom:210px;left:50%;transform:translateX(-50%);background:#f0c06022;border:1px solid #f0c06055;color:#f0c060;padding:8px 22px;border-radius:24px;font-size:13px;display:none;white-space:nowrap;pointer-events:none}
-#ptrMsg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#88aacc;font-size:13px;letter-spacing:.1em;text-align:center;display:none;pointer-events:none;line-height:2}
-#objective{position:absolute;top:68px;left:12px;background:#0a0e1acc;border:1px solid #223355;color:#99bbdd;padding:8px 12px;border-radius:6px;font-size:11px;line-height:1.6;max-width:200px}
-#objective .obj-title{color:#f0c060;font-size:10px;letter-spacing:.1em;margin-bottom:3px}
-#controls{position:fixed;bottom:0;left:0;right:0;height:200px;pointer-events:none;z-index:20;display:none}
-#joystickZone{position:absolute;bottom:20px;left:20px;width:140px;height:140px;pointer-events:all}
-#joystickBase{position:absolute;inset:0;border-radius:50%;background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.2)}
-#joystickKnob{position:absolute;top:50%;left:50%;width:52px;height:52px;border-radius:50%;background:rgba(240,192,96,.78);border:2px solid rgba(240,192,96,.95);transform:translate(-50%,-50%);box-shadow:0 0 16px rgba(240,192,96,.45)}
-#rightBtns{position:absolute;bottom:20px;right:20px;display:flex;flex-direction:column;gap:12px;pointer-events:all}
-.btn3d{width:64px;height:64px;border-radius:50%;border:2px solid rgba(255,255,255,.25);background:rgba(10,14,26,.8);color:#e8d5a3;font-size:10px;font-family:inherit;font-weight:700;letter-spacing:.08em;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;backdrop-filter:blur(4px);-webkit-tap-highlight-color:transparent}
-.btn3d span.icon{font-size:20px;line-height:1}
-.btn3d:active,.btn3d.pressed{background:rgba(240,192,96,.3);border-color:#f0c060;box-shadow:0 0 14px rgba(240,192,96,.5)}
-#lookZone{position:fixed;top:0;right:0;bottom:200px;width:60%;z-index:15;pointer-events:all}
-#fpsCounter{position:absolute;top:52px;right:12px;font-size:9px;color:#334}
-#powerPanel{position:absolute;top:88px;right:12px;background:#0a0e1acc;border:1px solid #223355;color:#6699cc;padding:8px 10px;border-radius:6px;font-size:10px;line-height:1.9;min-width:130px}
-#powerPanel .pv{color:#f0c060;float:right;margin-left:8px}
-.sep{border-top:1px solid #1a2233;margin:4px 0;clear:both}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ElectroTech Sim</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0a0f14;
+      color: #ffffff;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #overlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #0a1a2a 0%, #1a2a3a 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    #overlay h1 {
+      font-size: clamp(24px, 5vw, 48px);
+      color: #44ff88;
+      text-shadow: 0 0 20px #44ff8844;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+
+    #overlay p {
+      color: #aaccdd;
+      font-size: clamp(12px, 2vw, 16px);
+      margin-bottom: 30px;
+      text-align: center;
+      padding: 0 20px;
+    }
+
+    #startBtn {
+      padding: 15px 40px;
+      font-size: clamp(14px, 2.5vw, 20px);
+      font-family: inherit;
+      background: linear-gradient(135deg, #44ff88 0%, #22dd66 100%);
+      color: #0a1a2a;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 1px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 20px #44ff8844;
+    }
+
+    #startBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px #44ff8866;
+    }
+
+    #startBtn:active {
+      transform: translateY(0);
+    }
+
+    #hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      display: none;
+      z-index: 10;
+    }
+
+    #topBar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(180deg, rgba(10, 15, 20, 0.95) 0%, rgba(10, 15, 20, 0) 100%);
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .status-group {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .status-item {
+      font-size: 11px;
+      background: rgba(20, 30, 40, 0.8);
+      padding: 6px 12px;
+      border-radius: 4px;
+      border-left: 3px solid #44ff88;
+    }
+
+    .status-item label {
+      color: #8899aa;
+      margin-right: 6px;
+    }
+
+    #roomname {
+      font-size: 16px;
+      font-weight: bold;
+      color: #44ff88;
+      text-shadow: 0 0 10px #44ff8844;
+    }
+
+    #genStatus {
+      background: rgba(20, 30, 40, 0.9);
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #3a5a4a;
+      font-size: 11px;
+    }
+
+    #minimap {
+      position: absolute;
+      top: 60px;
+      left: 24px;
+      width: 140px;
+      height: 140px;
+      border: 2px solid #446644;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+      background: rgba(10, 15, 20, 0.95);
+      z-index: 15;
+      overflow: hidden;
+    }
+
+    #taskPanel {
+      position: absolute;
+      top: 80px;
+      right: 20px;
+      width: 280px;
+      max-height: 400px;
+      background: rgba(15, 20, 30, 0.95);
+      border: 2px solid #3a5a6a;
+      border-radius: 8px;
+      padding: 12px;
+      display: none;
+      overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+      pointer-events: all;
+    }
+
+    #taskPanel h3 {
+      color: #44ff88;
+      font-size: 14px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #3a5a6a;
+      padding-bottom: 8px;
+    }
+
+    #taskList {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .task-item:hover {
+      background: rgba(60, 80, 100, 0.5) !important;
+    }
+
+    #notification {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(20, 30, 40, 0.95);
+      color: #ffffff;
+      padding: 15px 30px;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      border: 2px solid #44ff88;
+      box-shadow: 0 4px 30px rgba(68, 255, 136, 0.3);
+      display: none;
+      max-width: 90vw;
+      z-index: 100;
+    }
+
+    #prompt {
+      position: absolute;
+      bottom: 140px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(68, 255, 136, 0.95);
+      color: #0a1a2a;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: bold;
+      display: none;
+      box-shadow: 0 4px 20px rgba(68, 255, 136, 0.5);
+      animation: pulse 1.5s infinite;
+      z-index: 20;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: translateX(-50%) scale(1);
+      }
+
+      50% {
+        transform: translateX(-50%) scale(1.05);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -40%);
+      }
+
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+      }
+    }
+
+    #fpsCounter {
+      position: absolute;
+      top: 15px;
+      right: 220px;
+      font-size: 11px;
+      color: #6a9aaa;
+      background: rgba(20, 30, 40, 0.8);
+      padding: 6px 12px;
+      border-radius: 4px;
+    }
+
+    #ptrMsg {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #8899aa;
+      font-size: 11px;
+      display: none;
+      text-align: center;
+      z-index: 20;
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      display: none;
+      pointer-events: all;
+      z-index: 50;
+    }
+
+    @media (min-width: 768px) {
+      #controls {
+        display: none !important;
+      }
+    }
+
+    .control-pad {
+      display: flex;
+      gap: 10px;
+    }
+
+    .control-btn {
+      width: 60px;
+      height: 60px;
+      background: rgba(68, 255, 136, 0.2);
+      border: 2px solid #44ff88;
+      border-radius: 50%;
+      color: #44ff88;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+    }
+
+    .control-btn:active {
+      background: rgba(68, 255, 136, 0.4);
+      transform: scale(0.95);
+    }
+
+    #btnInteract {
+      position: fixed;
+      bottom: 140px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: auto;
+      height: auto;
+      padding: 15px 30px;
+      background: rgba(255, 204, 0, 0.85);
+      border: 2px solid #ffcc00;
+      border-radius: 8px;
+      color: #111;
+      font-size: 16px;
+      font-weight: bold;
+      display: none; /* hidden by default */
+      box-shadow: 0 4px 20px rgba(255, 204, 0, 0.4);
+      z-index: 100;
+      cursor: pointer;
+      user-select: none;
+      animation: pulse 1.5s infinite;
+      white-space: nowrap;
+    }
+
+    #btnInteract:active {
+      background: rgba(255, 204, 0, 1.0);
+      transform: translateX(-50%) scale(0.95);
+    }
+
+    #taskPanel::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #taskPanel::-webkit-scrollbar-track {
+      background: rgba(20, 30, 40, 0.5);
+      border-radius: 3px;
+    }
+
+    #taskPanel::-webkit-scrollbar-thumb {
+      background: #3a5a6a;
+      border-radius: 3px;
+    }
+
+    #taskPanel::-webkit-scrollbar-thumb:hover {
+      background: #4a6a7a;
+    }
+
+    @media (max-width: 1024px) {
+      #topBar {
+        padding: 10px;
+        font-size: 10px;
+      }
+
+      .status-group {
+        gap: 10px;
+      }
+
+      .status-item {
+        font-size: 9px;
+        padding: 4px 8px;
+      }
+
+      #roomname {
+        font-size: 14px;
+      }
+
+      #minimap {
+        top: 60px;
+        left: 15px;
+        bottom: auto;
+        right: auto;
+        width: 120px;
+        height: 120px;
+        transform: none;
+      }
+
+      #taskPanel {
+        width: calc(100vw - 30px);
+        right: 15px;
+        top: 60px;
+        max-height: 250px;
+      }
+
+      #fpsCounter {
+        display: none;
+      }
+
+      #ptrMsg {
+        display: none !important;
+      }
+    }
+
+    /* Mobile Controls Styles */
+    #wasdPad {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      width: 150px;
+      height: 150px;
+      display: none;
+      z-index: 60;
+    }
+
+    .wasd-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .wasd-btn {
+      width: 45px;
+      height: 45px;
+      background: rgba(68, 255, 136, 0.15);
+      border: 2px solid #44ff88;
+      border-radius: 8px;
+      color: #44ff88;
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: all 0.1s;
+    }
+
+    .wasd-btn.active {
+      background: rgba(68, 255, 136, 0.5);
+      transform: scale(0.9);
+      box-shadow: 0 0 15px rgba(68, 255, 136, 0.4);
+    }
+
+    #lookZone {
+      position: absolute;
+      inset: 0;
+      z-index: 1; /* Lowest in controls to allow others to be clickable */
+      pointer-events: all;
+      display: none;
+      touch-action: none;
+    }
+
+    @media (max-width: 1024px) {
+      #wasdPad, #lookZone, #btnSprint {
+        display: block;
+      }
+    }
+
+    /* Computer UI Overlay */
+    #computerUI {
+      position: fixed;
+      inset: 50px 10%;
+      background: rgba(10, 15, 20, 0.98);
+      border: 2px solid #3a5a6a;
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+      display: none;
+      flex-direction: column;
+      z-index: 1000;
+      pointer-events: all;
+      font-family: 'Courier New', monospace;
+    }
+    
+    #compHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      border-bottom: 1px solid #3a5a6a;
+      background: rgba(20, 30, 40, 0.5);
+    }
+    
+    #compHeader h2 {
+      color: #44ff88;
+      font-size: 20px;
+    }
+    
+    #btnExitComp {
+      background: #ff4444;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    #compTabs {
+      display: flex;
+      border-bottom: 1px solid #3a5a6a;
+    }
+    
+    .comp-tab {
+      padding: 12px 24px;
+      color: #8899aa;
+      cursor: pointer;
+      border-right: 1px solid #3a5a6a;
+    }
+    
+    .comp-tab:hover { background: rgba(30, 40, 50, 0.8); }
+    .comp-tab.active { background: rgba(40, 60, 80, 0.8); color: #fff; border-bottom: 2px solid #44ff88; }
+    
+    #compContents {
+      flex: 1;
+      padding: 20px;
+      position: relative;
+    }
+    
+    .comp-panel { display: none; height: 100%; }
+    .comp-panel.active { display: block; }
+    
+    /* ── Facility Map ─────────────────────────────────────────────── */
+    .facility-map {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #02070d;
+      border: 1px solid #1e3a2a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    /* Subtle grid lines */
+    .facility-map::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(68,255,136,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(68,255,136,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .map-room {
+      position: absolute;
+      border: 1px solid rgba(68,255,136,0.25);
+      background: rgba(20,50,35,0.35);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #5a9a7a;
+      font-size: 10px;
+      font-weight: bold;
+      text-align: center;
+      letter-spacing: 1px;
+      line-height: 1.3;
+      transition: background 0.2s;
+    }
+    .map-room small { font-size: 8px; color: #3a6a4a; letter-spacing: 0.5px; }
+    .map-room:hover { background: rgba(40,80,55,0.5); }
+
+    .map-connector {
+      position: absolute;
+      background: rgba(68,255,136,0.15);
+    }
+
+    /* Zone colour variants */
+    .map-zone-blue   { border-color: rgba(68,136,255,0.35); background: rgba(20,35,60,0.4); color: #6a9aff; }
+    .map-zone-orange { border-color: rgba(255,160,68,0.35); background: rgba(60,35,10,0.4); color: #ffaa55; }
+    .map-zone-red    { border-color: rgba(255,80,68,0.35);  background: rgba(60,15,10,0.4); color: #ff7766; }
+    .map-zone-white  { border-color: rgba(200,220,255,0.30);background: rgba(30,35,60,0.4); color: #aabbdd; }
+
+    /* You-are-here */
+    .map-you {
+      border-color: #44ff88;
+      background: rgba(68,255,136,0.18);
+      color: #44ff88;
+      animation: mapPulse 2s ease-in-out infinite;
+    }
+    @keyframes mapPulse {
+      0%,100% { box-shadow: 0 0 0   0   rgba(68,255,136,0.5); }
+      50%      { box-shadow: 0 0 10px 4px rgba(68,255,136,0.3); }
+    }
+    
+    .cctv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    
+    .cctv-btn {
+      background: rgba(20, 30, 40, 0.8);
+      border: 1px solid #3a5a6a;
+      color: #aaccdd;
+      padding: 20px 15px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    
+    .cctv-btn:hover { background: #2a3a4a; border-color: #44ff88; color: #fff; }
+    
+    /* CCTV Overlay Mode */
+    #cctvOverlay {
+      position: fixed;
+      inset: 0;
+      background:
+        repeating-linear-gradient(0deg, rgba(0,0,0,0.12), rgba(0,0,0,0.12) 2px, transparent 2px, transparent 4px);
+      box-shadow: inset 0 0 120px rgba(0,0,0,0.85);
+      pointer-events: all;     /* FIXED: was none, now receives mouse events */
+      z-index: 2000;
+      display: none;
+      cursor: crosshair;
+    }
+    
+    .cctv-text {
+      position: absolute;
+      top: 30px;
+      left: 40px;
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      font-size: 24px;
+      text-shadow: 0 0 5px #fff;
+      animation: blink 2s infinite;
+    }
+    
+    .cctv-scanline {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+      background-size: 100% 4px;
+      pointer-events: none;
+    }
+    
+    #btnExitCCTV {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: all;
+      background: #ff4444;
+      color: #fff;
+      border: 2px solid #fff;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.7; } }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       ELECTRIC THEME BUTTON SYSTEM
+       All interactive controls for the training simulation
+    ═══════════════════════════════════════════════════════════════════════ */
+
+    /* ── BASE ACTION BUTTON — Industrial panel switch aesthetic ──────────── */
+    .act-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      width: 70px;
+      min-height: 58px;
+      padding: 6px 4px 10px;
+      background: linear-gradient(170deg, #0d1b25 0%, #081018 100%);
+      border: 1px solid rgba(68, 255, 136, 0.55);
+      border-radius: 2px;
+      color: #44ff88;
+      font-family: 'Courier New', monospace;
+      font-size: 7.5px;
+      font-weight: bold;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      position: relative;
+      box-shadow:
+        0 0 8px rgba(68, 255, 136, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+      transition: background 0.08s, box-shadow 0.08s, transform 0.08s;
+      user-select: none;
+      -webkit-user-select: none;
+      pointer-events: all;
+      outline: none;
+    }
+
+    /* LED indicator dot */
+    .act-btn::before {
+      content: '';
+      position: absolute;
+      top: 7px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #44ff88;
+      box-shadow: 0 0 6px #44ff88, 0 0 2px #44ff88;
+      transition: box-shadow 0.08s;
+    }
+
+    /* Bottom accent line */
+    .act-btn::after {
+      content: '';
+      position: absolute;
+      bottom: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 22px;
+      height: 1px;
+      background: rgba(68, 255, 136, 0.22);
+    }
+
+    .act-btn:active,
+    .act-btn.pressed {
+      background: linear-gradient(170deg, #050d12 0%, #0d1b25 100%);
+      box-shadow:
+        0 0 4px rgba(68, 255, 136, 0.2),
+        inset 0 2px 6px rgba(0, 0, 0, 0.65);
+      transform: scale(0.95);
+      color: #22cc66;
+    }
+
+    .act-btn:active::before,
+    .act-btn.pressed::before {
+      box-shadow: 0 0 3px #44ff88;
+    }
+
+    /* Amber variant — for warnings / hints */
+    .act-btn.amber {
+      border-color: rgba(244, 166, 35, 0.6);
+      color: #F4A623;
+    }
+    .act-btn.amber::before {
+      background: #F4A623;
+      box-shadow: 0 0 6px #F4A623;
+    }
+    .act-btn.amber::after {
+      background: rgba(244, 166, 35, 0.2);
+    }
+    .act-btn.amber:active { color: #cc8800; }
+
+    /* Red variant — danger actions */
+    .act-btn.danger {
+      border-color: rgba(231, 76, 60, 0.6);
+      color: #E74C3C;
+    }
+    .act-btn.danger::before {
+      background: #E74C3C;
+      box-shadow: 0 0 6px #E74C3C;
+    }
+    .act-btn.danger::after { background: rgba(231,76,60,0.2); }
+
+    /* Blue variant — info/schematic */
+    .act-btn.blue {
+      border-color: rgba(68, 160, 255, 0.6);
+      color: #44a0ff;
+    }
+    .act-btn.blue::before {
+      background: #44a0ff;
+      box-shadow: 0 0 6px #44a0ff;
+    }
+    .act-btn.blue::after { background: rgba(68,160,255,0.2); }
+
+    /* Disabled state */
+    .act-btn:disabled,
+    .act-btn.disabled {
+      border-color: rgba(68, 255, 136, 0.12);
+      color: rgba(68, 255, 136, 0.18);
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    .act-btn:disabled::before,
+    .act-btn.disabled::before {
+      background: rgba(68, 255, 136, 0.12);
+      box-shadow: none;
+    }
+
+    /* ── RIGHT ACTION BAR — vertical stack, right edge ───────────────────── */
+    #rightActionBar {
+      position: fixed;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: none;
+      flex-direction: column;
+      gap: 7px;
+      z-index: 50;
+      pointer-events: all;
+    }
+
+    /* ── PAUSE BUTTON — top right corner ─────────────────────────────────── */
+    #btnPauseTop {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      width: 54px;
+      height: 38px;
+      background: linear-gradient(170deg, #0d1b25 0%, #081018 100%);
+      border: 1px solid rgba(68, 255, 136, 0.4);
+      border-radius: 2px;
+      color: #44ff88;
+      font-family: 'Courier New', monospace;
+      font-size: 8px;
+      font-weight: bold;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 55;
+      pointer-events: all;
+      transition: all 0.08s;
+      user-select: none;
+      box-shadow: 0 0 6px rgba(68,255,136,0.1);
+    }
+    #btnPauseTop:active {
+      background: #050d12;
+      transform: scale(0.95);
+    }
+
+    /* ── CONTEXTUAL INTERACT BUTTON — override existing style ────────────── */
+    #btnInteract {
+      position: fixed;
+      bottom: 130px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(170deg, #18140a 0%, #0e0c05 100%);
+      border: 2px solid rgba(255, 204, 0, 0.85);
+      border-radius: 2px;
+      color: #ffcc00;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      padding: 13px 26px;
+      display: none;
+      box-shadow: 0 0 14px rgba(255, 204, 0, 0.25);
+      z-index: 100;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      animation: pulseAmber 1.6s ease-in-out infinite;
+      white-space: nowrap;
+      pointer-events: all;
+      position: fixed;
+    }
+    #btnInteract::before {
+      content: '';
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ffcc00;
+      box-shadow: 0 0 8px #ffcc00;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+    #btnInteract:active {
+      transform: translateX(-50%) scale(0.95);
+      background: linear-gradient(170deg, #0e0c05 0%, #18140a 100%);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.7);
+    }
+    @keyframes pulseAmber {
+      0%, 100% { box-shadow: 0 0 10px rgba(255,204,0,0.2); }
+      50%       { box-shadow: 0 0 22px rgba(255,204,0,0.45); }
+    }
+
+    /* ── TUTORIAL BAR — center bottom, shown during guided steps ─────────── */
+    #tutorialBar {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      align-items: center;
+      gap: 10px;
+      z-index: 60;
+      pointer-events: all;
+      white-space: nowrap;
+    }
+
+    #tutorialStepBadge {
+      background: rgba(10,20,30,0.9);
+      border: 1px solid rgba(68,255,136,0.3);
+      border-radius: 2px;
+      color: rgba(68,255,136,0.6);
+      font-family: 'Courier New', monospace;
+      font-size: 8px;
+      letter-spacing: 2px;
+      padding: 6px 10px;
+      text-transform: uppercase;
+    }
+
+    .tut-btn {
+      height: 42px;
+      padding: 0 18px;
+      background: linear-gradient(170deg, #0d1b25 0%, #081018 100%);
+      border: 1px solid rgba(68, 255, 136, 0.45);
+      border-radius: 2px;
+      color: rgba(68,255,136,0.75);
+      font-family: 'Courier New', monospace;
+      font-size: 9px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      pointer-events: all;
+      transition: all 0.08s;
+      box-shadow: 0 0 6px rgba(68,255,136,0.08);
+    }
+    .tut-btn:active {
+      transform: scale(0.95);
+      background: #050d12;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.6);
+    }
+
+    /* Primary NEXT STEP button */
+    #btnNextStep {
+      border-color: rgba(68,255,136,0.85);
+      color: #44ff88;
+      box-shadow: 0 0 14px rgba(68,255,136,0.18);
+      font-size: 10px;
+      padding: 0 22px;
+    }
+
+    /* ── TOOL BELT — slides up from bottom ───────────────────────────────── */
+    #toolBelt {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(0deg, #060e14 0%, #091520 100%);
+      border-top: 1px solid rgba(68,255,136,0.25);
+      padding: 14px 16px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      z-index: 70;
+      pointer-events: all;
+      transform: translateY(100%);
+      transition: transform 0.22s ease;
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+    }
+    #toolBelt.open {
+      transform: translateY(0%);
+    }
+
+    #toolBeltLabel {
+      color: rgba(68,255,136,0.35);
+      font-family: 'Courier New', monospace;
+      font-size: 8px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      align-self: flex-start;
+    }
+
+    #toolBeltItems {
+      display: flex;
+      gap: 9px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      width: 100%;
+    }
+    #toolBeltItems::-webkit-scrollbar { height: 2px; }
+    #toolBeltItems::-webkit-scrollbar-track { background: rgba(20,30,40,0.5); }
+    #toolBeltItems::-webkit-scrollbar-thumb { background: rgba(68,255,136,0.25); border-radius: 1px; }
+
+    .tool-btn {
+      min-width: 76px;
+      height: 76px;
+      flex-shrink: 0;
+      background: linear-gradient(170deg, #0d1b25 0%, #081018 100%);
+      border: 1px solid rgba(68,255,136,0.3);
+      border-radius: 2px;
+      color: rgba(100,130,110,0.7);
+      font-family: 'Courier New', monospace;
+      font-size: 7.5px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: all 0.12s;
+      position: relative;
+    }
+
+    .tool-sym {
+      font-family: 'Courier New', monospace;
+      font-size: 17px;
+      line-height: 1;
+      color: rgba(68,255,136,0.35);
+      letter-spacing: 0;
+      transition: color 0.12s;
+    }
+
+    /* LED for tool button */
+    .tool-btn::before {
+      content: '';
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(68,255,136,0.18);
+      transition: all 0.12s;
+    }
+
+    .tool-btn:active,
+    .tool-btn.active {
+      border-color: rgba(68,255,136,0.85);
+      color: #44ff88;
+      background: linear-gradient(170deg, #0f2233 0%, #0d1a22 100%);
+      box-shadow: 0 0 12px rgba(68,255,136,0.14), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .tool-btn.active .tool-sym,
+    .tool-btn:active .tool-sym {
+      color: #44ff88;
+    }
+    .tool-btn.active::before,
+    .tool-btn:active::before {
+      background: #44ff88;
+      box-shadow: 0 0 8px #44ff88;
+    }
+
+    .tool-btn.locked {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .tool-btn.locked::after {
+      content: 'LOCKED';
+      position: absolute;
+      bottom: 5px;
+      font-size: 6px;
+      color: rgba(231,76,60,0.6);
+      letter-spacing: 1px;
+    }
+
+    #btnCloseTools {
+      height: 36px;
+      padding: 0 28px;
+      background: transparent;
+      border: 1px solid rgba(231,76,60,0.4);
+      border-radius: 2px;
+      color: rgba(231,76,60,0.7);
+      font-family: 'Courier New', monospace;
+      font-size: 8px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.08s;
+    }
+    #btnCloseTools:active {
+      background: rgba(231,76,60,0.08);
+      transform: scale(0.96);
+    }
+
+    /* ── CIRCUIT MODAL — machine interaction overlay ──────────────────────── */
+    #circuitModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 10, 15, 0.97);
+      border: 1px solid rgba(68,255,136,0.2);
+      display: none;
+      flex-direction: column;
+      z-index: 900;
+      pointer-events: all;
+      font-family: 'Courier New', monospace;
+    }
+
+    #circuitHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(68,255,136,0.15);
+      background: rgba(10,20,28,0.8);
+      flex-shrink: 0;
+    }
+
+    #circuitTitle {
+      color: #44ff88;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    #circuitHeaderRight {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #circuitStatus {
+      font-size: 9px;
+      color: rgba(68,255,136,0.45);
+      letter-spacing: 2px;
+      border: 1px solid rgba(68,255,136,0.2);
+      padding: 4px 10px;
+      border-radius: 2px;
+    }
+
+    /* Circuit viewport — where the 2D machine view lives */
+    #circuitViewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #030a10;
+    }
+
+    /* Subtle grid for the circuit viewport */
+    #circuitViewport::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(68,255,136,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(68,255,136,0.025) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+    }
+
+    /* Circuit modal bottom action bar */
+    #circuitActions {
+      display: flex;
+      gap: 8px;
+      padding: 12px 14px;
+      border-top: 1px solid rgba(68,255,136,0.15);
+      background: rgba(10,20,28,0.8);
+      flex-shrink: 0;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #circuitActionsLeft {
+      display: flex;
+      gap: 8px;
+    }
+
+    .circ-btn {
+      height: 44px;
+      padding: 0 16px;
+      background: linear-gradient(170deg, #0d1b25 0%, #081018 100%);
+      border: 1px solid rgba(68,255,136,0.45);
+      border-radius: 2px;
+      color: #44ff88;
+      font-family: 'Courier New', monospace;
+      font-size: 9px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: all 0.08s;
+      white-space: nowrap;
+      pointer-events: all;
+      position: relative;
+    }
+    .circ-btn::before {
+      content: '';
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #44ff88;
+      box-shadow: 0 0 5px #44ff88;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    .circ-btn:active {
+      transform: scale(0.95);
+      background: #050d12;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.6);
+    }
+
+    /* Power ON — amber */
+    #btnPowerOn {
+      border-color: rgba(244,166,35,0.7);
+      color: #F4A623;
+    }
+    #btnPowerOn::before {
+      background: #F4A623;
+      box-shadow: 0 0 5px #F4A623;
+    }
+    #btnPowerOn.active-power {
+      border-color: rgba(231,76,60,0.7);
+      color: #E74C3C;
+    }
+    #btnPowerOn.active-power::before {
+      background: #E74C3C;
+      box-shadow: 0 0 5px #E74C3C;
+    }
+
+    /* Check — blue */
+    #btnCheckCircuit {
+      border-color: rgba(68,160,255,0.6);
+      color: #44a0ff;
+    }
+    #btnCheckCircuit::before {
+      background: #44a0ff;
+      box-shadow: 0 0 5px #44a0ff;
+    }
+
+    /* Reset — dim red */
+    #btnResetWires {
+      border-color: rgba(231,76,60,0.45);
+      color: rgba(231,76,60,0.75);
+    }
+    #btnResetWires::before {
+      background: rgba(231,76,60,0.7);
+      box-shadow: none;
+    }
+
+    /* Close modal */
+    #btnCloseCircuit {
+      border-color: rgba(68,255,136,0.25);
+      color: rgba(68,255,136,0.45);
+    }
+    #btnCloseCircuit::before {
+      background: rgba(68,255,136,0.3);
+      box-shadow: none;
+    }
+
+    /* ── PAUSE MENU OVERLAY ───────────────────────────────────────────────── */
+    #pauseMenu {
+      position: fixed;
+      inset: 0;
+      background: rgba(5,10,15,0.94);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 800;
+      pointer-events: all;
+    }
+
+    #pausePanel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid rgba(68,255,136,0.2);
+      border-radius: 2px;
+      background: linear-gradient(170deg, #0a1820 0%, #060e14 100%);
+      padding: 32px 40px;
+      min-width: 220px;
+      box-shadow: 0 0 40px rgba(0,0,0,0.8);
+    }
+
+    #pauseTitle {
+      color: rgba(68,255,136,0.5);
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      letter-spacing: 4px;
+      margin-bottom: 8px;
+    }
+
+    .pause-menu-btn {
+      width: 100%;
+      height: 46px;
+      background: linear-gradient(170deg, #0d1b25 0%, #081018 100%);
+      border: 1px solid rgba(68,255,136,0.4);
+      border-radius: 2px;
+      color: #44ff88;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.08s;
+      pointer-events: all;
+    }
+    .pause-menu-btn:active {
+      background: #050d12;
+      transform: scale(0.97);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+    }
+    .pause-menu-btn.danger-btn {
+      border-color: rgba(231,76,60,0.4);
+      color: rgba(231,76,60,0.8);
+    }
+
+    /* ── OVERRIDE: Start button — electric terminal style ────────────────── */
+    #startBtn {
+      padding: 16px 44px;
+      font-size: clamp(12px, 2.5vw, 17px);
+      font-family: 'Courier New', monospace;
+      background: transparent;
+      color: #44ff88;
+      border: 2px solid rgba(68,255,136,0.8);
+      border-radius: 2px;
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      transition: all 0.18s;
+      box-shadow: 0 0 20px rgba(68,255,136,0.15), inset 0 0 20px rgba(68,255,136,0.02);
+      position: relative;
+    }
+    #startBtn::before {
+      content: '';
+      position: absolute;
+      top: 6px; left: 6px;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #44ff88;
+      box-shadow: 0 0 8px #44ff88;
+    }
+    #startBtn::after {
+      content: '';
+      position: absolute;
+      top: 6px; right: 6px;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #44ff88;
+      box-shadow: 0 0 8px #44ff88;
+    }
+    #startBtn:hover {
+      background: rgba(68,255,136,0.06);
+      box-shadow: 0 0 30px rgba(68,255,136,0.3);
+      transform: none;
+    }
+    #startBtn:active {
+      transform: scale(0.97);
+      background: rgba(68,255,136,0.04);
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    /* ── OVERRIDE: WASD buttons ──────────────────────────────────────────── */
+    .wasd-btn {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(170deg, #0d1b25 0%, #081018 100%);
+      border: 1px solid rgba(68,255,136,0.4);
+      border-radius: 2px;
+      color: #44ff88;
+      font-size: 14px;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: all 0.07s;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+    .wasd-btn.active {
+      background: linear-gradient(170deg, #081018 0%, #050d12 100%);
+      border-color: #44ff88;
+      box-shadow: 0 0 10px rgba(68,255,136,0.2), inset 0 2px 4px rgba(0,0,0,0.5);
+      color: #88ffaa;
+    }
+
+    /* ── OVERRIDE: Sprint button ─────────────────────────────────────────── */
+    #btnSprint {
+      width: 54px;
+      height: 38px;
+      background: linear-gradient(170deg, #0d1b25 0%, #081018 100%);
+      border: 1px solid rgba(244,166,35,0.55);
+      border-radius: 2px;
+      color: #F4A623;
+      font-family: 'Courier New', monospace;
+      font-size: 8px;
+      font-weight: bold;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: all 0.08s;
+      pointer-events: all;
+      display: none;
+    }
+    #btnSprint:active {
+      background: #050d12;
+      transform: scale(0.94);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+    }
+
+    /* ── Remove old jump button style (no jump mechanic in training sim) ── */
+    #controls .control-btn { display: none !important; }
+    .control-pad { display: none !important; }
+
+    /* ══════════════════════════════════════════════════════════════════════
+       VIRTUAL JOYSTICK + CIRCULAR ACTION BUTTON
+    ══════════════════════════════════════════════════════════════════════ */
+
+    /* Full-screen look zone — behind all controls */
+    #lookZone {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      touch-action: none;
+      display: none;
+    }
+    @media (max-width: 1024px) {
+      #lookZone { display: block; pointer-events: all; }
+    }
+
+    /* Joystick container — bottom left */
+    #joystickContainer {
+      position: fixed;
+      bottom: 24px;
+      left: 20px;
+      display: none;
+      z-index: 20;
+      pointer-events: all;
+    }
+    @media (max-width: 1024px) {
+      #joystickContainer { display: block; }
+    }
+
+    #joystickOuter {
+      width: 128px;
+      height: 128px;
+      border-radius: 50%;
+      background: rgba(5, 12, 18, 0.55);
+      border: 2px solid rgba(68, 255, 136, 0.22);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.3);
+    }
+
+    /* Crosshair guides inside outer ring */
+    #joystickOuter::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 1px;
+      height: 60%;
+      background: rgba(68,255,136,0.08);
+    }
+    #joystickOuter::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60%;
+      height: 1px;
+      background: rgba(68,255,136,0.08);
+    }
+
+    #joystickInner {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 38%, rgba(80,255,150,0.28), rgba(20,80,50,0.35));
+      border: 2px solid rgba(68, 255, 136, 0.5);
+      position: absolute;
+      pointer-events: none;
+      box-shadow: 0 0 12px rgba(68,255,136,0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+      transition: transform 0.04s linear;
+      will-change: transform;
+    }
+
+    /* Sprint ring indicator — shown when sprinting */
+    #joystickOuter.sprinting {
+      border-color: rgba(244,166,35,0.6);
+      box-shadow: 0 0 18px rgba(244,166,35,0.2), inset 0 0 20px rgba(0,0,0,0.3);
+    }
+    #joystickOuter.sprinting #joystickInner {
+      border-color: rgba(244,166,35,0.7);
+      background: radial-gradient(circle at 38% 38%, rgba(255,200,80,0.3), rgba(80,50,10,0.35));
+    }
+
+    /* ── Circular Primary Action Button — bottom right ──────────────────── */
+    #btnInteract {
+      position: fixed !important;
+      bottom: 28px !important;
+      right: 100px !important;
+      left: auto !important;
+      transform: none !important;
+      width: 76px !important;
+      height: 76px !important;
+      border-radius: 50% !important;
+      padding: 0 !important;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 9px !important;
+      letter-spacing: 1px !important;
+      background: rgba(5, 14, 20, 0.62) !important;
+      border: 2.5px solid rgba(68,255,136,0.75) !important;
+      color: #44ff88 !important;
+      font-family: 'Roboto', Arial, sans-serif !important;
+      font-weight: 700 !important;
+      white-space: normal !important;
+      box-shadow: 0 0 18px rgba(68,255,136,0.18), inset 0 0 12px rgba(0,0,0,0.4) !important;
+      animation: pulseAction 1.5s ease-in-out infinite !important;
+      line-height: 1.2 !important;
+    }
+    @keyframes pulseAction {
+      0%, 100% { box-shadow: 0 0 10px rgba(68,255,136,0.15), inset 0 0 12px rgba(0,0,0,0.4); }
+      50%       { box-shadow: 0 0 22px rgba(68,255,136,0.38), inset 0 0 12px rgba(0,0,0,0.4); }
+    }
+    #btnInteract:active {
+      transform: scale(0.91) !important;
+      background: rgba(2,8,12,0.75) !important;
+    }
+    #btnInteract::before { display: none !important; } /* remove old LED dot */
+
+    /* On mobile, show as flex */
+    @media (max-width: 1024px) {
+      #btnInteract { display: flex; }
+    }
+
+
+
+    /* ── Right action bar — keep off screen on very small screens ──────── */
+    @media (max-width: 400px) {
+      #rightActionBar .act-btn { width: 58px; min-height: 50px; font-size: 7px; }
+    }
+
+    /* ── Minimap — clean up container ───────────────────────────────────── */
+    #minimap {
+      bottom: 24px;
+      right: 24px;
+      width: 148px;
+      height: 148px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+    }
+    @media (max-width: 1024px) {
+      #minimap {
+        bottom: 172px;
+        right: 100px;
+        width: 120px;
+        height: 120px;
+      }
+    }
+
+    /* ── Hide old controls div completely ────────────────────────────────── */
+    #controls { display: none !important; }
+
+    /* ══════════════════════════════════════════════════════════════════════
+       THEME OVERRIDE — Amber + Navy, Pill Buttons, Inter Font
+       Replaces the electric-green terminal aesthetic with a warmer,
+       more readable game UI closer to the Electrician Simulator reference.
+    ══════════════════════════════════════════════════════════════════════ */
+    :root {
+      --clr:       #FFB800;
+      --clr-dim:   rgba(255,184,0,0.65);
+      --clr-glow:  rgba(255,184,0,0.28);
+      --clr-glow2: rgba(255,184,0,0.12);
+      --bg:        #0d1526;
+      --bg2:       #121f38;
+      --bg3:       rgba(18,31,56,0.97);
+      --font:      'Inter', 'Roboto', Arial, sans-serif;
+      --r:         10px;
+    }
+
+    /* ── Global font + background ──────────────────────────────────────── */
+    body { font-family: var(--font) !important; background: var(--bg) !important; }
+
+    /* ── Main overlay / splash screen ─────────────────────────────────── */
+    #overlay {
+      background: linear-gradient(160deg, #09111f 0%, #0d1f3a 55%, #152848 100%) !important;
+    }
+    #overlay h1 {
+      font-family: var(--font) !important;
+      color: var(--clr) !important;
+      text-shadow: 0 2px 32px var(--clr-glow), 0 0 8px var(--clr-glow2) !important;
+      font-size: clamp(28px,7vw,58px) !important;
+      font-weight: 900 !important;
+      letter-spacing: 4px !important;
+    }
+    #overlay p {
+      font-family: var(--font) !important;
+      color: #8aaac8 !important;
+      font-size: clamp(12px,2.2vw,16px) !important;
+    }
+    #startBtn {
+      font-family: var(--font) !important;
+      background: var(--clr) !important;
+      color: #0d1526 !important;
+      border: none !important;
+      border-radius: 50px !important;
+      font-size: clamp(14px,2.5vw,18px) !important;
+      font-weight: 800 !important;
+      letter-spacing: 2px !important;
+      padding: 16px 52px !important;
+      box-shadow: 0 4px 28px var(--clr-glow) !important;
+      text-transform: uppercase !important;
+    }
+    #startBtn::before, #startBtn::after { display: none !important; }
+    #startBtn:hover {
+      background: #ffc933 !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 6px 36px rgba(255,184,0,0.45) !important;
+    }
+    #startBtn:active {
+      transform: scale(0.97) !important;
+      background: #e0a200 !important;
+    }
+
+    /* ── HUD top bar ───────────────────────────────────────────────────── */
+    #topBar {
+      background: linear-gradient(180deg, rgba(13,21,38,0.98) 0%, transparent 100%) !important;
+    }
+    #roomname {
+      font-family: var(--font) !important;
+      color: var(--clr) !important;
+      font-weight: 700 !important;
+      font-size: clamp(13px,2.5vw,17px) !important;
+    }
+    .status-item {
+      font-family: var(--font) !important;
+      border-left-color: var(--clr) !important;
+      background: rgba(13,21,38,0.88) !important;
+    }
+    #genStatus { font-family: var(--font) !important; background: rgba(13,21,38,0.92) !important; border-color: rgba(255,184,0,0.2) !important; }
+
+    /* ── Notification ──────────────────────────────────────────────────── */
+    #notification {
+      font-family: var(--font) !important;
+      border-color: var(--clr) !important;
+      box-shadow: 0 4px 30px var(--clr-glow) !important;
+      background: rgba(13,21,38,0.98) !important;
+      border-radius: var(--r) !important;
+      font-weight: 600 !important;
+    }
+
+    /* ── Action buttons — pill style ───────────────────────────────────── */
+    .act-btn {
+      font-family: var(--font) !important;
+      border-color: rgba(255,184,0,0.5) !important;
+      border-radius: var(--r) !important;
+      background: linear-gradient(160deg, var(--bg2) 0%, var(--bg) 100%) !important;
+      color: var(--clr) !important;
+      font-size: 9px !important;
+      letter-spacing: 1px !important;
+    }
+    .act-btn::before { background: var(--clr) !important; box-shadow: 0 0 6px var(--clr) !important; }
+    .act-btn::after  { background: var(--clr-glow2) !important; }
+    .act-btn:active, .act-btn.pressed {
+      background: linear-gradient(160deg, var(--bg) 0%, #090f1d 100%) !important;
+      color: #cc9200 !important;
+    }
+
+    /* Amber variant */
+    .act-btn.amber { border-color: rgba(244,166,35,0.6) !important; color: #F4A623 !important; }
+    .act-btn.amber::before { background: #F4A623 !important; box-shadow: 0 0 6px #F4A623 !important; }
+
+    /* Blue variant */
+    .act-btn.blue { border-color: rgba(68,160,255,0.6) !important; color: #44a0ff !important; }
+    .act-btn.blue::before { background: #44a0ff !important; box-shadow: 0 0 6px #44a0ff !important; }
+
+    /* Danger variant */
+    .act-btn.danger { border-color: rgba(231,76,60,0.6) !important; color: #E74C3C !important; }
+    .act-btn.danger::before { background: #E74C3C !important; box-shadow: 0 0 6px #E74C3C !important; }
+
+    /* ── Pause button ──────────────────────────────────────────────────── */
+    #btnPauseTop {
+      font-family: var(--font) !important;
+      border-color: rgba(255,184,0,0.4) !important;
+      border-radius: 8px !important;
+      color: var(--clr) !important;
+      background: linear-gradient(160deg, var(--bg2) 0%, var(--bg) 100%) !important;
+      font-size: 9px !important;
+      letter-spacing: 1px !important;
+    }
+
+
+
+    /* ── USE / Interact button ─────────────────────────────────────────── */
+    #btnInteract {
+      border-color: rgba(255,184,0,0.85) !important;
+      color: var(--clr) !important;
+      background: rgba(13,21,38,0.72) !important;
+      box-shadow: 0 0 20px var(--clr-glow), inset 0 0 12px rgba(0,0,0,0.4) !important;
+      font-family: var(--font) !important;
+      font-weight: 700 !important;
+      font-size: 10px !important;
+    }
+    @keyframes pulseAction {
+      0%,100% { box-shadow: 0 0 12px var(--clr-glow2), inset 0 0 12px rgba(0,0,0,0.4); }
+      50%      { box-shadow: 0 0 26px var(--clr-glow),  inset 0 0 12px rgba(0,0,0,0.4); }
+    }
+
+    /* ── Joystick ──────────────────────────────────────────────────────── */
+    #joystickOuter {
+      border-color: rgba(255,184,0,0.3) !important;
+      background: rgba(13,21,38,0.6) !important;
+    }
+    #joystickOuter::before { background: rgba(255,184,0,0.1) !important; }
+    #joystickOuter::after  { background: rgba(255,184,0,0.1) !important; }
+    #joystickInner {
+      border-color: rgba(255,184,0,0.6) !important;
+      background: radial-gradient(circle at 38% 38%, rgba(255,200,80,0.32), rgba(80,55,10,0.4)) !important;
+      box-shadow: 0 0 14px rgba(255,184,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+    }
+    #joystickOuter.sprinting {
+      border-color: rgba(255,120,0,0.65) !important;
+      box-shadow: 0 0 18px rgba(255,120,0,0.22), inset 0 0 20px rgba(0,0,0,0.3) !important;
+    }
+    #joystickOuter.sprinting #joystickInner {
+      border-color: rgba(255,120,0,0.75) !important;
+      background: radial-gradient(circle at 38% 38%, rgba(255,160,60,0.35), rgba(100,40,0,0.4)) !important;
+    }
+
+    /* ── Minimap ───────────────────────────────────────────────────────── */
+    #minimap { border-color: rgba(255,184,0,0.28) !important; border-radius: 8px !important; }
+
+    /* ── Tool belt ─────────────────────────────────────────────────────── */
+    #toolBelt {
+      background: linear-gradient(0deg, var(--bg) 0%, var(--bg2) 100%) !important;
+      border-top-color: rgba(255,184,0,0.25) !important;
+      font-family: var(--font) !important;
+    }
+    #toolBeltLabel { font-family: var(--font) !important; color: var(--clr-dim) !important; }
+    .tool-btn {
+      font-family: var(--font) !important;
+      border-color: rgba(255,184,0,0.28) !important;
+      border-radius: 8px !important;
+      background: linear-gradient(160deg, var(--bg2) 0%, var(--bg) 100%) !important;
+      color: rgba(180,140,40,0.65) !important;
+    }
+    .tool-btn::before { background: rgba(255,184,0,0.16) !important; }
+    .tool-btn.active, .tool-btn:active {
+      border-color: rgba(255,184,0,0.85) !important;
+      color: var(--clr) !important;
+      background: linear-gradient(160deg, #1a2d50 0%, var(--bg2) 100%) !important;
+    }
+    .tool-btn.active::before, .tool-btn:active::before { background: var(--clr) !important; box-shadow: 0 0 8px var(--clr) !important; }
+    .tool-sym { color: rgba(255,184,0,0.4) !important; }
+    .tool-btn.active .tool-sym, .tool-btn:active .tool-sym { color: var(--clr) !important; }
+    #btnCloseTools {
+      font-family: var(--font) !important;
+      border-color: rgba(231,76,60,0.4) !important;
+      border-radius: 8px !important;
+      color: rgba(231,76,60,0.75) !important;
+    }
+
+    /* ── Circuit modal ─────────────────────────────────────────────────── */
+    #circuitModal, #computerUI { font-family: var(--font) !important; }
+    #circuitTitle { font-family: var(--font) !important; color: var(--clr) !important; font-weight: 800 !important; }
+    #circuitStatus { font-family: var(--font) !important; border-color: rgba(255,184,0,0.2) !important; color: var(--clr-dim) !important; border-radius: 6px !important; }
+    .circ-btn {
+      font-family: var(--font) !important;
+      border-color: rgba(255,184,0,0.45) !important;
+      color: var(--clr) !important;
+      border-radius: 8px !important;
+      background: linear-gradient(160deg, var(--bg2) 0%, var(--bg) 100%) !important;
+      font-size: 10px !important;
+    }
+    .circ-btn::before { background: var(--clr) !important; box-shadow: 0 0 5px var(--clr) !important; }
+    #btnPowerOn { border-color: rgba(244,166,35,0.7) !important; color: #F4A623 !important; }
+    #btnPowerOn::before { background: #F4A623 !important; box-shadow: 0 0 5px #F4A623 !important; }
+    #btnCheckCircuit { border-color: rgba(68,160,255,0.6) !important; color: #44a0ff !important; }
+    #btnCheckCircuit::before { background: #44a0ff !important; box-shadow: 0 0 5px #44a0ff !important; }
+    #btnResetWires { border-color: rgba(231,76,60,0.45) !important; color: rgba(231,76,60,0.8) !important; }
+    #btnResetWires::before { background: rgba(231,76,60,0.7) !important; }
+    #btnCloseCircuit { border-color: rgba(255,184,0,0.25) !important; color: var(--clr-dim) !important; }
+    #btnCloseCircuit::before { background: var(--clr-dim) !important; box-shadow: none !important; }
+
+    /* Computer UI */
+    #compHeader { background: rgba(13,21,38,0.8) !important; border-bottom-color: rgba(255,184,0,0.15) !important; }
+    #compHeader h2 { font-family: var(--font) !important; color: var(--clr) !important; font-weight: 800 !important; }
+    #compTabs { border-bottom-color: rgba(255,184,0,0.15) !important; }
+    .comp-tab { font-family: var(--font) !important; color: #7a96b8 !important; }
+    .comp-tab.active { border-bottom-color: var(--clr) !important; color: #fff !important; background: rgba(25,40,65,0.8) !important; }
+    #btnExitComp { border-radius: 8px !important; font-family: var(--font) !important; }
+
+    /* ── Pause menu ────────────────────────────────────────────────────── */
+    #pauseMenu { background: rgba(9,15,25,0.96) !important; }
+    #pausePanel {
+      border-color: rgba(255,184,0,0.2) !important;
+      border-radius: 16px !important;
+      background: linear-gradient(160deg, var(--bg2) 0%, var(--bg) 100%) !important;
+    }
+    #pauseTitle { font-family: var(--font) !important; color: var(--clr-dim) !important; font-weight: 700 !important; letter-spacing: 3px !important; }
+    .pause-menu-btn {
+      font-family: var(--font) !important;
+      border-color: rgba(255,184,0,0.4) !important;
+      border-radius: var(--r) !important;
+      color: var(--clr) !important;
+      background: linear-gradient(160deg, var(--bg2) 0%, var(--bg) 100%) !important;
+      font-weight: 700 !important;
+      letter-spacing: 1.5px !important;
+    }
+    .pause-menu-btn.danger-btn { border-color: rgba(231,76,60,0.4) !important; color: rgba(231,76,60,0.85) !important; }
+
+    /* ── Task panel ────────────────────────────────────────────────────── */
+    #taskPanel {
+      font-family: var(--font) !important;
+      background: rgba(13,21,38,0.98) !important;
+      border-color: rgba(255,184,0,0.2) !important;
+      border-radius: 12px !important;
+    }
+    #taskPanel h3 { font-family: var(--font) !important; color: var(--clr) !important; font-weight: 700 !important; }
+
+    /* ── Mobile controller alignment fix ───────────────────────────────── */
+    @media (max-width: 1024px) {
+      /* USE button — bottom right, no overlap */
+      #btnInteract {
+        right: 16px !important;
+        bottom: 24px !important;
+        left: auto !important;
+        transform: none !important;
+      }
+      #btnInteract:active { transform: scale(0.91) !important; }
+
+      /* Minimap — above USE button */
+      #minimap {
+        bottom: 116px !important;
+        right: 16px !important;
+        width: 118px !important;
+        height: 118px !important;
+      }
+
+
+    }
+
+    /* ── Prompt / interaction label ────────────────────────────────────── */
+    #prompt { font-family: var(--font) !important; border-radius: var(--r) !important; }
+
+    /* ── Facility map legend ───────────────────────────────────────────── */
+    .map-room { font-family: var(--font) !important; }
+  </style>
+
+  <style>
+    /* ══════════════════════════════════════════════════════════════════════
+       UNIFIED TRAINING SYSTEM UI
+    ══════════════════════════════════════════════════════════════════════ */
+
+    /* ── Tool Indicator — always-visible strip below top bar ─────────────── */
+    #toolIndicator {
+      position: fixed;
+      top: 52px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(13,21,38,0.92);
+      border: 1px solid rgba(255,184,0,0.3);
+      border-radius: 20px;
+      padding: 5px 18px;
+      font-family: var(--font);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: #8899aa;
+      user-select: none;
+      pointer-events: none;
+      z-index: 30;
+      transition: color 0.2s, border-color 0.2s, opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    /* ── Step Progress Bar — scenario instruction at bottom center ─────── */
+    #stepProgress {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(9,14,24,0.96);
+      border-top: 1px solid rgba(255,184,0,0.18);
+      padding: 7px 16px;
+      font-family: var(--font);
+      font-size: 11px;
+      font-weight: 600;
+      color: #FFB800;
+      text-align: center;
+      letter-spacing: 0.5px;
+      user-select: none;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    /* ── Feedback Log — rolling action log at bottom-left ───────────────── */
+    #feedbackLog {
+      position: fixed;
+      bottom: 32px;
+      left: 14px;
+      background: rgba(9,14,24,0.80);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      line-height: 1.5;
+      max-width: 320px;
+      pointer-events: none;
+      user-select: none;
+      z-index: 29;
+    }
+
+    /* ── Error Flash — red screen edge flicker on wrong tool ────────────── */
+    #errorFlash {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 800;
+      opacity: 0;
+      transition: opacity 0s;
+      background: radial-gradient(ellipse at center, transparent 30%, rgba(200,0,0,0.28) 100%);
+      border: 3px solid rgba(220,30,30,0.6);
+    }
+
+    /* ── Schematic Modal ────────────────────────────────────────────────── */
+    #schematicModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9990;
+      background: rgba(6,10,18,0.97);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    #schematicModal.open { display: flex; }
+
+    #schematicHeader {
+      width: 100%;
+      max-width: 820px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255,184,0,0.2);
+      background: rgba(13,21,38,0.95);
+      border-radius: 10px 10px 0 0;
+    }
+    #schematicTitle {
+      font-family: var(--font);
+      color: var(--clr);
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    #btnCloseSchematic {
+      background: transparent;
+      border: 1px solid rgba(255,184,0,0.4);
+      border-radius: 8px;
+      color: var(--clr);
+      font-family: var(--font);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 18px;
+      cursor: pointer;
+      letter-spacing: 1px;
+    }
+    #btnCloseSchematic:hover { background: rgba(255,184,0,0.08); }
+
+    #schematicCanvas {
+      display: block;
+      max-width: 820px;
+      width: 100%;
+      background: #050d18;
+      border-radius: 0 0 10px 10px;
+      border: 1px solid rgba(255,184,0,0.12);
+      border-top: none;
+    }
+
+    #schematicNote {
+      margin-top: 10px;
+      font-family: var(--font);
+      font-size: 11px;
+      color: #4a6a8a;
+      letter-spacing: 1px;
+    }
+
+    @media (max-width: 1024px) {
+      #toolIndicator { top: 44px; font-size: 10px; }
+      #feedbackLog { bottom: 38px; font-size: 9px; max-width: 240px; }
+      #stepProgress { font-size: 10px; padding: 5px 10px; }
+    }
+  </style>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       MAIN MENU STYLES
+  ═══════════════════════════════════════════════════════════════════ -->
+  <style>
+    /* Override overlay — keep as fixed container, allow JS to set display:none */
+    #overlay {
+      position: fixed !important;
+      inset: 0 !important;
+      background: linear-gradient(180deg, #1a2a3e 0%, #0d1826 50%, #070f18 100%) !important;
+      display: block;   /* no !important — main.js can override via inline style */
+      overflow: hidden !important;
+      z-index: 1000 !important;
+      flex-direction: unset !important;
+      align-items: unset !important;
+      justify-content: unset !important;
+    }
+
+    /* ── Electrical Room Background ─────────────────────────────────────── */
+    .menu-bg {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .menu-panel {
+      position: absolute;
+      background: linear-gradient(135deg, #2a3a4c 0%, #1e2c3a 100%);
+      border: 2px solid #3a4c5e;
+      border-radius: 4px;
+      box-shadow: inset 2px 2px 10px rgba(0,0,0,0.6), 0 5px 20px rgba(0,0,0,0.7);
+    }
+    .menu-panel-left  { width:140px; height:240px; top:15%; left:4%; transform:perspective(500px) rotateY(12deg); opacity:.7; }
+    .menu-panel-right { width:160px; height:280px; top:12%; right:4%; transform:perspective(500px) rotateY(-12deg); opacity:.7; }
+    .menu-breaker {
+      position: absolute;
+      width: 28px; height: 36px;
+      background: linear-gradient(135deg, #222 0%, #111 100%);
+      border: 1px solid #444;
+      border-radius: 3px;
+    }
+    .menu-panel-left .menu-breaker:nth-child(1) { top:28px; left:18px; }
+    .menu-panel-left .menu-breaker:nth-child(2) { top:72px; left:18px; }
+    .menu-panel-left .menu-breaker:nth-child(3) { top:116px; left:18px; }
+    .menu-panel-right .menu-breaker:nth-child(1) { top:34px; right:22px; }
+    .menu-panel-right .menu-breaker:nth-child(2) { top:86px; right:22px; }
+    .menu-panel-right .menu-breaker:nth-child(3) { top:138px; right:22px; }
+    .menu-led {
+      position: absolute; width:8px; height:8px;
+      border-radius: 50%; animation: menuLedBlink 2s infinite;
+    }
+    .menu-led.green  { background:#4caf50; box-shadow:0 0 10px #4caf50; top:46px; right:28px; }
+    .menu-led.red    { background:#f44336; box-shadow:0 0 10px #f44336; top:66px; right:28px; animation-delay:.9s; }
+    .menu-led.yellow { background:#ffc107; box-shadow:0 0 10px #ffc107; top:86px; right:28px; animation-delay:.4s; }
+    @keyframes menuLedBlink {
+      0%,50%,100% { opacity:1; } 25%,75% { opacity:.25; }
+    }
+    .menu-conduit {
+      position: absolute;
+      background: linear-gradient(90deg, #4a5a6a 0%, #3a4a5a 50%, #4a5a6a 100%);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+      border-radius: 5px;
+    }
+    .mc1 { width:10px; height:130px; top:14%; left:16%; }
+    .mc2 { width:180px; height:10px; top:24%; left:9%; }
+    .mc3 { width:10px; height:170px; top:8%; right:18%; }
+    .mc4 { width:160px; height:10px; top:28%; right:9%; }
+    .menu-wire {
+      position: absolute; height:5px; border-radius:3px; opacity:.75;
+    }
+    .mw-red    { background:linear-gradient(90deg,#c62828,#e53935,#c62828); width:110px; top:22%; left:14%; transform:rotate(-15deg); }
+    .mw-yellow { background:linear-gradient(90deg,#f9a825,#fbc02d,#f9a825); width:90px;  top:25%; left:15%; transform:rotate(-10deg); }
+    .mw-green  { background:linear-gradient(90deg,#2e7d32,#43a047,#2e7d32); width:80px;  top:27%; left:16%; transform:rotate(-5deg); }
+    .mw-blue   { background:linear-gradient(90deg,#1565c0,#1976d2,#1565c0); width:100px; top:31%; right:17%; transform:rotate(12deg); }
+    .menu-ceiling-light {
+      position: absolute; width:180px; height:34px;
+      background: linear-gradient(180deg,#d0d0d0 0%,#aaa 100%);
+      border-radius: 17px;
+      box-shadow: 0 10px 28px rgba(255,255,255,.25), inset 0 2px 5px rgba(0,0,0,.2);
+      top:4%; left:50%; transform:translateX(-50%);
+    }
+    .menu-light-glow {
+      position: absolute; width:280px; height:280px;
+      background: radial-gradient(ellipse, rgba(255,255,255,.12) 0%, transparent 70%);
+      top:0; left:50%; transform:translate(-50%,-20%);
+    }
+    .menu-particle {
+      position: absolute; width:3px; height:3px;
+      background:rgba(255,255,255,.3); border-radius:50%;
+      animation: menuFloat 16s infinite ease-in-out;
+    }
+    .mp1 { top:20%; left:28%; animation-delay:0s; }
+    .mp2 { top:55%; left:62%; animation-delay:3s; }
+    .mp3 { top:70%; left:18%; animation-delay:6s; }
+    .mp4 { top:38%; left:82%; animation-delay:9s; }
+    @keyframes menuFloat {
+      0%,100% { transform:translate(0,0); opacity:.3; }
+      50%      { transform:translate(28px,-45px); opacity:.6; }
+    }
+
+    /* ── Menu Screens ───────────────────────────────────────────────────── */
+    .menu-screen {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .menu-screen.ms-active { display: flex; }
+
+    /* ── Logo ────────────────────────────────────────────────────────────── */
+    .menu-logo {
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(56px, 10vw, 96px);
+      color: #ffd700;
+      letter-spacing: 8px;
+      line-height: 1;
+      text-shadow:
+        4px 4px 0 #0d1826,
+        -2px -2px 0 #0d1826,
+        2px -2px 0 #0d1826,
+        -2px 2px 0 #0d1826,
+        0 0 40px rgba(255,215,0,.9);
+      animation: menuLogoGlow 3s infinite;
+      text-align: center;
+    }
+    @keyframes menuLogoGlow {
+      0%,100% { text-shadow:4px 4px 0 #0d1826,-2px -2px 0 #0d1826,2px -2px 0 #0d1826,-2px 2px 0 #0d1826,0 0 40px rgba(255,215,0,.9); }
+      50%      { text-shadow:4px 4px 0 #0d1826,-2px -2px 0 #0d1826,2px -2px 0 #0d1826,-2px 2px 0 #0d1826,0 0 65px rgba(255,215,0,1); }
+    }
+    .menu-logo-sub {
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(13px, 2.5vw, 22px);
+      color: rgba(255,255,255,.55);
+      letter-spacing: 4px;
+      margin-top: 6px;
+      text-align: center;
+    }
+    .menu-greeting {
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(11px, 2vw, 16px);
+      color: rgba(255,215,0,.6);
+      letter-spacing: 3px;
+      margin-top: 4px;
+      min-height: 20px;
+    }
+    .menu-logo-wrap { margin-bottom: 48px; text-align: center; animation: menuSlideDown .9s ease-out; }
+    @keyframes menuSlideDown {
+      from { opacity:0; transform:translateY(-80px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    /* ── Menu Buttons ────────────────────────────────────────────────────── */
+    .menu-btns { display:flex; flex-direction:column; gap:16px; animation:menuFadeUp .9s ease-out .2s backwards; }
+    @keyframes menuFadeUp {
+      from { opacity:0; transform:translateY(50px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .mbtn {
+      display: flex; align-items: center; gap: 14px;
+      min-width: clamp(260px, 50vw, 360px);
+      padding: 18px 50px;
+      background: linear-gradient(135deg, #1e3252 0%, #0d1826 100%);
+      border: 3px solid rgba(255,215,0,.55);
+      border-radius: 50px;
+      cursor: pointer;
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(22px, 4vw, 32px);
+      color: #fff;
+      letter-spacing: 3px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,.7);
+      box-shadow: 0 8px 0 rgba(0,0,0,.35), 0 12px 28px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.08);
+      position: relative; overflow: hidden;
+      transition: all .25s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mbtn::before {
+      content:''; position:absolute; top:0; left:-100%; width:100%; height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,215,0,.18),transparent);
+      transition:left .5s;
+    }
+    .mbtn:hover::before { left:100%; }
+    .mbtn:hover {
+      transform: translateY(-5px);
+      border-color: #ffd700;
+      box-shadow: 0 13px 0 rgba(0,0,0,.35), 0 18px 34px rgba(0,0,0,.6), 0 0 28px rgba(255,215,0,.28);
+    }
+    .mbtn:active { transform:translateY(4px); box-shadow:0 3px 0 rgba(0,0,0,.35),0 5px 18px rgba(0,0,0,.4); }
+    .mbtn.mbtn-primary { background:linear-gradient(135deg, #1a4070 0%, #0d2040 100%); border-color:#ffd700; }
+    .mbtn-icon { width:30px; height:30px; position:relative; z-index:1; }
+
+    /* CSS icons */
+    .ico-lightning {
+      width:0; height:0;
+      border-left:9px solid transparent; border-right:9px solid transparent; border-top:22px solid #ffd700;
+      position:relative;
+    }
+    .ico-lightning::after {
+      content:''; position:absolute; top:7px; left:-7px;
+      width:0; height:0;
+      border-left:7px solid transparent; border-right:7px solid transparent; border-top:16px solid #ffd700;
+      transform:rotate(180deg);
+    }
+    .ico-book {
+      width:28px; height:30px; background:#ffd700; border-radius:2px 4px 4px 2px;
+      position:relative;
+    }
+    .ico-book::before {
+      content:''; position:absolute;
+      top:4px; left:4px; right:4px; height:2px; background:#0d1826;
+      box-shadow: 0 5px 0 #0d1826, 0 10px 0 #0d1826, 0 15px 0 #0d1826;
+    }
+    .ico-gear {
+      width:28px; height:28px; background:#ffd700;
+      clip-path: polygon(50% 0%,58% 8%,70% 5%,72% 17%,84% 20%,83% 32%,95% 38%,90% 50%,95% 62%,83% 68%,84% 80%,72% 83%,70% 95%,58% 92%,50% 100%,42% 92%,30% 95%,28% 83%,16% 80%,17% 68%,5% 62%,10% 50%,5% 38%,17% 32%,16% 20%,28% 17%,30% 5%,42% 8%);
+      position:relative;
+    }
+    .ico-gear::after {
+      content:''; position:absolute;
+      top:50%; left:50%; transform:translate(-50%,-50%);
+      width:10px; height:10px; background:#0d1826; border-radius:50%;
+    }
+    .ico-power {
+      width:26px; height:26px;
+      border:4px solid #ffd700; border-radius:50%;
+      border-top-color: transparent;
+      position:relative;
+    }
+    .ico-power::after {
+      content:''; position:absolute;
+      top:-8px; left:50%; transform:translateX(-50%);
+      width:4px; height:14px; background:#ffd700; border-radius:2px;
+    }
+
+    /* ── Screen Titles ───────────────────────────────────────────────────── */
+    .screen-title {
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(28px, 5vw, 44px);
+      color: #ffd700;
+      letter-spacing: 5px;
+      margin-bottom: 8px;
+      text-shadow: 2px 2px 0 #0d1826, 0 0 20px rgba(255,215,0,.6);
+    }
+    .screen-sub {
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(12px, 2vw, 18px);
+      color: rgba(255,255,255,.4);
+      letter-spacing: 3px;
+      margin-bottom: 32px;
+    }
+    .screen-header { text-align:center; }
+
+    /* ── Back Button ─────────────────────────────────────────────────────── */
+    .btn-back {
+      display: flex; align-items:center; gap:8px;
+      background: transparent;
+      border: 2px solid rgba(255,215,0,.35);
+      border-radius: 50px;
+      padding: 10px 28px;
+      font-family: 'Bebas Neue', cursive;
+      font-size: 18px;
+      color: rgba(255,215,0,.7);
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all .2s;
+      margin-bottom: 24px;
+      align-self: flex-start;
+    }
+    .btn-back:hover { border-color:#ffd700; color:#ffd700; }
+    .btn-back:active { transform:scale(.96); }
+
+    /* ── Register Screen ─────────────────────────────────────────────────── */
+    .register-box {
+      background: linear-gradient(135deg, #1e3252 0%, #0d1826 100%);
+      border: 3px solid rgba(255,215,0,.5);
+      border-radius: 20px;
+      padding: clamp(24px,4vw,48px) clamp(24px,5vw,64px);
+      display: flex; flex-direction:column; align-items:center; gap:20px;
+      min-width: clamp(280px, 80vw, 480px);
+      box-shadow: 0 16px 48px rgba(0,0,0,.7), 0 0 30px rgba(255,215,0,.1);
+      animation: menuFadeUp .7s ease-out;
+    }
+    .register-title {
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(28px, 5vw, 42px);
+      color: #ffd700; letter-spacing: 5px;
+      text-shadow: 2px 2px 0 #0d1826;
+    }
+    .register-sub {
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(12px, 2vw, 17px);
+      color: rgba(255,255,255,.45); letter-spacing: 2px;
+      text-align: center;
+    }
+    .register-input {
+      width: 100%;
+      padding: 14px 20px;
+      background: rgba(255,255,255,.07);
+      border: 2px solid rgba(255,215,0,.4);
+      border-radius: 12px;
+      font-family: 'Bebas Neue', cursive;
+      font-size: 22px;
+      color: #fff;
+      letter-spacing: 3px;
+      outline: none;
+      text-align: center;
+      transition: border-color .2s;
+    }
+    .register-input:focus { border-color: #ffd700; }
+    .register-input::placeholder { color:rgba(255,255,255,.25); }
+    .register-error {
+      color: #ff5544; font-family: 'Bebas Neue', cursive;
+      font-size: 16px; letter-spacing: 2px;
+      display: none;
+    }
+    .btn-confirm {
+      width:100%; padding:18px;
+      background: linear-gradient(135deg, #1a4070 0%, #0d2040 100%);
+      border: 3px solid #ffd700; border-radius: 50px;
+      font-family: 'Bebas Neue', cursive;
+      font-size: 26px; color: #fff; letter-spacing: 4px;
+      cursor: pointer; transition: all .2s;
+      box-shadow: 0 6px 0 rgba(0,0,0,.4), 0 0 20px rgba(255,215,0,.15);
+    }
+    .btn-confirm:hover { transform:translateY(-3px); box-shadow:0 9px 0 rgba(0,0,0,.4),0 0 28px rgba(255,215,0,.3); }
+    .btn-confirm:active { transform:translateY(3px); }
+
+    /* ── Stage Cards ─────────────────────────────────────────────────────── */
+    .stages-container { display:flex; flex-direction:column; gap:16px; width:100%; max-width:560px; }
+    .stage-card {
+      display: flex; align-items:center; gap:16px;
+      background: linear-gradient(135deg, #1e2e44 0%, #0d1826 100%);
+      border: 2px solid rgba(255,215,0,.35);
+      border-radius: 16px; padding: 18px 22px;
+      cursor: pointer; transition: all .2s;
+      box-shadow: 0 4px 18px rgba(0,0,0,.5);
+    }
+    .stage-card:hover { transform:translateY(-3px); border-color:rgba(255,215,0,.75); box-shadow:0 8px 28px rgba(0,0,0,.6); }
+    .stage-card:active { transform:translateY(1px); }
+    .stage-card.stage-locked { opacity:.45; cursor:not-allowed; }
+    .stage-card.stage-locked:hover { transform:none; border-color:rgba(255,215,0,.35); }
+    .stage-icon { font-size:34px; width:44px; text-align:center; }
+    .stage-info { flex:1; }
+    .stage-title { font-family:'Bebas Neue',cursive; font-size:clamp(16px,3vw,22px); letter-spacing:2px; }
+    .stage-sub   { font-size:11px; color:rgba(255,255,255,.45); letter-spacing:1px; margin-top:3px; font-family:'Bebas Neue',cursive; }
+    .stage-prog  { display:flex; align-items:center; gap:10px; margin-top:10px; }
+    .stage-prog-bar { flex:1; height:4px; background:rgba(255,255,255,.1); border-radius:2px; }
+    .stage-prog-fill { height:100%; border-radius:2px; transition:width .4s ease; }
+    .stage-prog-label { font-family:'Bebas Neue',cursive; font-size:12px; color:rgba(255,255,255,.4); letter-spacing:1px; white-space:nowrap; }
+    .stage-arrow { font-size:20px; color:rgba(255,215,0,.5); }
+
+    /* ── Level Cards ─────────────────────────────────────────────────────── */
+    .levels-container { display:flex; flex-direction:column; gap:12px; width:100%; max-width:600px; }
+    .level-card {
+      display:flex; align-items:center; gap:14px;
+      background: linear-gradient(135deg, #19283e 0%, #0d1826 100%);
+      border: 2px solid rgba(255,255,255,.12);
+      border-radius: 14px; padding: 16px 18px;
+      transition: all .2s;
+    }
+    .level-card.level-unlocked { border-color:rgba(255,215,0,.4); cursor:pointer; }
+    .level-card.level-unlocked:hover { transform:translateY(-2px); border-color:rgba(255,215,0,.75); box-shadow:0 6px 20px rgba(0,0,0,.5); }
+    .level-card.level-completed { border-color:rgba(68,200,100,.4); background:linear-gradient(135deg,#142a1e 0%,#0d1826 100%); }
+    .level-card.level-locked { opacity:.4; }
+    .level-num { font-family:'Bebas Neue',cursive; font-size:28px; letter-spacing:1px; width:52px; text-align:center; flex-shrink:0; }
+    .level-info { flex:1; }
+    .level-title { font-family:'Bebas Neue',cursive; font-size:clamp(15px,2.5vw,20px); color:#fff; letter-spacing:1.5px; }
+    .level-done-badge { font-size:11px; color:#44c864; letter-spacing:1px; }
+    .level-desc  { font-size:11px; color:rgba(255,255,255,.45); margin-top:4px; line-height:1.5; }
+    .level-meta  { display:flex; align-items:center; gap:14px; margin-top:8px; }
+    .level-dur   { font-family:'Bebas Neue',cursive; font-size:13px; color:rgba(255,255,255,.4); letter-spacing:1px; }
+    .level-stars { font-size:16px; letter-spacing:2px; }
+    .level-action { flex-shrink:0; }
+    .level-lock  { font-size:22px; }
+    .btn-play {
+      padding: 10px 22px;
+      background: linear-gradient(135deg, #1a4070 0%, #0d2040 100%);
+      border: 2px solid #ffd700; border-radius: 50px;
+      font-family:'Bebas Neue',cursive;
+      font-size:18px; color:#fff; letter-spacing:2px;
+      cursor:pointer; transition:all .15s;
+      box-shadow:0 4px 0 rgba(0,0,0,.4);
+    }
+    .btn-play:hover { transform:translateY(-2px); box-shadow:0 6px 0 rgba(0,0,0,.4); }
+    .btn-play:active { transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.4); }
+
+    /* ── Learn Screen ────────────────────────────────────────────────────── */
+    .learn-container { display:flex; flex-direction:column; gap:12px; width:100%; max-width:620px; }
+    .learn-card {
+      background: linear-gradient(135deg, #1a2e48 0%, #0d1826 100%);
+      border: 2px solid rgba(255,215,0,.25);
+      border-radius: 14px; overflow:hidden;
+    }
+    .learn-header {
+      display:flex; align-items:center; gap:14px;
+      padding:16px 20px; cursor:pointer;
+      transition: background .2s;
+    }
+    .learn-header:hover { background:rgba(255,215,0,.06); }
+    .learn-icon  { font-size:24px; }
+    .learn-title { flex:1; font-family:'Bebas Neue',cursive; font-size:clamp(16px,3vw,22px); color:#ffd700; letter-spacing:2px; }
+    .learn-chevron { color:rgba(255,215,0,.5); font-size:14px; }
+    .learn-body {
+      padding: 0 20px 18px 58px;
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 13px; line-height: 1.7;
+      color: rgba(255,255,255,.7);
+    }
+    .learn-body ul { padding-left:16px; }
+    .learn-body li { margin-bottom:6px; }
+    .learn-body strong { color:rgba(255,215,0,.85); }
+    .learn-body p { margin-bottom:10px; }
+
+    /* ── Settings Screen ─────────────────────────────────────────────────── */
+    .settings-box {
+      background: linear-gradient(135deg, #1a2e48 0%, #0d1826 100%);
+      border: 2px solid rgba(255,215,0,.35);
+      border-radius: 20px;
+      padding: clamp(20px,4vw,40px) clamp(20px,5vw,56px);
+      width:100%; max-width:480px;
+      display:flex; flex-direction:column; gap:22px;
+      box-shadow:0 16px 48px rgba(0,0,0,.7);
+    }
+    .setting-row {
+      display:flex; align-items:center; justify-content:space-between; gap:14px;
+    }
+    .setting-label {
+      font-family:'Bebas Neue',cursive;
+      font-size:clamp(16px,2.5vw,20px);
+      color:#ffd700; letter-spacing:2px; flex-shrink:0;
+    }
+    .setting-input {
+      flex:1; padding:10px 16px;
+      background:rgba(255,255,255,.07);
+      border:2px solid rgba(255,215,0,.35); border-radius:10px;
+      font-family:'Bebas Neue',cursive; font-size:18px; color:#fff;
+      letter-spacing:2px; outline:none; transition:border-color .2s;
+      min-width:0;
+    }
+    .setting-input:focus { border-color:#ffd700; }
+    .setting-divider {
+      height:1px; background:rgba(255,215,0,.15); margin:4px 0;
+    }
+    /* Toggle switch */
+    .toggle-wrap { display:flex; align-items:center; gap:10px; }
+    .toggle {
+      position:relative; width:48px; height:26px;
+      -webkit-appearance:none; appearance:none;
+      background:rgba(255,255,255,.15); border-radius:13px;
+      cursor:pointer; outline:none; transition:background .2s;
+      flex-shrink:0;
+    }
+    .toggle:checked { background:#ffd700; }
+    .toggle::after {
+      content:''; position:absolute;
+      top:3px; left:3px;
+      width:20px; height:20px;
+      background:#fff; border-radius:50%;
+      transition:transform .2s; box-shadow:0 1px 4px rgba(0,0,0,.4);
+    }
+    .toggle:checked::after { transform:translateX(22px); }
+    .vol-slider {
+      flex:1; min-width:0; height:4px;
+      -webkit-appearance:none; appearance:none;
+      background: rgba(255,215,0,.25); border-radius:2px; outline:none;
+    }
+    .vol-slider::-webkit-slider-thumb {
+      -webkit-appearance:none; appearance:none;
+      width:18px; height:18px;
+      background:#ffd700; border-radius:50%; cursor:pointer;
+      box-shadow:0 0 8px rgba(255,215,0,.5);
+    }
+    .btn-settings-save {
+      width:100%; padding:16px;
+      background:linear-gradient(135deg,#1a4070 0%,#0d2040 100%);
+      border:3px solid #ffd700; border-radius:50px;
+      font-family:'Bebas Neue',cursive; font-size:24px;
+      color:#fff; letter-spacing:4px; cursor:pointer;
+      transition:all .2s; box-shadow:0 6px 0 rgba(0,0,0,.4);
+    }
+    .btn-settings-save:hover { transform:translateY(-3px); }
+    .btn-settings-save:active { transform:translateY(3px); }
+    .btn-reset-progress {
+      width:100%; padding:12px;
+      background:transparent;
+      border:2px solid rgba(231,76,60,.45); border-radius:50px;
+      font-family:'Bebas Neue',cursive; font-size:18px;
+      color:rgba(231,76,60,.7); letter-spacing:3px;
+      cursor:pointer; transition:all .2s;
+    }
+    .btn-reset-progress:hover { border-color:rgba(231,76,60,.85); color:#e74c3c; }
+    .settings-saved {
+      text-align:center; font-family:'Bebas Neue',cursive;
+      font-size:18px; color:#44c864; letter-spacing:3px;
+      opacity:0; transition:opacity .3s;
+    }
+    .reset-done {
+      text-align:center; font-family:'Bebas Neue',cursive;
+      font-size:15px; color:#44c864; letter-spacing:2px;
+      display:none;
+    }
+
+    /* ── Version / Branding ──────────────────────────────────────────────── */
+    .menu-version {
+      position:absolute; bottom:16px; left:18px;
+      font-family:'Bebas Neue',cursive; font-size:16px;
+      color:rgba(255,255,255,.2); z-index:5; letter-spacing:2px;
+    }
+    .menu-brand {
+      position:absolute; bottom:14px; right:18px;
+      display:flex; align-items:center; gap:8px; z-index:5;
+    }
+    .brand-bolt {
+      width:30px; height:30px;
+      background:linear-gradient(135deg,#ffd700 0%,#ffed4e 100%);
+      clip-path:polygon(50% 0%,100% 38%,82% 100%,18% 100%,0% 38%);
+      filter:drop-shadow(0 2px 8px rgba(255,215,0,.5));
+      animation:menuBrandPulse 2s infinite;
+    }
+    @keyframes menuBrandPulse {
+      0%,100% { transform:scale(1); } 50% { transform:scale(1.12); }
+    }
+    .brand-text {
+      font-family:'Bebas Neue',cursive; font-size:18px;
+      color:rgba(255,255,255,.35); letter-spacing:2px;
+    }
+
+    /* ── Quit overlay (iOS) ───────────────────────────────────────────────── */
+    #quitMsg {
+      position:fixed; inset:0; z-index:9999;
+      background:rgba(0,0,0,.85);
+      display:none; align-items:center; justify-content:center;
+    }
+    .quit-box {
+      background:linear-gradient(135deg,#1a2e48 0%,#0d1826 100%);
+      border:3px solid rgba(255,215,0,.5); border-radius:20px;
+      padding:36px 48px; text-align:center;
+      display:flex; flex-direction:column; gap:16px; max-width:340px;
+    }
+    .quit-title {
+      font-family:'Bebas Neue',cursive; font-size:32px;
+      color:#ffd700; letter-spacing:4px;
+    }
+    .quit-sub { font-size:13px; color:rgba(255,255,255,.5); line-height:1.6; }
+    .btn-quit-cancel {
+      padding:14px 32px;
+      background:linear-gradient(135deg,#1a4070 0%,#0d2040 100%);
+      border:2px solid #ffd700; border-radius:50px;
+      font-family:'Bebas Neue',cursive; font-size:22px;
+      color:#fff; letter-spacing:3px; cursor:pointer; transition:all .2s;
+    }
+    .btn-quit-cancel:hover { transform:translateY(-2px); }
+
+    /* ── Scrollbar styling for menu screens ──────────────────────────────── */
+    .menu-screen::-webkit-scrollbar { width:4px; }
+    .menu-screen::-webkit-scrollbar-track { background:transparent; }
+    .menu-screen::-webkit-scrollbar-thumb { background:rgba(255,215,0,.3); border-radius:2px; }
+  </style>
 </head>
+
 <body>
-<canvas id="c"></canvas>
-<div id="overlay">
-  <div class="badge">⚡ ELECTRICAL TRAINING v4.0</div>
-  <h1>⚡ ElecTrain</h1>
-  <p class="sub">MOBILE FACILITY SIMULATOR</p>
-  <button id="startBtn">ENTER FACILITY</button>
-  <p style="margin-top:20px;font-size:10px;color:#334455;letter-spacing:.12em">TOUCH · SWIPE · JOYSTICK · MOUSE</p>
-</div>
-<div id="hud">
-  <div id="crosshair"></div>
-  <div id="topbar">
-    <div id="logo">⚡ ELECTRAIN</div>
-    <div id="roomname">LOBBY</div>
-    <div id="pwrdot"></div>
+  <canvas id="c"></canvas>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       MAIN MENU OVERLAY
+  ═══════════════════════════════════════════════════════════════════ -->
+  <div id="overlay">
+
+    <!-- Electrical Room Background Decorations -->
+    <div class="menu-bg" aria-hidden="true">
+      <div class="menu-ceiling-light"></div>
+      <div class="menu-light-glow"></div>
+      <!-- Left panel -->
+      <div class="menu-panel menu-panel-left">
+        <div class="menu-breaker"></div>
+        <div class="menu-breaker"></div>
+        <div class="menu-breaker"></div>
+        <div class="menu-led green"></div>
+        <div class="menu-led red"></div>
+        <div class="menu-led yellow"></div>
+      </div>
+      <!-- Right panel -->
+      <div class="menu-panel menu-panel-right">
+        <div class="menu-breaker"></div>
+        <div class="menu-breaker"></div>
+        <div class="menu-breaker"></div>
+      </div>
+      <!-- Conduits -->
+      <div class="menu-conduit mc1"></div>
+      <div class="menu-conduit mc2"></div>
+      <div class="menu-conduit mc3"></div>
+      <div class="menu-conduit mc4"></div>
+      <!-- Wires -->
+      <div class="menu-wire mw-red"></div>
+      <div class="menu-wire mw-yellow"></div>
+      <div class="menu-wire mw-green"></div>
+      <div class="menu-wire mw-blue"></div>
+      <!-- Particles -->
+      <div class="menu-particle mp1"></div>
+      <div class="menu-particle mp2"></div>
+      <div class="menu-particle mp3"></div>
+      <div class="menu-particle mp4"></div>
+    </div>
+
+    <!-- Version + Branding -->
+    <div class="menu-version">v1.0.0</div>
+    <div class="menu-brand">
+      <div class="brand-bolt"></div>
+      <div class="brand-text">TESDA NC II / NC III</div>
+    </div>
+
+    <!-- ── SCREEN: Main Menu ─────────────────────────────────────────── -->
+    <div class="menu-screen" id="screenMain">
+      <div class="menu-logo-wrap">
+        <div class="menu-logo">WIREVERSE</div>
+        <div class="menu-logo-sub">ELECTRICAL TRAINING SIMULATOR</div>
+        <div class="menu-greeting" id="menuGreeting"></div>
+      </div>
+      <div class="menu-btns">
+        <button class="mbtn mbtn-primary" id="btnMenuStart">
+          <div class="mbtn-icon"><div class="ico-lightning"></div></div>
+          START GAME
+        </button>
+        <button class="mbtn" id="btnMenuLearn">
+          <div class="mbtn-icon"><div class="ico-book"></div></div>
+          LEARN
+        </button>
+        <button class="mbtn" id="btnMenuSettings">
+          <div class="mbtn-icon"><div class="ico-gear"></div></div>
+          SETTINGS
+        </button>
+        <button class="mbtn" id="btnMenuQuit">
+          <div class="mbtn-icon"><div class="ico-power"></div></div>
+          QUIT
+        </button>
+      </div>
+    </div>
+
+    <!-- ── SCREEN: Player Registration ──────────────────────────────── -->
+    <div class="menu-screen" id="screenRegister">
+      <div class="register-box">
+        <div class="register-title">REGISTER TRAINEE</div>
+        <div class="register-sub">Enter your name to begin training</div>
+        <input
+          type="text"
+          id="playerNameInput"
+          class="register-input"
+          placeholder="YOUR NAME"
+          maxlength="30"
+          autocomplete="off"
+        />
+        <div class="register-error" id="registerError"></div>
+        <button class="btn-confirm" id="btnConfirmRegister">CONFIRM</button>
+      </div>
+    </div>
+
+    <!-- ── SCREEN: Stage Selection ──────────────────────────────────── -->
+    <div class="menu-screen" id="screenStages">
+      <div class="screen-header">
+        <div class="screen-title">SELECT STAGE</div>
+        <div class="screen-sub">TESDA ELECTRICAL INSTALLATION &amp; MAINTENANCE</div>
+      </div>
+      <div class="stages-container" id="stagesList"></div>
+      <br>
+      <button class="btn-back" id="btnStagesBack">&#8592; BACK</button>
+    </div>
+
+    <!-- ── SCREEN: Level Selection ──────────────────────────────────── -->
+    <div class="menu-screen" id="screenLevels">
+      <div class="screen-header">
+        <div class="screen-title" id="levelScreenTitle">LEVELS</div>
+        <div class="screen-sub">CHOOSE A LEVEL TO BEGIN</div>
+      </div>
+      <div class="levels-container" id="levelsList"></div>
+      <br>
+      <button class="btn-back" id="btnLevelsBack">&#8592; BACK</button>
+    </div>
+
+    <!-- ── SCREEN: Learn ─────────────────────────────────────────────── -->
+    <div class="menu-screen" id="screenLearn">
+      <div class="screen-header">
+        <div class="screen-title">TRAINING MODULES</div>
+        <div class="screen-sub">TAP A MODULE TO EXPAND</div>
+      </div>
+      <div class="learn-container" id="learnList"></div>
+      <br>
+      <button class="btn-back" id="btnLearnBack">&#8592; BACK</button>
+    </div>
+
+    <!-- ── SCREEN: Settings ──────────────────────────────────────────── -->
+    <div class="menu-screen" id="screenSettings">
+      <div class="screen-header">
+        <div class="screen-title">SETTINGS</div>
+        <div class="screen-sub">PLAYER &amp; AUDIO PREFERENCES</div>
+      </div>
+      <div class="settings-box">
+
+        <!-- Player Name -->
+        <div class="setting-row">
+          <div class="setting-label">NAME</div>
+          <input type="text" id="settingName" class="setting-input" maxlength="30" autocomplete="off" />
+        </div>
+
+        <div class="setting-divider"></div>
+
+        <!-- Music -->
+        <div class="setting-row">
+          <div class="setting-label">MUSIC</div>
+          <div class="toggle-wrap">
+            <input type="checkbox" id="settingMusicOn" class="toggle" />
+            <input type="range" id="settingMusicVol" class="vol-slider" min="0" max="100" value="70" />
+          </div>
+        </div>
+
+        <!-- SFX -->
+        <div class="setting-row">
+          <div class="setting-label">SFX</div>
+          <div class="toggle-wrap">
+            <input type="checkbox" id="settingSfxOn" class="toggle" />
+            <input type="range" id="settingSfxVol" class="vol-slider" min="0" max="100" value="80" />
+          </div>
+        </div>
+
+        <div class="setting-divider"></div>
+
+        <div class="settings-saved" id="settingsSaved">SETTINGS SAVED</div>
+        <button class="btn-settings-save" id="btnSettingsSave">SAVE</button>
+        <button class="btn-reset-progress" id="btnResetProgress">RESET PROGRESS</button>
+        <div class="reset-done" id="resetDone">PROGRESS RESET</div>
+      </div>
+      <br>
+      <button class="btn-back" id="btnSettingsBack">&#8592; BACK</button>
+    </div>
+
+    <!-- Hidden start button — required by main.js to launch game -->
+    <button id="startBtn" style="display:none!important;pointer-events:none;"></button>
+
   </div>
-  <div id="fpsCounter">-- fps</div>
-  <div id="objective">
-    <div class="obj-title">📋 OBJECTIVES</div>
-    <div id="objText">Explore the facility.<br>Find switches &amp; panels.<br>Press <b>E</b> or tap ⚡ to interact.</div>
+
+  <!-- iOS Quit Message -->
+  <div id="quitMsg">
+    <div class="quit-box">
+      <div class="quit-title">GOODBYE</div>
+      <div class="quit-sub">On iOS, please press the Home button to exit the application.</div>
+      <button class="btn-quit-cancel" id="btnQuitCancel">STAY</button>
+    </div>
   </div>
-  <div id="powerPanel">
-    MAINS <span class="pv" id="pMains" style="color:#44ff88">ON</span><br>
-    WORKSHOP <span class="pv" id="pWork" style="color:#44ff88">ON</span><br>
-    LAB <span class="pv" id="pLab" style="color:#44ff88">ON</span><br>
-    <div class="sep"></div>
-    VOLTAGE <span class="pv">480V</span><br>
-    FREQ <span class="pv">60Hz</span>
+
+  <div id="hud">
+    <!-- Tool Indicator -->
+    <div id="toolIndicator">No tool equipped</div>
+
+    <div id="topBar">
+      <div id="roomname">LOADING...</div>
+      <div class="status-group">
+        <div class="status-item"><label>MAINS:</label><span id="pMains">OFF</span></div>
+        <div class="status-item"><label>GEN:</label><span id="pGen">OFF</span></div>
+        <div class="status-item"><label>WKSP:</label><span id="pWork">OFF</span></div>
+        <div class="status-item"><label>CTRL:</label><span id="pCtrl">OFF</span></div>
+      </div>
+      <div id="genStatus"></div>
+    </div>
+
+    <div id="fpsCounter">-- fps</div>
+    <canvas id="minimap"></canvas>
+
+    <div id="taskPanel">
+      <h3>-- ACTIVE TASKS --</h3>
+      <div id="taskList"></div>
+    </div>
+
+    <div id="notification"></div>
+    <div id="btnInteract">USE</div>
+    <div id="ptrMsg">Click to lock pointer &bull; WASD to move &bull; E to interact &bull; ESC to unlock</div>
   </div>
-  <div id="notification"></div>
-  <div id="prompt">⚡ Press E / Tap to interact</div>
-  <div id="ptrMsg">🖱 Click to look around<br><span style="font-size:10px;color:#446">ESC to release mouse</span></div>
-</div>
-<div id="controls">
-  <div id="joystickZone">
-    <div id="joystickBase"></div>
-    <div id="joystickKnob"></div>
+
+  <!-- Legacy controls div (hidden) — kept so old JS references don't break -->
+  <div id="controls" style="display:none!important;">
+    <div id="wasdPad"></div>
+    <button id="btnSprint" style="display:none"></button>
+    <button id="btnJump" style="display:none"></button>
   </div>
-  <div id="rightBtns">
-    <button class="btn3d" id="btnInteract"><span class="icon">⚡</span>ACT</button>
-    <button class="btn3d" id="btnSprint"><span class="icon">🏃</span>RUN</button>
+
+  <!-- Full-screen look zone (right side drag to look) -->
+  <div id="lookZone"></div>
+
+  <!-- Virtual joystick — bottom left -->
+  <div id="joystickContainer">
+    <div id="joystickOuter">
+      <div id="joystickInner"></div>
+    </div>
   </div>
-</div>
-<div id="lookZone"></div>
-<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
-<script type="module" src="js/main.js"></script>
+
+  <div id="computerUI">
+    <div id="compHeader">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="display:flex;gap:6px;">
+          <div style="width:12px;height:12px;border-radius:50%;background:#ff5f57;"></div>
+          <div style="width:12px;height:12px;border-radius:50%;background:#febc2e;"></div>
+          <div style="width:12px;height:12px;border-radius:50%;background:#28c840;"></div>
+        </div>
+        <h2>⚡ SITE CONTROL TERMINAL</h2>
+      </div>
+      <button id="btnExitComp">✕ EXIT SYSTEM</button>
+    </div>
+    <div id="compTabs">
+      <div class="comp-tab active" data-tab="tabMap">🗺 FACILITY MAP</div>
+      <div class="comp-tab" data-tab="tabCCTV">📹 CCTV CAMERAS</div>
+    </div>
+    <div id="compContents">
+
+      <!-- ── FACILITY MAP ─────────────────────────────────────── -->
+      <div id="tabMap" class="comp-panel active">
+        <div class="facility-map">
+
+          <!-- Legend -->
+          <div style="position:absolute;bottom:6px;left:8px;display:flex;gap:10px;font-size:9px;z-index:2;">
+            <span style="color:#5a9a7a;">■ General</span>
+            <span style="color:#6a9aff;">■ Control</span>
+            <span style="color:#ffaa55;">■ Power</span>
+            <span style="color:#ff7766;">■ Dist</span>
+            <span style="color:#aabbdd;">■ Lab/Store</span>
+          </div>
+
+          <!-- Floor label -->
+          <div style="position:absolute;top:6px;right:8px;font-size:9px;color:#2a5a3a;letter-spacing:2px;">FLOOR 1 — GROUND LEVEL</div>
+
+          <!--
+            Coordinate mapping (top=north, left=west):
+            Facility X: -14 (west) → 34 (east)  → 48 total → 1% = 0.48 units
+            Facility Z: -28 (north) → 34 (south) → 62 total → 1% = 0.62 units
+
+            West wall x=-14  → left:0%
+            East wall x=34   → left:100%
+            North wall z=-28 → top:0%
+            South wall z=34  → top:100%
+
+            Entrance:   x=-2→4,   z=-28→-20   → left:25%,top:0%,   w:12.5%,h:12.9%
+            Corridor:   x=-2→4,   z=-20→26    → left:25%,top:12.9%,w:12.5%,h:74.2%
+            Workshop:   x=4→26,   z=-20→0     → left:37.5%,top:12.9%,w:45.8%,h:32.3%
+            Gen Room:   x=4→20,   z=0→14      → left:37.5%,top:45.2%,w:33.3%,h:22.6%
+            Control:    x=20→34,  z=-8→10     → left:70.8%,top:32.3%,w:29.2%,h:29%
+            Dist A:     x=-14→-2, z=-12→2     → left:0%,top:25.8%,  w:25%,h:22.6%
+            Dist B:     x=-14→-2, z=2→16      → left:0%,top:48.4%,  w:25%,h:22.6%
+            Lab:        x=20→34,  z=10→22     → left:70.8%,top:61.3%,w:29.2%,h:19.4%
+            Storage:    x=-14→-2, z=16→28     → left:0%,top:71%,    w:25%,h:19.4%
+            Utility:    x=4→16,   z=14→28     → left:37.5%,top:67.7%,w:25%,h:22.6%
+            Stairwell:  x=4→10,   z=26→34     → left:37.5%,top:87.1%,w:12.5%,h:12.9%
+          -->
+
+          <div class="map-room map-you"
+               style="left:25%;top:0%;width:12.5%;height:13%;">
+               📍 ENTRANCE<br><small>YOU ARE HERE</small></div>
+
+          <div class="map-room"
+               style="left:25%;top:13%;width:12.5%;height:74%;">
+               <span style="writing-mode:vertical-rl;letter-spacing:4px;">CORRIDOR</span></div>
+
+          <div class="map-room map-zone-orange"
+               style="left:37.5%;top:13%;width:45.8%;height:32%;">
+               🔧 WORKSHOP<br><small>Zone A</small></div>
+
+          <div class="map-room map-zone-orange"
+               style="left:37.5%;top:45%;width:33.3%;height:22.5%;">
+               ⚡ GENERATOR RM</div>
+
+          <div class="map-room map-zone-blue"
+               style="left:70.8%;top:32%;width:29.2%;height:29%;">
+               🎛 CONTROL CTR</div>
+
+          <div class="map-room map-zone-red"
+               style="left:0%;top:26%;width:25%;height:22%;">
+               DIST-A</div>
+
+          <div class="map-room map-zone-red"
+               style="left:0%;top:48%;width:25%;height:22%;">
+               DIST-B</div>
+
+          <div class="map-room map-zone-blue"
+               style="left:70.8%;top:61%;width:29.2%;height:20%;">
+               🔬 TESTING LAB</div>
+
+          <div class="map-room map-zone-white"
+               style="left:0%;top:70%;width:25%;height:20%;">
+               STORAGE</div>
+
+          <div class="map-room map-zone-white"
+               style="left:37.5%;top:67%;width:25%;height:23%;">
+               UTILITY</div>
+
+          <div class="map-room"
+               style="left:37.5%;top:87%;width:12.5%;height:13%;font-size:8px;">
+               STAIRWELL</div>
+
+        </div>
+      </div>
+
+      <!-- ── CCTV CAMERAS ─────────────────────────────────────── -->
+      <div id="tabCCTV" class="comp-panel">
+        <p style="margin-bottom:16px;color:#8899aa;font-size:13px;">
+          Select a feed — then <strong style='color:#44ff88'>drag / touch</strong> the screen to pan the camera:
+        </p>
+        <div class="cctv-grid">
+          <button class="cctv-btn" data-cam="generator">📷 CAM 01<br><small>GENERATOR RM</small></button>
+          <button class="cctv-btn" data-cam="workshop">📷 CAM 02<br><small>WORKSHOP</small></button>
+          <button class="cctv-btn" data-cam="control">📷 CAM 03<br><small>CONTROL CTR</small></button>
+          <button class="cctv-btn" data-cam="lab">📷 CAM 04<br><small>TESTING LAB</small></button>
+          <button class="cctv-btn" data-cam="entrance">📷 CAM 05<br><small>ENTRANCE</small></button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="cctvOverlay">
+    <div class="cctv-text">⬤ REC &nbsp; <span id="cctvTime"></span><br><span id="cctvName">CAM 01</span></div>
+    <div class="cctv-scanline"></div>
+    <div style="position:absolute;bottom:100px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.5);font-family:monospace;font-size:13px;pointer-events:none;">🖱 Drag / Touch to rotate camera</div>
+    <button id="btnExitCCTV">RETURN TO TERMINAL</button>
+  </div>
+
+  <!-- ── PAUSE BUTTON — top right, always visible during gameplay ─────── -->
+  <button id="btnPauseTop">MENU</button>
+
+  <!-- ── RIGHT ACTION BAR — main game controls, right edge ─────────────── -->
+  <div id="rightActionBar">
+    <button class="act-btn" id="btnRTasks">
+      TASKS
+    </button>
+    <button class="act-btn blue" id="btnRSchematic">
+      SCHEMTC
+    </button>
+    <button class="act-btn amber" id="btnRHint">
+      HINT
+    </button>
+    <button class="act-btn" id="btnRTools">
+      TOOLS
+    </button>
+  </div>
+
+  <!-- ── TOOL BELT — slides up from bottom on TOOLS press ──────────────── -->
+  <div id="toolBelt">
+    <div id="toolBeltLabel">-- SELECT TOOL --</div>
+    <div id="toolBeltItems">
+
+      <button class="tool-btn active" data-tool="wire">
+        <span class="tool-sym">~~~</span>
+        WIRE
+      </button>
+
+      <button class="tool-btn" data-tool="flat">
+        <span class="tool-sym">[-]</span>
+        FLAT
+      </button>
+
+      <button class="tool-btn" data-tool="phillips">
+        <span class="tool-sym">[+]</span>
+        PHILLIP
+      </button>
+
+      <button class="tool-btn" data-tool="vtester">
+        <span class="tool-sym">(V)</span>
+        V-TEST
+      </button>
+
+      <button class="tool-btn" data-tool="meter">
+        <span class="tool-sym">[M]</span>
+        METER
+      </button>
+
+      <button class="tool-btn locked" data-tool="stripper">
+        <span class="tool-sym">|--|</span>
+        STRIP
+      </button>
+
+      <button class="tool-btn locked" data-tool="conduit">
+        <span class="tool-sym">|==|</span>
+        CONDUIT
+      </button>
+
+    </div>
+    <button id="btnCloseTools">CLOSE TOOLS</button>
+  </div>
+
+
+
+  <!-- ── CIRCUIT MODAL — 2D machine interaction overlay ────────────────── -->
+  <div id="circuitModal">
+    <div id="circuitHeader">
+      <div id="circuitTitle">PANEL BOARD</div>
+      <div id="circuitHeaderRight">
+        <div id="circuitStatus">CIRCUIT: OPEN</div>
+      </div>
+    </div>
+
+    <!-- 2D machine view renders here -->
+    <div id="circuitViewport">
+      <canvas id="circuitCanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair;touch-action:none;"></canvas>
+    </div>
+
+    <!-- Bottom action bar -->
+    <div id="circuitActions">
+      <div id="circuitActionsLeft">
+        <button class="circ-btn" id="btnPowerOn">PWR ON</button>
+        <button class="circ-btn" id="btnCheckCircuit">CHECK</button>
+        <button class="circ-btn" id="btnResetWires">RESET</button>
+      </div>
+      <button class="circ-btn" id="btnCloseCircuit">CLOSE</button>
+    </div>
+  </div>
+
+  <!-- ── MINIGAME MODAL — Generic container for the 5 new interactive modules ── -->
+  <div id="minigameModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(9,15,25,0.95); flex-direction:column;">
+    <div id="mgHeader" style="display:flex; justify-content:space-between; align-items:center; background:rgba(13,21,38,0.9); padding:16px 20px; border-bottom:2px solid rgba(255,184,0,0.2);">
+      <div id="mgTitle" style="color:#FFB800; font-weight:800; font-size:18px; letter-spacing:1.5px;text-transform:uppercase;">MINIGAME TITLE</div>
+      <div style="color:#8899aa; font-size:12px;" id="mgHint">Complete the objective to proceed</div>
+    </div>
+    
+    <div id="mgViewport" style="flex:1; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; padding:20px;">
+      <div id="mgContent" style="width:100%; height:100%; max-width:800px; max-height:600px; background:rgba(18,31,56,0.5); border:1px solid rgba(68,160,255,0.2); border-radius:12px; padding:24px; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+          <div id="mgDynamicArea" style="flex:1; width:100%; display:flex; flex-direction:column; justify-content:center; gap:20px;">
+             <!-- Dynamic JS creates the UI per minigame type -->
+          </div>
+      </div>
+    </div>
+
+    <div id="mgActions" style="background:rgba(13,21,38,0.9); padding:12px 20px; border-top:2px solid rgba(255,184,0,0.2); display:flex; justify-content:space-between;">
+      <div style="display:flex; gap:12px;" id="mgActionsLeft">
+        <!-- Buttons injected here by JS -->
+      </div>
+      <button id="btnMgClose" class="circ-btn" style="padding:10px 24px; border-color:rgba(255,184,0,0.4);">CLOSE TERMINAL</button>
+    </div>
+  </div>
+
+  <!-- ── PAUSE MENU ─────────────────────────────────────────────────────── -->
+  <div id="pauseMenu">
+    <div id="pausePanel">
+      <div id="pauseTitle">-- PAUSED --</div>
+      <button class="pause-menu-btn" id="btnResume">RESUME</button>
+      <button class="pause-menu-btn" id="btnRestartLevel">RESTART LEVEL</button>
+      <button class="pause-menu-btn danger-btn" id="btnMainMenu">MAIN MENU</button>
+    </div>
+  </div>
+
+  <!-- ── STEP PROGRESS BAR ────────────────────────────────────────────────── -->
+  <div id="stepProgress">S01: Basic Panel Wiring &mdash; starting...</div>
+
+  <!-- ── FEEDBACK LOG ─────────────────────────────────────────────────────── -->
+  <div id="feedbackLog"></div>
+
+  <!-- ── ERROR FLASH OVERLAY ─────────────────────────────────────────────── -->
+  <div id="errorFlash"></div>
+
+  <!-- ── SCHEMATIC MODAL ─────────────────────────────────────────────────── -->
+  <div id="schematicModal">
+    <div id="schematicHeader">
+      <div id="schematicTitle">S01 &mdash; BASIC PANEL WIRING SCHEMATIC</div>
+      <button id="btnCloseSchematic">&times; CLOSE</button>
+    </div>
+    <canvas id="schematicCanvas" width="820" height="480"></canvas>
+    <div id="schematicNote">IEC 60446 color standard &bull; L=Brown &bull; N=Blue &bull; PE=Green/Yellow</div>
+  </div>
+
+  <!-- Game database + menu (must load before main.js) -->
+  <script src="./js/db.js"></script>
+  <script src="./js/menu.js"></script>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+    }
+  }
+  </script>
+  <script type="module" src="./js/main.js"></script>
+
+  <!-- Schematic canvas renderer (plain JS, no module needed) -->
+  <script>
+  function openSchematicModal(scenarioId) {
+    const modal = document.getElementById('schematicModal');
+    if (!modal) return;
+    modal.classList.add('open');
+    renderSchematic(scenarioId);
+    document.exitPointerLock?.();
+  }
+  window.openSchematicModal = openSchematicModal;
+
+  document.getElementById('btnCloseSchematic').addEventListener('click', () => {
+    document.getElementById('schematicModal').classList.remove('open');
+  });
+
+  function renderSchematic(scenarioId) {
+    const canvas = document.getElementById('schematicCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    ctx.fillStyle = '#050d18';
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(68,120,180,0.06)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 32) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 32) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+    // Title
+    ctx.font = 'bold 13px Courier New';
+    ctx.fillStyle = 'rgba(255,184,0,0.7)';
+    ctx.textAlign = 'left';
+    ctx.fillText('S01 — BASIC PANEL WIRING  (IEC 60446)', 20, 28);
+    ctx.font = '10px Courier New';
+    ctx.fillStyle = 'rgba(100,150,200,0.5)';
+    ctx.fillText('230V AC  |  50Hz  |  3-conductor TPS', 20, 46);
+
+    // Wire definitions
+    const wires = [
+      { id: 'L',  name: 'LINE',    color: '#cc4422', y: 120 },
+      { id: 'N',  name: 'NEUTRAL', color: '#3366cc', y: 220 },
+      { id: 'PE', name: 'EARTH',   color: '#33aa44', y: 320 },
+    ];
+
+    const srcX = 90,  srcBoxW = 80, srcBoxH = 40;
+    const termX = 480, termBoxW = 70, termBoxH = 40;
+    const loadX = 680, loadBoxW = 80, loadBoxH = 120;
+
+    // Load box
+    ctx.strokeStyle = 'rgba(180,200,220,0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4,4]);
+    ctx.strokeRect(loadX, 160, loadBoxW, loadBoxH);
+    ctx.setLineDash([]);
+    ctx.font = '9px Courier New';
+    ctx.fillStyle = 'rgba(180,200,220,0.5)';
+    ctx.textAlign = 'center';
+    ctx.fillText('LOAD', loadX + loadBoxW/2, 156);
+
+    wires.forEach(({ id, name, color, y }) => {
+      // Source box
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.fillStyle = 'rgba(20,30,45,0.9)';
+      ctx.beginPath();
+      ctx.roundRect(srcX, y - srcBoxH/2, srcBoxW, srcBoxH, 4);
+      ctx.fill(); ctx.stroke();
+
+      ctx.font = 'bold 13px Courier New';
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.fillText(id, srcX + srcBoxW/2, y + 2);
+      ctx.font = '8px Courier New';
+      ctx.fillStyle = 'rgba(200,200,200,0.5)';
+      ctx.fillText(name, srcX + srcBoxW/2, y + 14);
+
+      // Wire line
+      ctx.strokeStyle = color;
+      ctx.lineWidth = id === 'PE' ? 3.5 : 2.5;
+      ctx.setLineDash(id === 'PE' ? [6,3] : []);
+      ctx.beginPath();
+      ctx.moveTo(srcX + srcBoxW, y);
+      ctx.lineTo(termX, y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Wire label
+      ctx.font = '9px Courier New';
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      const labelX = srcX + srcBoxW + (termX - srcX - srcBoxW) / 2;
+      ctx.fillText(id === 'PE' ? '2.5mm² GRN/YLW' : '2.5mm² ' + (id==='L'?'BRN':'BLU'), labelX, y - 8);
+
+      // Terminal block
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.fillStyle = 'rgba(12,25,40,0.95)';
+      ctx.beginPath();
+      ctx.roundRect(termX, y - termBoxH/2, termBoxW, termBoxH, 4);
+      ctx.fill(); ctx.stroke();
+
+      ctx.font = 'bold 14px Courier New';
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.fillText(id, termX + termBoxW/2, y + 2);
+      ctx.font = '8px Courier New';
+      ctx.fillStyle = 'rgba(100,150,200,0.6)';
+      ctx.fillText('TERM', termX + termBoxW/2, y + 14);
+
+      // Screwdriver indicator
+      ctx.fillStyle = 'rgba(255,184,0,0.35)';
+      ctx.font = '8px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText('🔩', termX + termBoxW/2, y - termBoxH/2 - 6);
+
+      // Line to load
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(termX + termBoxW, y);
+      ctx.lineTo(loadX, y);
+      ctx.stroke();
+    });
+
+    // Step annotations on right
+    const steps = [
+      { n: '1-4', text: 'Pick up Wire Stripper →', color: '#FFB800', x: 160, y: 390 },
+      { n: '5',   text: 'Pick up Screwdriver →',   color: '#FFB800', x: 310, y: 390 },
+      { n: '6-8', text: 'Connect to Terminals →',  color: '#FFB800', x: 460, y: 390 },
+      { n: '9-11',text: 'Measure & Validate →',    color: '#FFB800', x: 630, y: 390 },
+    ];
+    steps.forEach(({ n, text, color, x, y }) => {
+      ctx.font = 'bold 9px Courier New';
+      ctx.fillStyle = 'rgba(255,184,0,0.35)';
+      ctx.textAlign = 'center';
+      ctx.fillText(`[Step ${n}]`, x, y);
+      ctx.font = '9px Courier New';
+      ctx.fillStyle = 'rgba(180,200,220,0.4)';
+      ctx.fillText(text, x, y + 14);
+    });
+
+    // Border
+    ctx.strokeStyle = 'rgba(255,184,0,0.12)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(1, 1, W-2, H-2);
+  }
+  </script>
+
 </body>
 </html>

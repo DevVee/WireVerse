@@ -109,11 +109,11 @@ export function checkCol(pos) {
 
 // ── LIGHTING ──────────────────────────────────────────────────────────────────
 export const roomLightSets = {};
-export const ambLight = new THREE.AmbientLight(0xffeedd, 1.2);
+export const ambLight = new THREE.AmbientLight(0x667799, 1.2);
 scene.add(ambLight);
-scene.add(new THREE.HemisphereLight(0xb8d8f0, 0x8a7a60, 0.8));
+scene.add(new THREE.HemisphereLight(0x88bbff, 0x334455, 0.6));
 
-const sunLight = new THREE.DirectionalLight(0xfff5e0, 2.0);
+const sunLight = new THREE.DirectionalLight(0x6699ff, 0.8);
 sunLight.position.set(30, 45, -20);
 sunLight.castShadow = true;
 sunLight.shadow.mapSize.set(1024, 1024);
@@ -289,7 +289,7 @@ mkRoom(-8, -5, 12, 14);        // Distribution A
 mkRoom(-8, 9, 12, 14);        // Distribution B
 mkRoom(27, 16, 14, 12);        // Testing lab
 mkRoom(-8, 22, 12, 12);        // Storage
-mkRoom(10, 21, 12, 14);        // Utility
+mkRoom(12, 21, 16, 14);        // Utility
 mkRoom(7, 30, 6, 8); // Stairwell alcove (no second floor)
 
 // ── FLOOR 1: OUTER WALLS ─────────────────────────────────────────────────────
@@ -305,7 +305,9 @@ mkWall(4.11, OMY, -24, WT, OW, 8, M.concrete);      // E
 mkWall(-14.11, OMY, 8, WT, OW, 40.22, M.concrete);
 
 // East boundary (workshop + control)
-mkWall(26.11, OMY, -10, WT, OW, 20.22, M.concrete);   // Workshop E
+mkWall(26.11, OMY, -14, WT, OW, 12.22, M.concrete);   // Workshop E
+// Workshop/Control partition wall
+mkWall(20.11, OMY, -4, WT, OW, 8.22, M.wall);
 mkWall(20.11, OMY, 7, WT, OW, 14.22, M.concrete);   // Gen E (partial, rest is control W)
 mkWall(34.11, OMY, 7, WT, OW, 44.22, M.concrete);   // Control/Lab E
 
@@ -316,7 +318,7 @@ mkWall(-8, OMY, -12.11, 12.22, OW, WT, M.concrete);  // Dist A N
 
 // South boundaries
 mkWall(27, OMY, 22.11, 14.22, OW, WT, M.concrete);  // Lab S
-mkWall(10, OMY, 28.11, 12.22, OW, WT, M.concrete);  // Utility S (stairwell cuts through)
+mkWall(12, OMY, 28.11, 16.22, OW, WT, M.concrete);  // Utility S (stairwell cuts through)
 mkWall(-8, OMY, 28.11, 12.22, OW, WT, M.concrete);  // Storage S
 
 // Stairwell outer
@@ -337,6 +339,9 @@ wallDoor(4, 0, 14, 7, 1.5, true);
 // Corridor / Distribution A (x=-2)
 wallDoor(-2, -12, 2, -5, 1.5, true);
 
+// Seal Corridor gap (x=-2, z=-20 to z=-12)
+mkWall(-2.11, OMY, -16, WT, OW, 8, M.wall);
+
 // Corridor / Distribution B (x=-2)
 wallDoor(-2, 2, 16, 9, 1.5, true);
 
@@ -349,11 +354,14 @@ wallDoor(10, 20, 34, 27, 1.5, false);
 // Distribution B / Storage (z=16)
 wallDoor(16, -14, -2, -8, 1.5, false);
 
+// Utility East / Lab West partition
+mkWall(20.11, OMY, 21, WT, OW, 14.22, M.concrete);
+
 // Generator / Utility Room (z=14)
-wallDoor(14, 4, 16, 10, 1.5, false);
+wallDoor(14, 4, 20, 10, 1.5, false);
 
 // Workshop south wall (z=0)
-mkWall(15, OMY, 0.11, 22, OW, WT, M.wall);
+mkWall(12, OMY, 0.11, 16.22, OW, WT, M.wall);
 
 // Distribution A/B divider (z=2)
 mkWall(-8, OMY, 2, 12, OW, WT, M.wall);
@@ -389,13 +397,13 @@ addWindow(34.05, 2.4, 6, 4, 2, true);             // Control E
 addWindow(34.05, 2.4, 16, 4, 2, true);             // Lab E
 
 // ── FLOOR 1: LIGHTING ────────────────────────────────────────────────────────
-mkLight(1, H - .2, -24, 0xfff5dd, 4.0, 'entrance');
+mkLight(1, H - .2, -24, 0xffeedd, 1.8, 'entrance');
 
-for (let z = -17; z <= 24; z += 7) mkLight(1, H - .2, z, 0xfff0dd, 4.5, 'corridor');
+for (let z = -17; z <= 24; z += 7) mkLight(1, H - .2, z, 0x11aaff, 3.2, 'corridor');
 
 for (let x = 9; x <= 23; x += 7) {
   for (let z = -17; z <= -3; z += 7) {
-    mkLight(x, H - .2, z, 0xffe8aa, 4.2, 'workshop');
+    mkLight(x, H - .2, z, 0xd0f0ff, 6.0, 'workshop'); // brighter techy light
   }
 }
 
@@ -428,30 +436,13 @@ function stripe(x1, z1, x2, z2, yOff = 0.002) {
   scene.add(s);
 }
 
-for (let z = -18; z <= 24; z += 4) stripe(-2, z, 4, z);
-for (let x = 6; x <= 24; x += 4) stripe(x, -20, x, 0);
-stripe(4, 0, 4, 14);
+// for (let z = -18; z <= 24; z += 4) stripe(-2, z, 4, z);
+// for (let x = 6; x <= 18; x += 4) stripe(x, -20, x, 0);
+// stripe(22, -20, 22, -8);
+// stripe(4, 0, 4, 6.25);
+// stripe(4, 7.75, 4, 14);
 
-// ── FLOOR 1: EMERGENCY LIGHTS ────────────────────────────────────────────────
-function emergencyLight(x, y, z, ry = 0) {
-  const g = new THREE.Group();
-  const base = mkBox(.1, .2, .85, M.black);
-  g.add(base);
-  const strip = new THREE.Mesh(new THREE.PlaneGeometry(.07, .75), M.eGreen);
-  strip.position.set(.06, 0, 0);
-  g.add(strip);
-  g.position.set(x, y, z);
-  g.rotation.y = ry;
-  scene.add(g);
-  const ept = new THREE.PointLight(0x00ff88, .35, 4);
-  ept.position.set(x + .3, y, z);
-  scene.add(ept);
-}
 
-for (let z = -18; z <= 22; z += 6) {
-  emergencyLight(3.88, .3, z, Math.PI / 2);
-  emergencyLight(-1.88, .3, z, -Math.PI / 2);
-}
 
 // ── FLOOR 1: CABLE TRAYS ─────────────────────────────────────────────────────
 function cableTray(x1, z1, x2, z2, y = H - .5) {
@@ -485,9 +476,6 @@ function conduit(x, z, len, ry = 0, y = 2.8) {
   scene.add(pipe);
 }
 
-for (let z = -19; z <= -2; z += 5) {
-  conduit(3.88, z, 1.5, 0, 3.2);
-}
 conduit(4.2, 7, 5, 0, 3.5);
 conduit(19.8, 7, 5, 0, 3.5);
 for (let x = 7; x < 18; x += 5) conduit(x, 13.88, 3, Math.PI / 2, 3.3);
@@ -504,7 +492,6 @@ function junctionBox(x, y, z, ry = 0) {
   scene.add(c);
 }
 
-[-17, -10, -3, 4, 11, 18].forEach(z => junctionBox(3.88, 2.0, z, Math.PI / 2));
 [9, 15, 21].forEach(x => junctionBox(x, 2.0, -19.88, 0));
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -798,9 +785,327 @@ function workbench(cx, cz) {
   addCol(cx, .5, cz, 2.7, 1.0, 1.15);
 }
 
-workbench(9, -11); workbench(9, -17);
-workbench(16, -11); workbench(16, -17);
-workbench(22, -11);
+// ── WORKSHOP — NORTH TRAINING ROW (z=-17) ─────────────────────────────────────
+workbench(8.5, -17);  // Station A — Wire Colour ID
+workbench(15, -17);   // Station B — DOL Motor Starter
+workbench(21.5, -17); // Station C — Schematic Quiz
+
+// ── WORKSHOP — CENTRE PRACTICE ROW (z=-11) ────────────────────────────────────
+workbench(8.5, -11);  // Station D — Component Identifier
+workbench(15, -11);   // Station E — Junction Box Task
+workbench(21.5, -11); // Station F — Tool Calibration
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UNIFIED TRAINING INTERACTION SYSTEM — Workshop Zone Objects
+// Replaces isolated mini-game boards with real-world tool-based training objects.
+// Zone A: Preparation  |  Zone B: Execution  |  Zone C: Diagnostic
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── EXPORTS for interaction engine (main.js) ──────────────────────────────────
+export const wireObjects      = [];  // Wire state meshes on execution bench
+export const scenarioTerminals = []; // Terminal block targets for wire connection
+export const validationBoard  = { leds: [], allGreen: false }; // Lab LED board
+
+// ── ZONE A: PEGBOARD TOOL RACK (north wall of workshop, z≈-19.88) ─────────────
+{
+  const pgW = 5.4, pgH = 1.8;
+  const pgMat = new THREE.MeshStandardMaterial({ color: 0x8B6914, roughness: 0.9, metalness: 0.05 });
+  const pboard = mkBox(pgW, pgH, 0.06, pgMat);
+  pboard.position.set(11.5, 2.3, -19.88);
+  scene.add(pboard);
+
+  // Pegboard holes grid (decorative)
+  const holeMat = new THREE.MeshBasicMaterial({ color: 0x5a4010 });
+  for (let px = 0; px < 10; px++) {
+    for (let py = 0; py < 7; py++) {
+      const hole = new THREE.Mesh(new THREE.CircleGeometry(0.038, 8), holeMat);
+      hole.position.set(9.2 + px * 0.56, 1.55 + py * 0.22, -19.84);
+      scene.add(hole);
+    }
+  }
+
+  // Label strip above pegboard
+  const labelBg = mkBox(pgW, 0.2, 0.04,
+    new THREE.MeshBasicMaterial({ color: 0xffcc00 }));
+  labelBg.position.set(11.5, 3.26, -19.85);
+  scene.add(labelBg);
+  const labelInner = mkBox(pgW - 0.1, 0.14, 0.045,
+    new THREE.MeshBasicMaterial({ color: 0x0a1520 }));
+  labelInner.position.set(11.5, 3.26, -19.83);
+  scene.add(labelInner);
+
+  // Pegboard light bar
+  const pLight = new THREE.PointLight(0xffeedd, 1.8, 5.5);
+  pLight.position.set(11.5, 3.6, -18.8);
+  scene.add(pLight);
+
+  // ── Tool definitions on the rack ─────────────────────────────────────────
+  const rackTools = [
+    { id: 'wire_stripper',  label: 'Wire Stripper',  sym: '|--|', color: 0xcc2200, hx: 9.2  },
+    { id: 'screwdriver',    label: 'Screwdriver',    sym: '[-]',  color: 0x2255bb, hx: 10.3 },
+    { id: 'multimeter',     label: 'Multimeter',     sym: '[M]',  color: 0x991111, hx: 11.4 },
+    { id: 'pliers',         label: 'Pliers',         sym: '(P)',  color: 0x557788, hx: 12.5 },
+    { id: 'voltage_tester', label: 'Volt Tester',    sym: '(V)',  color: 0xff7700, hx: 13.6 },
+  ];
+
+  rackTools.forEach(({ id, label, color, hx }) => {
+    const toolMat  = new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.2 });
+    const handleMat= new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.85 });
+    const hookMat  = new THREE.MeshStandardMaterial({ color: 0x909090, roughness: 0.2, metalness: 0.95 });
+
+    // Metal hook
+    const hook = mkBox(0.06, 0.18, 0.1, hookMat);
+    hook.position.set(hx, 3.04, -19.82);
+    scene.add(hook);
+
+    // Tool head (coloured body)
+    const toolHead = mkBox(0.1, 0.38, 0.07, toolMat);
+    toolHead.position.set(hx, 2.68, -19.82);
+    scene.add(toolHead);
+
+    // Tool handle (dark grip)
+    const toolHandle = mkBox(0.08, 0.3, 0.07, handleMat);
+    toolHandle.position.set(hx, 2.3, -19.82);
+    scene.add(toolHandle);
+
+    // Small label plate on tool
+    const tLabel = mkBox(0.09, 0.06, 0.01,
+      new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    tLabel.position.set(hx, 2.62, -19.78);
+    scene.add(tLabel);
+
+    // Invisible interaction proxy — picking up tool
+    const proxy = new THREE.Mesh(
+      new THREE.BoxGeometry(0.28, 0.72, 0.18),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    proxy.position.set(hx, 2.65, -19.82);
+    proxy.userData = { type: 'tool-pickup', toolId: id, label: `Pick up ${label}` };
+    allInteractables.push(proxy);
+    scene.add(proxy);
+  });
+}
+
+// ── ZONE B: WIRE STATE OBJECTS (execution bench at x=15, z=-11) ──────────────
+{
+  const BENCH_X = 15, BENCH_Z = -11;
+
+  const WIRE_DEFS = [
+    { id: 'L',  name: 'L (LINE)',    baseColor: 0x7a2e0e, strippedColor: 0xd4590a, connColor: 0x44aa22, offX: -0.44, offZ: -0.22 },
+    { id: 'N',  name: 'N (NEUTRAL)', baseColor: 0x122077, strippedColor: 0x2255cc, connColor: 0x44aa22, offX:  0.0,  offZ: -0.16 },
+    { id: 'PE', name: 'PE (EARTH)',  baseColor: 0x1a5a0a, strippedColor: 0x33aa11, connColor: 0x44aa22, offX:  0.44, offZ: -0.10 },
+  ];
+
+  WIRE_DEFS.forEach(({ id, name, baseColor, strippedColor, offX, offZ }) => {
+    const wireMat = new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.8, metalness: 0.05 });
+
+    // Insulated wire body
+    const wire = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.022, 0.022, 0.68, 10),
+      wireMat
+    );
+    wire.rotation.z = Math.PI / 2;
+    wire.rotation.y = 0.12;
+    wire.position.set(BENCH_X + offX, 1.012, BENCH_Z + offZ);
+    scene.add(wire);
+
+    // Dark insulation tip (unstripped end indicator)
+    const insMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+    const insEnd = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.024, 0.024, 0.1, 10),
+      insMat
+    );
+    insEnd.rotation.z = Math.PI / 2;
+    insEnd.position.set(BENCH_X + offX + 0.3, 1.012, BENCH_Z + offZ);
+    scene.add(insEnd);
+
+    // Tiny label tag
+    const tagMat = new THREE.MeshBasicMaterial({
+      color: id === 'L' ? 0xcc2200 : id === 'N' ? 0x2244cc : 0x228822
+    });
+    const tag = mkBox(0.1, 0.042, 0.006, tagMat);
+    tag.position.set(BENCH_X + offX - 0.28, 1.025, BENCH_Z + offZ);
+    scene.add(tag);
+
+    // Invisible interaction proxy
+    const proxy = new THREE.Mesh(
+      new THREE.BoxGeometry(0.56, 0.1, 0.16),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    proxy.position.set(BENCH_X + offX, 1.012, BENCH_Z + offZ);
+    proxy.userData = {
+      type:         'wire-object',
+      wireId:       id,
+      wireName:     name,
+      state:        'unprocessed',
+      wireMesh:     wire,
+      insMesh:      insEnd,
+      baseColor,
+      strippedColor,
+      label:        `Inspect wire — ${name}`,
+    };
+    allInteractables.push(proxy);
+    scene.add(proxy);
+
+    wireObjects.push({
+      id, proxy, wireMesh: wire, insMesh: insEnd,
+      state: 'unprocessed', wireMat, baseColor, strippedColor,
+    });
+  });
+
+  // Instruction clipboard on bench
+  {
+    const clipMat   = new THREE.MeshStandardMaterial({ color: 0x1e1e1e, roughness: 0.85, metalness: 0.3 });
+    const paperMat  = new THREE.MeshStandardMaterial({ color: 0xf5eed8, roughness: 0.95 });
+    const clipBoard = mkBox(0.46, 0.58, 0.03, clipMat);
+    clipBoard.position.set(BENCH_X + 0.82, 1.005, BENCH_Z - 0.12);
+    clipBoard.rotation.x = -Math.PI / 2;
+    clipBoard.rotation.z = -0.18;
+    scene.add(clipBoard);
+    const paper = mkBox(0.40, 0.52, 0.008, paperMat);
+    paper.position.set(BENCH_X + 0.82, 1.009, BENCH_Z - 0.12);
+    paper.rotation.x = -Math.PI / 2;
+    paper.rotation.z = -0.18;
+    scene.add(paper);
+    // Circuit diagram lines on paper
+    const lineMats = [
+      new THREE.MeshBasicMaterial({ color: 0xcc2200 }), // L
+      new THREE.MeshBasicMaterial({ color: 0x2244cc }), // N
+      new THREE.MeshBasicMaterial({ color: 0x228822 }), // PE
+    ];
+    lineMats.forEach((lm, i) => {
+      const ln = mkBox(0.32, 0.006, 0.004, lm);
+      ln.position.set(BENCH_X + 0.82, 1.013, BENCH_Z - 0.02 + i * 0.14);
+      ln.rotation.x = -Math.PI / 2;
+      ln.rotation.z = -0.18;
+      scene.add(ln);
+    });
+    // Proxy for schematic view
+    const clipProxy = new THREE.Mesh(
+      new THREE.BoxGeometry(0.52, 0.1, 0.62),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    clipProxy.position.set(BENCH_X + 0.82, 1.01, BENCH_Z - 0.12);
+    clipProxy.userData = { type: 'schematic', scenarioId: 'S01', label: 'View Wiring Schematic' };
+    allInteractables.push(clipProxy);
+    scene.add(clipProxy);
+  }
+}
+
+// ── ZONE B: SCENARIO TERMINAL BLOCK LABELS on cable stations ─────────────────
+{
+  // The three cable stations at x=15.4, z=-3/-8/-13 become the wiring targets.
+  // Add colour-coded label boards and invisible interaction overlays.
+  const TERM_DEFS = [
+    { termId: 'L',  x: 15.4, z: -3,  color: 0x9a2010 },
+    { termId: 'N',  x: 15.4, z: -8,  color: 0x1a2a99 },
+    { termId: 'PE', x: 15.4, z: -13, color: 0x1a7a22 },
+  ];
+
+  TERM_DEFS.forEach(({ termId, x, z, color }) => {
+    // Label board above station
+    const lbBg = mkBox(0.32, 0.22, 0.04,
+      new THREE.MeshStandardMaterial({ color: 0x0a1520, roughness: 0.5, metalness: 0.3 }));
+    lbBg.position.set(x, 2.28, z + 0.05);
+    scene.add(lbBg);
+
+    const lbColor = mkBox(0.24, 0.14, 0.02,
+      new THREE.MeshBasicMaterial({ color }));
+    lbColor.position.set(x, 2.28, z + 0.07);
+    scene.add(lbColor);
+
+    // Connecting wire placeholder (thin rod, grey = unconnected)
+    const wirePlaceholderMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.8 });
+    const wirePlaceholder = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.012, 0.012, 0.5, 8),
+      wirePlaceholderMat
+    );
+    wirePlaceholder.rotation.z = Math.PI / 2;
+    wirePlaceholder.position.set(x, 1.62, z + 0.08);
+    scene.add(wirePlaceholder);
+
+    // Invisible terminal interaction proxy
+    const proxy = new THREE.Mesh(
+      new THREE.BoxGeometry(0.65, 0.88, 0.42),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    proxy.position.set(x, 1.44, z);
+    proxy.userData = {
+      type:            'terminal-block',
+      terminalId:      termId,
+      state:           'empty',     // empty → connected → tightened
+      label:           `Terminal ${termId} — Connect wire`,
+      colorMesh:       lbColor,
+      wirePlaceholder: wirePlaceholder,
+      wirePlaceholderMat,
+    };
+    allInteractables.push(proxy);
+    scene.add(proxy);
+
+    scenarioTerminals.push({ termId, proxy, state: 'empty', wirePlaceholder, wirePlaceholderMat });
+  });
+}
+
+// ── ZONE C: VALIDATION LED BOARD (testing lab) ────────────────────────────────
+{
+  const BX = 25.5, BY = 0, BZ = 13.5;
+
+  // Board enclosure
+  const boardEncl = mkBox(1.3, 0.95, 0.14,
+    new THREE.MeshStandardMaterial({ color: 0x0a1520, roughness: 0.5, metalness: 0.35 }));
+  boardEncl.position.set(BX, BY + 1.7, BZ - 0.3);
+  scene.add(boardEncl);
+  addCol(BX, BY + 1.7, BZ - 0.3, 1.3, 0.95, 0.14);
+
+  // Board face trim
+  const boardFace = mkBox(1.24, 0.88, 0.08,
+    new THREE.MeshStandardMaterial({ color: 0x0e2235, roughness: 0.4, metalness: 0.2 }));
+  boardFace.position.set(BX, BY + 1.7, BZ - 0.23);
+  scene.add(boardFace);
+
+  // Board title strip
+  const titleStrip = mkBox(1.18, 0.14, 0.01,
+    new THREE.MeshBasicMaterial({ color: 0x003366 }));
+  titleStrip.position.set(BX, BY + 2.1, BZ - 0.19);
+  scene.add(titleStrip);
+
+  // Three check indicators: CONTINUITY / VOLTAGE / GROUND
+  const checkDefs = [
+    { label: 'CONT', checkId: 'continuity', dx: -0.36 },
+    { label: 'VOLT', checkId: 'voltage',    dx:  0.0  },
+    { label: 'GND',  checkId: 'ground',     dx:  0.36 },
+  ];
+
+  checkDefs.forEach(({ checkId, dx }) => {
+    const ledMat = new THREE.MeshBasicMaterial({ color: 0x220000 }); // off
+    const led = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 10), ledMat);
+    led.position.set(BX + dx, BY + 1.8, BZ - 0.19);
+    scene.add(led);
+
+    const glow = new THREE.PointLight(0x001100, 0, 1.8);
+    glow.position.copy(led.position);
+    scene.add(glow);
+
+    validationBoard.leds.push({ led, ledMat, glow, checkId, lit: false });
+  });
+
+  // VALIDATE button (big blue press)
+  const valBtn = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.09, 0.09, 0.06, 18),
+    M.eBlue
+  );
+  valBtn.rotation.x = Math.PI / 2;
+  valBtn.position.set(BX, BY + 1.48, BZ - 0.19);
+  scene.add(valBtn);
+  valBtn.userData = { type: 'validate-board', label: 'Run Validation Check' };
+  allInteractables.push(valBtn);
+
+  // Safety label for the board
+  const safetyLbl = mkBox(1.18, 0.12, 0.01,
+    new THREE.MeshBasicMaterial({ color: 0xffcc00 }));
+  safetyLbl.position.set(BX, BY + 1.3, BZ - 0.19);
+  scene.add(safetyLbl);
+}
 
 // Lab benches
 workbench(22, 12); workbench(28, 12);
@@ -827,8 +1132,71 @@ function addShelf(cx, cz, ry = 0) {
 
 addShelf(-12, 17); addShelf(-12, 21);
 addShelf(-4, 17); addShelf(-4, 21);
-addShelf(25.4, -16, Math.PI / 2);
-addShelf(25.4, -10, Math.PI / 2);
+// ── SERVER RACKS (Workshop east zone, free-standing) ─────────────────────────
+{
+  function buildServerRack(cx, cz, rackId, label) {
+    const g = new THREE.Group();
+
+    // Main chassis
+    const chassis = mkBox(0.65, 2.0, 0.88, M.serverRack);
+    chassis.position.set(0, 1.0, 0);
+    g.add(chassis);
+
+    // Front bezel (south-facing, +z side)
+    const bezel = mkBox(0.63, 1.96, 0.04, M.panelGrey);
+    bezel.position.set(0, 1.0, 0.46);
+    g.add(bezel);
+
+    // 7 server units with LEDs — pre-set 2 faults per rack
+    const faultIdxA = rackId === 'server-1' ? [2, 5] : [1, 4];
+    for (let u = 0; u < 7; u++) {
+      const unit = mkBox(0.58, 0.055, 0.26, M.black);
+      unit.position.set(0, 1.82 - u * 0.13, 0.32);
+      g.add(unit);
+
+      const isFault = faultIdxA.includes(u);
+      const ledMat = isFault ? new THREE.MeshBasicMaterial({ color: 0xff2200 }) : M.serverLed;
+      const led = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.014, 0.014), ledMat);
+      led.position.set(-0.24, 1.82 - u * 0.13, 0.46);
+      g.add(led);
+
+      // Vent slots
+      const vent = mkBox(0.22, 0.014, 0.1, M.panelGrey);
+      vent.position.set(0.1, 1.82 - u * 0.13, 0.38);
+      g.add(vent);
+    }
+
+    // Status beacon on top (red = faults present)
+    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff2200 }));
+    beacon.position.set(0.28, 2.04, 0.44);
+    g.add(beacon);
+    const beaconGlow = new THREE.PointLight(0xff2200, 0.8, 2.0);
+    beaconGlow.position.set(cx + 0.28, 2.04, cz + 0.44);
+    scene.add(beaconGlow);
+
+    // Cable tray on top
+    const tray = mkBox(0.62, 0.06, 0.3, M.panelGrey);
+    tray.position.set(0, 2.03, 0.1);
+    g.add(tray);
+
+    // Interaction proxy (front face)
+    const proxy = new THREE.Mesh(new THREE.BoxGeometry(0.65, 2.0, 0.2), new THREE.MeshBasicMaterial({ visible: false }));
+    proxy.position.set(0, 1.0, 0.47);
+    proxy.userData = { type: 'circuit-bench', label, benchId: rackId };
+    allInteractables.push(proxy);
+    g.add(proxy);
+
+    g.position.set(cx, 0, cz);
+    scene.add(g);
+    addCol(cx, 1.0, cz, 0.7, 2.05, 0.92);
+  }
+
+  buildServerRack(17.5, -6.5,  'server-1', 'NETWORK ROUTING CUBE A');
+  buildServerRack(19, -6.5, 'server-2', 'NETWORK ROUTING CUBE B');
+  buildServerRack(20.5, -6.5, 'server-3', 'MAIN SCADA SERVER');
+  buildServerRack(22, -6.5, 'server-4', 'BACKUP SYSTEMS CABINET');
+  buildServerRack(23.5, -6.5, 'server-5', 'DATA STORAGE ARRAY');
+}
 
 // ── BREAKER PANELS ────────────────────────────────────────────────────────────
 export function breakerPanel(cx, cy, cz, ry, id, label, count = 8) {
@@ -869,6 +1237,200 @@ export const distAPanel = breakerPanel(-13.9, 0, -5, Math.PI / 2, 'dist-a', 'DIS
 export const distBPanel = breakerPanel(-13.9, 0, 9, Math.PI / 2, 'dist-b', 'DIST-B', 8);
 export const wsPanel = breakerPanel(25.9, 0, -16, Math.PI / 2, 'workshop', 'WS', 6);
 
+// ── WORKSHOP OVERHAUL ─────────────────────────────────────────────────────────
+{
+  const WX = 22, WZ = -3;
+  const deskMat = new THREE.MeshStandardMaterial({ color: 0x5a3e26, roughness: 0.85, metalness: 0.1 });
+  const legMat = new THREE.MeshStandardMaterial({ color: 0x334455, roughness: 0.6, metalness: 0.8 });
+  
+  // tabletop
+  const dtop = mkBox(1.9, 0.06, 1.0, deskMat);
+  dtop.position.set(WX, 0.78, WZ);
+  scene.add(dtop);
+
+  // side panels
+  const dleft = mkBox(0.04, 0.78, 1.0, legMat);
+  dleft.position.set(WX - 0.93, 0.39, WZ);
+  scene.add(dleft);
+  const dright = mkBox(0.04, 0.78, 1.0, legMat);
+  dright.position.set(WX + 0.93, 0.39, WZ);
+  scene.add(dright);
+
+  // back modesty panel
+  const dfront = mkBox(1.9, 0.74, 0.04, legMat);
+  dfront.position.set(WX, 0.39, WZ + 0.48);
+  scene.add(dfront);
+
+  addCol(WX, 0.42, WZ, 1.9, 0.82, 1.0);
+
+  // Monitor
+  const monBezel = mkBox(0.92, 0.58, 0.055, new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.2 }));
+  monBezel.position.set(WX, 1.32, WZ - 0.24);
+  scene.add(monBezel);
+
+  // screen face
+  const screenMat = new THREE.MeshStandardMaterial({ color: 0x0a1f3a, emissive: 0x153060, emissiveIntensity: 1.4, roughness: 0.1, metalness: 0.2 });
+  const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 0.50), screenMat);
+  screenMesh.position.set(WX, 1.32, WZ - 0.215);
+  scene.add(screenMesh);
+  
+  const screenGlow = new THREE.PointLight(0x2266ff, 0.9, 3.5);
+  screenGlow.position.set(WX, 1.3, WZ - 0.2);
+  scene.add(screenGlow);
+
+  // Interaction proxy
+  const monProxy = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.58, 0.1), new THREE.MeshBasicMaterial({ visible: false }));
+  monProxy.position.set(WX, 1.32, WZ - 0.2);
+  monProxy.userData = { 
+    type: 'computer', 
+    label: 'Use Workshop Computer',
+    compPos: new THREE.Vector3(WX, 1.10, WZ + 0.67),
+    compRot: new THREE.Euler(-0.05, 0, 0, 'YXZ')
+  };
+  allInteractables.push(monProxy);
+  scene.add(monProxy);
+
+  // Re-use existing chair implementation but place at desk
+  chair(WX, WZ + 0.6);
+  
+  // Computer Props
+  const kbBase = mkBox(0.52, 0.018, 0.22, new THREE.MeshStandardMaterial({ color: 0x1a1e24, roughness: 0.6, metalness: 0.3 }));
+  kbBase.position.set(WX, 0.808, WZ + 0.12);
+  scene.add(kbBase);
+  
+  const mousePad = mkBox(0.22, 0.006, 0.18, new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.95, metalness: 0.0 }));
+  mousePad.position.set(WX + 0.36, 0.806, WZ + 0.12);
+  scene.add(mousePad);
+
+  const lampMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.2 });
+  const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.02, 12), lampMat);
+  lampBase.position.set(WX - 0.6, 0.81, WZ - 0.3);
+  scene.add(lampBase);
+  const lampArm = mkBox(0.02, 0.4, 0.02, lampMat);
+  lampArm.position.set(WX - 0.6, 1.0, WZ - 0.3);
+  scene.add(lampArm);
+  const lampHead = mkBox(0.12, 0.05, 0.22, lampMat);
+  lampHead.position.set(WX - 0.6, 1.2, WZ - 0.2);
+  lampHead.rotation.x = 0.2;
+  scene.add(lampHead);
+  const lampLight = new THREE.PointLight(0xffeedd, 1.2, 2.5);
+  lampLight.position.set(WX - 0.6, 1.15, WZ - 0.2);
+  scene.add(lampLight);
+}
+
+// ── WORKSHOP LOUNGE COUCH ─────────────────────────────────────────────────────
+{
+  const cx = 6, cz = -3, rotY = Math.PI; // facing North (-Z)
+  const cg = new THREE.Group();
+  cg.position.set(cx, 0, cz);
+  cg.rotation.y = rotY;
+
+  const wCouchWood = new THREE.MeshStandardMaterial({ color: 0x1a0f05, roughness: 0.9, metalness: 0.1 });
+  const wCouchFabric = new THREE.MeshStandardMaterial({ color: 0x5a2e22, roughness: 0.95, metalness: 0.0 });
+
+  const cBase = mkBox(2.3, 0.14, 0.85, wCouchWood);
+  cBase.position.set(0, 0.07, 0);
+  cg.add(cBase);
+
+  const seat1 = mkBox(1.02, 0.22, 0.72, wCouchFabric);
+  seat1.position.set(-0.57, 0.28, 0.04);
+  cg.add(seat1);
+  const seat2 = mkBox(1.02, 0.22, 0.72, wCouchFabric);
+  seat2.position.set(0.57, 0.28, 0.04);
+  cg.add(seat2);
+
+  const back1 = mkBox(1.02, 0.6, 0.22, wCouchFabric);
+  back1.position.set(-0.57, 0.62, -0.32);
+  back1.rotation.x = 0.12;
+  cg.add(back1);
+  const back2 = mkBox(1.02, 0.6, 0.22, wCouchFabric);
+  back2.position.set(0.57, 0.62, -0.32);
+  back2.rotation.x = 0.12;
+  cg.add(back2);
+
+  const backRail = mkBox(2.32, 0.08, 0.12, wCouchWood);
+  backRail.position.set(0, 0.96, -0.38);
+  cg.add(backRail);
+
+  [-1.15, 1.15].forEach(ax => {
+    const armBody = mkBox(0.22, 0.48, 0.85, wCouchFabric);
+    armBody.position.set(ax, 0.38, 0);
+    cg.add(armBody);
+  });
+
+  const cProxy = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.9, 1.0), new THREE.MeshBasicMaterial({ visible: false }));
+  cProxy.position.set(0, 0.4, 0);
+  const sitW = new THREE.Vector3(0, 0.95, 0.15).applyAxisAngle(new THREE.Vector3(0,1,0), rotY).add(new THREE.Vector3(cx, 0, cz));
+  cProxy.userData = { type: 'sit', label: 'Sit Down (Lounge)', sitPos: sitW, sitYaw: rotY + Math.PI };
+  allInteractables.push(cProxy);
+  cg.add(cProxy);
+
+  scene.add(cg);
+  addCol(cx, 0.45, cz + 0.2, 2.5, 0.9, 0.6); // since rotY = Math.PI, offset is reversed.
+}
+
+// ── WORKBENCH PROPS & TOOLS ───────────────────────────────────────────────────
+{
+  const toolSteel = new THREE.MeshStandardMaterial({ color: 0x8899aa, roughness: 0.3, metalness: 0.9 });
+  const toolRed = new THREE.MeshStandardMaterial({ color: 0xaa2211, roughness: 0.7, metalness: 0.1 });
+  const blueprintMat = new THREE.MeshStandardMaterial({ color: 0x2244aa, roughness: 0.9, metalness: 0 });
+  const whitePaper = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.9, metalness: 0 });
+
+  function populateBench(bx, bz) {
+    const wrench = mkBox(0.25, 0.015, 0.04, toolSteel);
+    wrench.position.set(bx - 0.5, 1.01, bz);
+    wrench.rotation.y = Math.random() * Math.PI;
+    wrench.userData = { type: 'inspect', label: 'Heavy Duty Wrench' };
+    allInteractables.push(wrench);
+    scene.add(wrench);
+
+    const bp = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.6), blueprintMat);
+    bp.rotation.x = -Math.PI / 2;
+    bp.rotation.z = Math.random() * 0.4 - 0.2;
+    bp.position.set(bx, 1.002, bz - 0.2);
+    scene.add(bp);
+
+    const multi = mkBox(0.12, 0.04, 0.08, toolRed);
+    multi.position.set(bx + 0.6, 1.02, bz + 0.1);
+    multi.rotation.y = Math.random() * -0.5;
+    multi.userData = { type: 'inspect', label: 'Digital Multimeter' };
+    allInteractables.push(multi);
+    scene.add(multi);
+
+    const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.1, 12), new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.4 }));
+    mug.position.set(bx + 1.0, 1.05, bz - 0.3);
+    scene.add(mug);
+  }
+
+  populateBench(8.5, -17);
+  populateBench(15, -17);
+  populateBench(21.5, -17);
+  populateBench(8.5, -11);
+  populateBench(15, -11);
+  populateBench(21.5, -11);
+  populateBench(22, 12); // Lab bench
+
+  // Whiteboard (North wall of workshop z=-20 from x=15 to 26)
+  const wb = mkBox(2.8, 1.4, 0.04, new THREE.MeshStandardMaterial({ color: 0xf4f4f4, roughness: 0.2, metalness: 0.1 }));
+  wb.position.set(18, 1.8, -19.98);
+  scene.add(wb);
+  const wbFrame = mkBox(2.85, 1.45, 0.03, new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.6 }));
+  wbFrame.position.set(18, 1.8, -19.99);
+  scene.add(wbFrame);
+
+  // Safety Pinboard (East wall of workshop near breaker panel x=26)
+  const pinboard = mkBox(0.04, 1.2, 1.8, new THREE.MeshStandardMaterial({ color: 0xaa8855, roughness: 0.9 }));
+  pinboard.position.set(25.98, 1.8, -13);
+  scene.add(pinboard);
+  const paper = mkBox(0.045, 0.2, 0.15, whitePaper);
+  paper.position.set(25.98, 2.0, -13.2);
+  scene.add(paper);
+  const paper2 = mkBox(0.045, 0.2, 0.15, whitePaper);
+  paper2.position.set(25.98, 1.7, -12.8);
+  scene.add(paper2);
+}
+
+
 // ── SWITCH BOXES ─────────────────────────────────────────────────────────────
 export function switchBox(cx, cy, cz, ry, id, label, on) {
   const grp = new THREE.Group();
@@ -893,6 +1455,15 @@ export const cableStations = [];
 
 function buildCableStation(cx, cz, idx) {
   const g = new THREE.Group();
+
+  // Solid structural pedestal to fix floating bug
+  const basePole = mkBox(0.5, 0.9, 0.15, new THREE.MeshStandardMaterial({ color: 0x111116, roughness: 0.8, metalness: 0.4 }));
+  basePole.position.set(0, 0.45, -0.01);
+  g.add(basePole);
+
+  const footMat = mkBox(0.8, 0.06, 0.6, new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9, metalness: 0.3 }));
+  footMat.position.set(0, 0.03, -0.01);
+  g.add(footMat);
 
   const panel = mkBox(.7, .9, .1, M.panel);
   panel.position.set(0, 1.35, 0);
@@ -924,6 +1495,10 @@ function buildCableStation(cx, cz, idx) {
   g.position.set(cx, 0, cz);
   g.rotation.y = Math.PI;
   scene.add(g);
+  
+  // Pedestal collision
+  addCol(cx, 0.45, cz, 0.8, 0.9, 0.6);
+
   cableStations.push({ group: g, terminals, completed: false });
 }
 
@@ -1067,22 +1642,30 @@ const hatColors = [M.yellow, M.orange];
   }
 });
 
-// Fire extinguisher
-const ext = mkCyl(.1, .68, M.red);
-place(ext, -1.88, 0.34, -9);
-place(mkCyl(.05, .14, M.chrome), -1.88, 0.72, -9);
-place(mkBox(.06, .02, .28, M.chrome), -1.88, 0.8, -9);  // hose bracket
+// ── TECH CORRIDOR ACCENT WIRES ─────────────────────────────────────────────
+{
+  const wireMat = new THREE.MeshStandardMaterial({ color: 0x18181a, roughness: 0.8, metalness: 0.2 });
+  const opticMat = new THREE.MeshBasicMaterial({ color: 0x00aaff });
 
-// First aid boxes
-[[-.88, 1.75, 3, -Math.PI / 2], [3.88, 1.75, -16, Math.PI / 2]].forEach(([x, y, z, ry]) => {
-  const box = mkBox(.44, .38, .14, new THREE.MeshLambertMaterial({ color: 0xee3333 }));
-  box.position.set(x, y, z);
-  box.rotation.y = ry;
-  scene.add(box);
-  // White cross
-  place(mkBox(.28, .05, .01, M.winFrame), x, y, z + .075);
-  place(mkBox(.05, .28, .01, M.winFrame), x, y, z + .075);
-});
+  const cLength = 46; // From z=-20 to z=26
+  const cMidZ = 3;
+
+  // West Wall slim wires
+  const wWire = mkBox(0.02, 0.02, cLength, wireMat);
+  wWire.position.set(-1.99, H * 0.85, cMidZ);
+  scene.add(wWire);
+  const wOptic = mkBox(0.006, 0.006, cLength, opticMat);
+  wOptic.position.set(-1.98, H * 0.85 - 0.03, cMidZ);
+  scene.add(wOptic);
+
+  // East Wall slim wires
+  const eWire = mkBox(0.02, 0.02, cLength, wireMat);
+  eWire.position.set(3.99, H * 0.85, cMidZ);
+  scene.add(eWire);
+  const eOptic = mkBox(0.006, 0.006, cLength, opticMat);
+  eOptic.position.set(3.98, H * 0.85 - 0.03, cMidZ);
+  scene.add(eOptic);
+}
 
 // Toolboxes
 function toolbox(x, z, color = 0xdd4433) {
@@ -1171,7 +1754,16 @@ chair(21, -5); chair(25, 1); chair(29, 6);
 const entranceGroup = new THREE.Group();
 scene.add(entranceGroup);
 
-// Emergency Stop Button (Moved properly to a wall near the entrance door)
+// ─── MATERIALS (local to entrance) ───────────────────────────────────────────
+const fabricMat   = new THREE.MeshStandardMaterial({ color: 0x4a6080, roughness: 0.92, metalness: 0.05 });
+const couchWoodMat= new THREE.MeshStandardMaterial({ color: 0x2c1a08, roughness: 0.8, metalness: 0.1 });
+const deskWoodMat = new THREE.MeshStandardMaterial({ color: 0xb5813a, roughness: 0.75, metalness: 0.05 });
+const deskMetalMat= new THREE.MeshStandardMaterial({ color: 0x8899aa, roughness: 0.4, metalness: 0.9 });
+const monitorMat  = new THREE.MeshStandardMaterial({ color: 0x111418, roughness: 0.5, metalness: 0.6 });
+const chairFabric = new THREE.MeshStandardMaterial({ color: 0x1a2530, roughness: 0.9, metalness: 0.05 });
+const chairMetal  = new THREE.MeshStandardMaterial({ color: 0x99aabb, roughness: 0.3, metalness: 0.95 });
+
+// Emergency Stop Button
 const eStopGrp = new THREE.Group();
 const eStopBox = mkBox(.28, .28, .14, M.panelGrey);
 eStopGrp.add(eStopBox);
@@ -1185,97 +1777,605 @@ eStopBtn.position.set(0, 0, .09);
 eStopGrp.add(eStopBtn);
 eStopBtn.userData = { type: 'estop', label: 'EMERGENCY STOP' };
 allInteractables.push(eStopBtn);
-eStopGrp.position.set(2.8, 1.3, -20.1); // Placed on South wall near entrance door
-eStopGrp.rotation.y = Math.PI; // Face north
+eStopGrp.position.set(2.8, 1.3, -20.1);
+eStopGrp.rotation.y = Math.PI;
 entranceGroup.add(eStopGrp);
 
-// Reception Desk
-const deskWoodMat = new THREE.MeshLambertMaterial({ color: 0xd4a373 }); // Warm wood
-const deskTop = mkBox(2.2, 0.08, 1.2, deskWoodMat);
-deskTop.position.set(2.5, 0.9, -24);
-addCol(2.5, 0.45, -24, 2.2, 0.9, 1.2);
-entranceGroup.add(deskTop);
+// ═══════════════════════════════════════════════════════════════════════════
+// ENHANCED ENTRANCE DECOR
+// ═══════════════════════════════════════════════════════════════════════════
 
-const deskFront = mkBox(0.1, 0.9, 1.2, M.panel);
-deskFront.position.set(1.45, 0.45, -24);
-entranceGroup.add(deskFront);
-
-const deskSide1 = mkBox(2.2, 0.9, 0.1, M.panel);
-deskSide1.position.set(2.5, 0.45, -24.55);
-entranceGroup.add(deskSide1);
-
-const deskSide2 = mkBox(2.2, 0.9, 0.1, M.panel);
-deskSide2.position.set(2.5, 0.45, -23.45);
-entranceGroup.add(deskSide2);
-
-// Monitor on desk
-const monitor = mkBox(.5, .35, .05, M.black);
-monitor.position.set(1.7, 1.1, -24);
-monitor.rotation.y = Math.PI / 8;
-entranceGroup.add(monitor);
-const mScreen = new THREE.Mesh(new THREE.PlaneGeometry(.46, .3), new THREE.MeshBasicMaterial({ color: 0x22aaff }));
-mScreen.position.set(1.67, 1.1, -24);
-mScreen.rotation.y = -Math.PI / 2 + Math.PI / 8;
-entranceGroup.add(mScreen);
-
-// Small props on desk
-const paperStack = mkBox(.3, .05, .2, new THREE.MeshLambertMaterial({ color: 0xffffff }));
-paperStack.position.set(2.4, 0.965, -23.8);
-paperStack.rotation.y = 0.2;
-entranceGroup.add(paperStack);
-
-const book = mkBox(.2, .04, .25, new THREE.MeshLambertMaterial({ color: 0x992222 }));
-book.position.set(2.4, 0.96, -24.2);
-book.rotation.y = -0.1;
-entranceGroup.add(book);
-
-// Waiting Chairs (West Wall)
-const fabricMat = new THREE.MeshLambertMaterial({ color: 0x477a94 }); // Bright blue fabric
-for (let i = 0; i < 3; i++) {
-  const cx = -1.5;
-  const cz = -26 + i * 1.5;
-  const cSeat = mkBox(.6, .1, .6, fabricMat);
-  cSeat.position.set(cx, 0.45, cz);
-  addCol(cx, 0.22, cz, .6, .45, .6);
-  entranceGroup.add(cSeat);
-  
-  const cBack = mkBox(.1, .6, .6, fabricMat);
-  cBack.position.set(cx - 0.25, 0.8, cz);
-  entranceGroup.add(cBack);
-  
-  const legMat = M.chrome;
-  const l1 = mkBox(.05, .4, .05, legMat); l1.position.set(cx - 0.2, 0.2, cz - 0.2); entranceGroup.add(l1);
-  const l2 = mkBox(.05, .4, .05, legMat); l2.position.set(cx - 0.2, 0.2, cz + 0.2); entranceGroup.add(l2);
-  const l3 = mkBox(.05, .4, .05, legMat); l3.position.set(cx + 0.2, 0.2, cz - 0.2); entranceGroup.add(l3);
-  const l4 = mkBox(.05, .4, .05, legMat); l4.position.set(cx + 0.2, 0.2, cz + 0.2); entranceGroup.add(l4);
+// ── Extra entrance ceiling light (warmer + second fixture) ──────────────────
+{
+  const pt2 = new THREE.PointLight(0xffeedd, 1.8, 10);
+  pt2.position.set(1, H - 0.2, -25.5);
+  scene.add(pt2);
+  const fixtureBase2 = mkBox(0.15, 0.05, 1.4, M.panelGrey);
+  fixtureBase2.position.set(1, H - 0.02, -25.5);
+  scene.add(fixtureBase2);
+  const tube2 = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.3, 8), M.eWhite);
+  tube2.rotation.z = Math.PI / 2;
+  tube2.position.set(1, H - 0.05, -25.5);
+  scene.add(tube2);
 }
 
-// Plant pot
-const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.2, 0.5, 12), new THREE.MeshLambertMaterial({ color: 0xddccaa }));
-pot.position.set(-1.4, 0.25, -22);
-addCol(-1.4, 0.25, -22, 0.6, 0.5, 0.6);
-entranceGroup.add(pot);
+// ── WELCOME / COMPANY SIGN on north wall (z=-28) ────────────────────────────
+{
+  // Sign backing plate
+  const signBg = mkBox(3.8, 0.72, 0.08,
+    new THREE.MeshStandardMaterial({ color: 0x0a1520, roughness: 0.6, metalness: 0.4 }));
+  signBg.position.set(1, 2.6, -27.88);
+  scene.add(signBg);
 
-// Decorative Leaves
-for (let i = 0; i < 6; i++) {
-  const leaf = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.8), new THREE.MeshLambertMaterial({ color: 0x33aa44, side: THREE.DoubleSide }));
-  leaf.position.set(-1.4, 0.8, -22);
-  leaf.rotation.y = (i / 6) * Math.PI * 2;
-  leaf.rotation.x = -Math.PI / 6;
-  entranceGroup.add(leaf);
+  // Green accent bar on top
+  const signBar = mkBox(3.8, 0.06, 0.09,
+    new THREE.MeshBasicMaterial({ color: 0x44ff88 }));
+  signBar.position.set(1, 3.0, -27.85);
+  scene.add(signBar);
+
+  // Company name plate (emissive white)
+  const namePlate = mkBox(3.6, 0.34, 0.01,
+    new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: new THREE.Color(0xaaffcc),
+      emissiveIntensity: 0.6,
+      roughness: 0.4,
+      metalness: 0.1
+    }));
+  namePlate.position.set(1, 2.72, -27.83);
+  scene.add(namePlate);
+
+  // Sub-text plate (bluish)
+  const subPlate = mkBox(2.4, 0.16, 0.01,
+    new THREE.MeshStandardMaterial({
+      color: 0x8899bb,
+      emissive: new THREE.Color(0x334466),
+      emissiveIntensity: 0.5,
+      roughness: 0.5,
+      metalness: 0.1
+    }));
+  subPlate.position.set(1, 2.44, -27.83);
+  scene.add(subPlate);
+
+  // Sign glow light
+  const signGlow = new THREE.PointLight(0x88ffcc, 0.7, 4.5);
+  signGlow.position.set(1, 2.6, -27.5);
+  scene.add(signGlow);
+
+  // Left / right chrome end-caps
+  [-1.92, 1.92].forEach(dx => {
+    const cap = mkBox(0.04, 0.74, 0.10,
+      new THREE.MeshStandardMaterial({ color: 0xaabbcc, roughness: 0.3, metalness: 0.9 }));
+    cap.position.set(1 + dx, 2.6, -27.87);
+    scene.add(cap);
+  });
 }
 
-// Wall Painting
-const paintingGeom = new THREE.PlaneGeometry(2, 1.2);
-const pMat = new THREE.MeshBasicMaterial({ color: 0xffcc88 }); // Bright abstract color
-const painting = new THREE.Mesh(paintingGeom, pMat);
-painting.position.set(-1.98, 1.8, -25);
-painting.rotation.y = Math.PI / 2;
-entranceGroup.add(painting);
+// ── DIRECTIONAL SIGN (east wall, pointing toward corridor) ──────────────────
+{
+  const dSign = mkBox(0.06, 0.32, 1.4,
+    new THREE.MeshStandardMaterial({ color: 0x112233, roughness: 0.6, metalness: 0.3 }));
+  dSign.position.set(3.88, 2.1, -22.5);
+  scene.add(dSign);
 
-const pFrame = mkBox(.05, 1.25, 2.05, new THREE.MeshLambertMaterial({ color: 0x111111 }));
-pFrame.position.set(-1.99, 1.8, -25);
-entranceGroup.add(pFrame);
+  // Arrow stripe (green)
+  const arrow1 = mkBox(0.07, 0.10, 0.9,
+    new THREE.MeshBasicMaterial({ color: 0x44ff88 }));
+  arrow1.position.set(3.86, 2.1, -22.5);
+  scene.add(arrow1);
+
+  // Direction text plates
+  const tPlate = mkBox(0.07, 0.18, 0.6,
+    new THREE.MeshBasicMaterial({ color: 0xccddff }));
+  tPlate.position.set(3.86, 2.26, -22.5);
+  scene.add(tPlate);
+}
+
+// ── WALL CLOCK (east wall near entrance door) ────────────────────────────────
+{
+  const clockFace = new THREE.Mesh(
+    new THREE.CircleGeometry(0.22, 24),
+    new THREE.MeshStandardMaterial({ color: 0xf0f0e8, roughness: 0.8, metalness: 0.05 })
+  );
+  clockFace.rotation.y = -Math.PI / 2;
+  clockFace.position.set(3.88, 2.4, -20.8);
+  scene.add(clockFace);
+
+  const clockRim = new THREE.Mesh(
+    new THREE.TorusGeometry(0.22, 0.025, 8, 24),
+    new THREE.MeshStandardMaterial({ color: 0x334455, roughness: 0.4, metalness: 0.9 })
+  );
+  clockRim.rotation.y = -Math.PI / 2;
+  clockRim.position.set(3.87, 2.4, -20.8);
+  scene.add(clockRim);
+
+  // Hour and minute hands (static aesthetic)
+  const hHand = mkBox(0.01, 0.01, 0.12, new THREE.MeshLambertMaterial({ color: 0x111111 }));
+  hHand.position.set(3.87, 2.45, -20.8);
+  hHand.rotation.y = -Math.PI / 2;
+  scene.add(hHand);
+  const mHand = mkBox(0.008, 0.008, 0.17, new THREE.MeshLambertMaterial({ color: 0x111111 }));
+  mHand.position.set(3.87, 2.38, -20.8);
+  mHand.rotation.y = -Math.PI / 2;
+  scene.add(mHand);
+}
+
+// ── DECORATIVE FLOOR MAT / RUG under couch area ─────────────────────────────
+{
+  const rug = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.2, 1.6),
+    new THREE.MeshStandardMaterial({ color: 0x223344, roughness: 1.0, metalness: 0.0 })
+  );
+  rug.rotation.x = -Math.PI / 2;
+  rug.position.set(-0.5, 0.003, -25.5);
+  scene.add(rug);
+
+  // Rug border stripe
+  const rugBorder = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.0, 1.4),
+    new THREE.MeshStandardMaterial({ color: 0x334a5a, roughness: 1.0, metalness: 0.0 })
+  );
+  rugBorder.rotation.x = -Math.PI / 2;
+  rugBorder.position.set(-0.5, 0.004, -25.5);
+  scene.add(rugBorder);
+}
+
+// ── WALL SCONCE accent lights (west wall) ───────────────────────────────────
+[-26, -23].forEach((wz, i) => {
+  const sconceBracket = mkBox(0.08, 0.22, 0.14,
+    new THREE.MeshStandardMaterial({ color: 0x8899aa, roughness: 0.4, metalness: 0.9 }));
+  sconceBracket.position.set(-1.88, 1.85, wz);
+  scene.add(sconceBracket);
+
+  const sconceGlobe = new THREE.Mesh(
+    new THREE.SphereGeometry(0.09, 10, 10),
+    new THREE.MeshStandardMaterial({
+      color: 0xfff5cc,
+      emissive: new THREE.Color(0xffdd88),
+      emissiveIntensity: 0.8,
+      roughness: 0.3
+    })
+  );
+  sconceGlobe.position.set(-1.82, 1.7, wz);
+  scene.add(sconceGlobe);
+
+  const sconceLight = new THREE.PointLight(0xffcc66, 0.4, 3.5);
+  sconceLight.position.set(-1.7, 1.65, wz);
+  scene.add(sconceLight);
+});
+
+// ── SECURITY CAMERA bracket on ceiling corner ────────────────────────────────
+{
+  const camBracket = mkBox(0.1, 0.22, 0.1,
+    new THREE.MeshStandardMaterial({ color: 0x445566, roughness: 0.5, metalness: 0.7 }));
+  camBracket.position.set(3.5, H - 0.12, -27.5);
+  scene.add(camBracket);
+
+  const camBody = mkBox(0.16, 0.09, 0.22,
+    new THREE.MeshStandardMaterial({ color: 0x222833, roughness: 0.5, metalness: 0.6 }));
+  camBody.position.set(3.5, H - 0.26, -27.4);
+  camBody.rotation.x = -0.3;
+  scene.add(camBody);
+
+  // Camera lens
+  const camLens = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.032, 0.026, 0.06, 10),
+    new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.1, metalness: 0.9 })
+  );
+  camLens.rotation.x = Math.PI / 2 - 0.3;
+  camLens.position.set(3.5, H - 0.30, -27.28);
+  scene.add(camLens);
+
+  // Red LED on camera
+  const camLED = new THREE.Mesh(
+    new THREE.SphereGeometry(0.012, 6, 6),
+    new THREE.MeshBasicMaterial({ color: 0xff2222 })
+  );
+  camLED.position.set(3.58, H - 0.24, -27.35);
+  scene.add(camLED);
+}
+
+// ── THIN BASEBOARD along north + west walls ──────────────────────────────────
+{
+  // North wall baseboard
+  const bb1 = mkBox(6.22, 0.08, 0.04,
+    new THREE.MeshStandardMaterial({ color: 0xccccbb, roughness: 0.9, metalness: 0.0 }));
+  bb1.position.set(1, 0.04, -28.02);
+  scene.add(bb1);
+
+  // West wall baseboard
+  const bb2 = mkBox(0.04, 0.08, 8.0,
+    new THREE.MeshStandardMaterial({ color: 0xccccbb, roughness: 0.9, metalness: 0.0 }));
+  bb2.position.set(-2.02, 0.04, -24);
+  scene.add(bb2);
+
+  // East wall baseboard
+  const bb3 = mkBox(0.04, 0.08, 8.0,
+    new THREE.MeshStandardMaterial({ color: 0xccccbb, roughness: 0.9, metalness: 0.0 }));
+  bb3.position.set(4.02, 0.04, -24);
+  scene.add(bb3);
+}
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SINGLE COUCH — waiting area, left side of entrance, facing toward the door
+// Position: x≈-1, z≈-25, facing south (rotY=0)
+// ─────────────────────────────────────────────────────────────────────────────
+{
+  const cx = -0.6, cz = -25.5, rotY = 0;
+  const cg = new THREE.Group();
+  cg.position.set(cx, 0, cz);
+  cg.rotation.y = rotY;
+
+  // Base platform (wood)
+  const cBase = mkBox(2.3, 0.14, 0.85, couchWoodMat);
+  cBase.position.set(0, 0.07, 0);
+  cg.add(cBase);
+
+  // Seat cushions (two separate for realism)
+  const seat1 = mkBox(1.02, 0.22, 0.72, fabricMat);
+  seat1.position.set(-0.57, 0.28, 0.04);
+  cg.add(seat1);
+  const seat2 = mkBox(1.02, 0.22, 0.72, fabricMat);
+  seat2.position.set(0.57, 0.28, 0.04);
+  cg.add(seat2);
+
+  // Seat cushion piping (ridge between cushions)
+  const seam = mkBox(0.04, 0.24, 0.72, couchWoodMat);
+  seam.position.set(0, 0.28, 0.04);
+  cg.add(seam);
+
+  // Back cushions (slightly angled)
+  const back1 = mkBox(1.02, 0.6, 0.22, fabricMat);
+  back1.position.set(-0.57, 0.62, -0.32);
+  back1.rotation.x = 0.12;
+  cg.add(back1);
+  const back2 = mkBox(1.02, 0.6, 0.22, fabricMat);
+  back2.position.set(0.57, 0.62, -0.32);
+  back2.rotation.x = 0.12;
+  cg.add(back2);
+
+  // Back frame rail (wood strip)
+  const backRail = mkBox(2.32, 0.08, 0.12, couchWoodMat);
+  backRail.position.set(0, 0.96, -0.38);
+  cg.add(backRail);
+
+  // Armrests with padded tops
+  [-1.15, 1.15].forEach(ax => {
+    const armBody = mkBox(0.22, 0.48, 0.85, fabricMat);
+    armBody.position.set(ax, 0.38, 0);
+    cg.add(armBody);
+    const armCap = mkBox(0.24, 0.06, 0.87, couchWoodMat);
+    armCap.position.set(ax, 0.65, 0);
+    cg.add(armCap);
+  });
+
+  // Chrome legs (tapered cylinders)
+  const legGeo = new THREE.CylinderGeometry(0.025, 0.018, 0.09, 8);
+  [[-1.0,-0.33],[1.0,-0.33],[-1.0,0.33],[1.0,0.33]].forEach(([lx,lz]) => {
+    const leg = new THREE.Mesh(legGeo, chairMetal);
+    leg.position.set(lx, 0.045, lz);
+    cg.add(leg);
+  });
+
+  // Invisible interaction proxy
+  const cProxy = new THREE.Mesh(
+    new THREE.BoxGeometry(2.5, 0.9, 1.0),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  cProxy.position.set(0, 0.4, 0);
+  const sitW = new THREE.Vector3(0, 0.95, 0.15)
+    .applyAxisAngle(new THREE.Vector3(0,1,0), rotY)
+    .add(new THREE.Vector3(cx, 0, cz));
+  cProxy.userData = { type: 'sit', label: 'Sit Down (Couch)', sitPos: sitW, sitYaw: rotY + Math.PI };
+  allInteractables.push(cProxy);
+  cg.add(cProxy);
+
+  entranceGroup.add(cg);
+  // Couch collision (offset to the back half to prevent getting stuck when standing up)
+  addCol(cx, 0.45, cz - 0.2, 2.5, 0.9, 0.6);
+}
+
+// Small side table next to couch
+{
+  place(mkBox(0.55, 0.04, 0.55, deskWoodMat), 1.1, 0.58, -25.5);
+  place(mkCyl(0.03, 0.56, chairMetal, 8), 1.1, 0.28, -25.5);
+  // Coffee mug on table
+  place(mkCyl(0.055, 0.1, new THREE.MeshStandardMaterial({ color: 0xcc4422, roughness: 0.7, metalness: 0.2 }), 10), 1.1, 0.655, -25.5);
+}
+
+// Decorative plant
+{
+  const potMat = new THREE.MeshStandardMaterial({ color: 0xccbb88, roughness: 0.9, metalness: 0.05 });
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.16, 0.42, 14), potMat);
+  place(pot, -1.7, 0.21, -26.8);
+  // Soil top
+  const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.04, 14),
+    new THREE.MeshStandardMaterial({ color: 0x3a2a14, roughness: 1.0, metalness: 0.0 }));
+  place(soil, -1.7, 0.44, -26.8);
+  addCol(-1.7, 0.21, -26.8, 0.5, 0.5, 0.5);
+  // Leaves
+  for (let i = 0; i < 8; i++) {
+    const leaf = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.3 + Math.random()*0.25, 0.7 + Math.random()*0.3),
+      new THREE.MeshStandardMaterial({ color: 0x2d8a3e, roughness: 0.9, metalness: 0.0, side: THREE.DoubleSide })
+    );
+    leaf.position.set(-1.7, 0.75 + Math.random()*0.25, -26.8);
+    leaf.rotation.y = (i / 8) * Math.PI * 2;
+    leaf.rotation.x = -Math.PI / 6 - Math.random() * 0.2;
+    scene.add(leaf);
+  }
+}
+
+// Wall painting
+{
+  const paintMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.1),
+    new THREE.MeshBasicMaterial({ color: 0xff9944 }));
+  paintMesh.position.set(-1.98, 2.0, -24.8);
+  paintMesh.rotation.y = Math.PI / 2;
+  scene.add(paintMesh);
+  const pFrame2 = mkBox(0.05, 1.18, 1.88, new THREE.MeshLambertMaterial({ color: 0x111111 }));
+  pFrame2.position.set(-1.99, 2.0, -24.8);
+  scene.add(pFrame2);
+  // Inner abstract accent stripe
+  const stripe1 = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.12),
+    new THREE.MeshBasicMaterial({ color: 0x2255cc }));
+  stripe1.position.set(-1.975, 1.88, -24.8);
+  stripe1.rotation.y = Math.PI / 2;
+  scene.add(stripe1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPUTER WORKSTATION — full desk + monitor + keyboard + mouse + CPU + chair
+// Position: x≈2.5, z≈-24, facing west (player sits behind, looks at monitor)
+// ─────────────────────────────────────────────────────────────────────────────
+{
+  const WX = 2.5, WZ = -23.5;  // workstation center
+
+  // ── Desk ────────────────────────────────────────────────────────────────────
+  // Main tabletop
+  const dtop = mkBox(1.9, 0.06, 1.0, deskWoodMat);
+  dtop.position.set(WX, 0.78, WZ);
+  scene.add(dtop);
+
+  // Modesty panel (front face)
+  const dfront = mkBox(1.9, 0.74, 0.04, deskMetalMat);
+  dfront.position.set(WX, 0.39, WZ + 0.48);
+  scene.add(dfront);
+
+  // Left side panel
+  const dleft = mkBox(0.04, 0.78, 1.0, deskMetalMat);
+  dleft.position.set(WX - 0.93, 0.39, WZ);
+  scene.add(dleft);
+
+  // Right side panel
+  const dright = mkBox(0.04, 0.78, 1.0, deskMetalMat);
+  dright.position.set(WX + 0.93, 0.39, WZ);
+  scene.add(dright);
+
+  // Under-shelf
+  const dshelf = mkBox(1.86, 0.04, 0.88, deskWoodMat);
+  dshelf.position.set(WX, 0.38, WZ);
+  scene.add(dshelf);
+
+  // Cable management trough (back edge of desk)
+  const dcable = mkBox(1.7, 0.04, 0.06, deskMetalMat);
+  dcable.position.set(WX, 0.81, WZ - 0.45);
+  scene.add(dcable);
+
+  // Desk collision
+  addCol(WX, 0.42, WZ, 1.9, 0.82, 1.0);
+
+  // ── Monitor ─────────────────────────────────────────────────────────────────
+  // Monitor stand arm
+  const mArm = mkBox(0.05, 0.28, 0.05, deskMetalMat);
+  mArm.position.set(WX, 0.93, WZ - 0.2);
+  scene.add(mArm);
+  const mArmBase = mkBox(0.22, 0.03, 0.18, deskMetalMat);
+  mArmBase.position.set(WX, 0.8, WZ - 0.2);
+  scene.add(mArmBase);
+  const mArmHingeH = mkBox(0.18, 0.04, 0.04, deskMetalMat);
+  mArmHingeH.position.set(WX, 1.07, WZ - 0.22);
+  scene.add(mArmHingeH);
+
+  // Monitor bezel
+  const mBezel = mkBox(0.92, 0.58, 0.055, monitorMat);
+  mBezel.position.set(WX, 1.32, WZ - 0.24);
+  scene.add(mBezel);
+
+  // Screen face — emissive blue glow (interactive)
+  const screenMat = new THREE.MeshStandardMaterial({
+    color: 0x0a1f3a,
+    emissive: new THREE.Color(0x153060),
+    emissiveIntensity: 1.4,
+    roughness: 0.1,
+    metalness: 0.2
+  });
+  const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 0.50), screenMat);
+  screenMesh.position.set(WX, 1.32, WZ - 0.215);
+  scene.add(screenMesh);
+
+  // Screen scanlines (aesthetic plane)
+  const scanMat = new THREE.MeshBasicMaterial({ color: 0x4499ff, transparent: true, opacity: 0.08 });
+  const scanMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 0.50), scanMat);
+  scanMesh.position.set(WX, 1.32, WZ - 0.212);
+  scene.add(scanMesh);
+
+  // Screen glow light
+  const screenGlow = new THREE.PointLight(0x2266ff, 0.9, 3.5);
+  screenGlow.position.set(WX, 1.3, WZ - 0.2);
+  scene.add(screenGlow);
+
+  // Monitor interaction proxy — clicking the screen opens the computer UI
+  const monProxy = new THREE.Mesh(
+    new THREE.BoxGeometry(0.92, 0.58, 0.1),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  monProxy.position.set(WX, 1.32, WZ - 0.2);
+  monProxy.userData = { 
+    type: 'computer', 
+    label: 'Use Entrance Terminal',
+    compPos: new THREE.Vector3(2.5, 1.10, -22.83),
+    compRot: new THREE.Euler(-0.05, 0, 0, 'YXZ')
+  };
+  allInteractables.push(monProxy);
+  scene.add(monProxy);
+
+  // Monitor power LED
+  const mLED = new THREE.Mesh(
+    new THREE.CircleGeometry(0.012, 8),
+    new THREE.MeshBasicMaterial({ color: 0x00ff88 })
+  );
+  mLED.position.set(WX + 0.38, 1.07, WZ - 0.218);
+  scene.add(mLED);
+
+  // ── Keyboard ────────────────────────────────────────────────────────────────
+  const kbBase = mkBox(0.52, 0.018, 0.22, new THREE.MeshStandardMaterial({ color: 0x1a1e24, roughness: 0.6, metalness: 0.3 }));
+  kbBase.position.set(WX, 0.808, WZ + 0.12);
+  scene.add(kbBase);
+
+  // Key rows (decorative)
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 12; col++) {
+      const key = mkBox(0.033, 0.012, 0.033, new THREE.MeshStandardMaterial({ color: 0x2a2e38, roughness: 0.7, metalness: 0.2 }));
+      key.position.set(WX - 0.22 + col * 0.04, 0.82, WZ + 0.02 + row * 0.042);
+      scene.add(key);
+    }
+  }
+
+  // ── Mouse ────────────────────────────────────────────────────────────────────
+  const mousePad = mkBox(0.22, 0.006, 0.18, new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.95, metalness: 0.0 }));
+  mousePad.position.set(WX + 0.36, 0.806, WZ + 0.12);
+  scene.add(mousePad);
+
+  const mouseBody = new THREE.Mesh(
+    new THREE.BoxGeometry(0.065, 0.028, 0.11),
+    new THREE.MeshStandardMaterial({ color: 0x22282f, roughness: 0.5, metalness: 0.4 })
+  );
+  mouseBody.position.set(WX + 0.36, 0.822, WZ + 0.12);
+  scene.add(mouseBody);
+
+  // Mouse scroll wheel
+  const mWheel = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.009, 0.009, 0.038, 8),
+    new THREE.MeshStandardMaterial({ color: 0x555566, roughness: 0.4, metalness: 0.7 })
+  );
+  mWheel.rotation.x = Math.PI / 2;
+  mWheel.position.set(WX + 0.36, 0.834, WZ + 0.11);
+  scene.add(mWheel);
+
+  // ── CPU Tower ───────────────────────────────────────────────────────────────
+  const cpuBody = mkBox(0.2, 0.46, 0.44, new THREE.MeshStandardMaterial({ color: 0x18202a, roughness: 0.6, metalness: 0.5 }));
+  cpuBody.position.set(WX + 0.77, 0.41, WZ + 0.0);
+  scene.add(cpuBody);
+  addCol(WX + 0.77, 0.41, WZ, 0.2, 0.46, 0.44);
+
+  // CPU vents (stripe pattern)
+  for (let i = 0; i < 5; i++) {
+    const vent = mkBox(0.205, 0.018, 0.28, new THREE.MeshStandardMaterial({ color: 0x0d141c, roughness: 0.8, metalness: 0.3 }));
+    vent.position.set(WX + 0.77, 0.28 + i * 0.06, WZ + 0.0);
+    scene.add(vent);
+  }
+
+  // CPU power LED
+  const cpuLED = new THREE.Mesh(
+    new THREE.CircleGeometry(0.01, 8),
+    new THREE.MeshBasicMaterial({ color: 0x0066ff })
+  );
+  cpuLED.rotation.y = -Math.PI / 2;
+  cpuLED.position.set(WX + 0.66, 0.6, WZ + 0.08);
+  scene.add(cpuLED);
+
+  // ── Paper / notebook on desk ─────────────────────────────────────────────────
+  const notepad = mkBox(0.18, 0.008, 0.24, new THREE.MeshLambertMaterial({ color: 0xf5f0e8 }));
+  notepad.position.set(WX - 0.5, 0.804, WZ + 0.1);
+  notepad.rotation.y = 0.15;
+  scene.add(notepad);
+
+  const pen = mkBox(0.01, 0.01, 0.16, new THREE.MeshLambertMaterial({ color: 0x1133cc }));
+  pen.position.set(WX - 0.43, 0.812, WZ + 0.06);
+  pen.rotation.y = 0.3;
+  scene.add(pen);
+
+  // ── Ergonomic Desk Chair ─────────────────────────────────────────────────────
+  // Chair sits SOUTH of the desk, facing NORTH (toward the monitor)
+  // WZ = -23.5 (desk centre). Desk front panel is at WZ+0.48 = -23.02.
+  // Chair centre at WZ + 0.85 = -22.65  (pulled away from desk a bit more)
+  const CHX = WX;           // same X as desk centre (2.5)
+  const CHZ = WZ + 0.88;   // south of desk front panel
+
+  // Seat
+  const cSeat = new THREE.Mesh(
+    new THREE.BoxGeometry(0.58, 0.08, 0.56),
+    chairFabric
+  );
+  cSeat.position.set(CHX, 0.5, CHZ);
+  scene.add(cSeat);
+
+  // Front bevel of seat (south/front edge curves down slightly)
+  const cSeatFront = mkBox(0.58, 0.04, 0.06, chairFabric);
+  cSeatFront.position.set(CHX, 0.47, CHZ + 0.25);  // south front of seat
+  cSeatFront.rotation.x = 0.3;  // tilt slightly downward
+  scene.add(cSeatFront);
+
+  // Backrest — on SOUTH side (back of chair = away from desk)
+  const cBack = new THREE.Mesh(
+    new THREE.BoxGeometry(0.55, 0.72, 0.07),
+    chairFabric
+  );
+  cBack.position.set(CHX, 0.98, CHZ + 0.25);  // south side = CHZ + offset
+  cBack.rotation.x = 0.08;   // lean slightly backward (away from desk)
+  scene.add(cBack);
+
+  // Lumbar support on south side backrest
+  const cLumbar = new THREE.Mesh(
+    new THREE.BoxGeometry(0.4, 0.18, 0.06),
+    new THREE.MeshStandardMaterial({ color: 0x131c25, roughness: 0.9, metalness: 0.05 })
+  );
+  cLumbar.position.set(CHX, 0.74, CHZ + 0.258);
+  scene.add(cLumbar);
+
+  // Headrest — above backrest on south side
+  const cHead = new THREE.Mesh(
+    new THREE.BoxGeometry(0.32, 0.22, 0.07),
+    chairFabric
+  );
+  cHead.position.set(CHX, 1.40, CHZ + 0.26);
+  scene.add(cHead);
+
+  // Armrests (horizontal pads, running north-south)
+  [-0.30, 0.30].forEach(ax => {
+    // Horizontal pad
+    const armPad = mkBox(0.065, 0.025, 0.40, chairFabric);
+    armPad.position.set(CHX + ax, 0.69, CHZ);
+    scene.add(armPad);
+    // Vertical post (connects seat to pad, on the back half)
+    const armPost = mkBox(0.045, 0.20, 0.045, chairMetal);
+    armPost.position.set(CHX + ax, 0.59, CHZ + 0.12);
+    scene.add(armPost);
+  });
+
+  // Pneumatic piston (centre column)
+  const cPiston = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.044, 0.46, 10), chairMetal);
+  cPiston.position.set(CHX, 0.25, CHZ);
+  scene.add(cPiston);
+
+  // 5-star base with caster wheels
+  for (let i = 0; i < 5; i++) {
+    const ang = (i / 5) * Math.PI * 2;
+    const starArm = mkBox(0.38, 0.028, 0.055, chairMetal);
+    starArm.position.set(CHX + Math.sin(ang) * 0.19, 0.025, CHZ + Math.cos(ang) * 0.19);
+    starArm.rotation.y = ang;
+    scene.add(starArm);
+    const caster = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.03, 8), M.black);
+    caster.position.set(CHX + Math.sin(ang) * 0.34, 0.015, CHZ + Math.cos(ang) * 0.34);
+    scene.add(caster);
+  }
+
+  // Chair collision (offset to the backrest so the seat is clear)
+  addCol(CHX, 0.45, CHZ + 0.2, 0.65, 0.9, 0.3);
+}
 
 // ── DOOR CLASS ────────────────────────────────────────────────────────────────
 
