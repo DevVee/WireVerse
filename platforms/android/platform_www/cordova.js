@@ -19,7 +19,7 @@
  under the License.
 */
 ;(function() {
-var PLATFORM_VERSION_BUILD_LABEL = '13.0.0';
+var PLATFORM_VERSION_BUILD_LABEL = '15.0.0';
 // file: src/scripts/require.js
 var require;
 var define;
@@ -986,7 +986,7 @@ function androidExec (success, fail, service, action, args) {
     var callbackId = service + cordova.callbackId++;
     var argsJson = JSON.stringify(args);
     if (success || fail) {
-        cordova.callbacks[callbackId] = { success: success, fail: fail };
+        cordova.callbacks[callbackId] = { success, fail };
     }
 
     var msgs = nativeApiProvider.get().exec(bridgeSecret, service, action, callbackId, argsJson);
@@ -1025,6 +1025,8 @@ function pollOnce (opt_fromOnlineEvent) {
         processMessages();
     }
 }
+
+androidExec.pollOnce = pollOnce;
 
 function pollingTimerFunc () {
     if (pollEnabled) {
@@ -1429,6 +1431,10 @@ module.exports = {
         // Core Splash Screen
         modulemapper.clobbers('cordova/plugin/android/splashscreen', 'navigator.splashscreen');
 
+        // Attach the internal statusBar utility to window.statusbar
+        // see the file under plugin/android/statusbar.js
+        modulemapper.clobbers('cordova/plugin/android/statusbar', 'window.statusbar');
+
         var APP_PLUGIN_NAME = Number(cordova.platformVersion.split('.')[0]) >= 4 ? 'CoreAndroid' : 'App';
 
         // Inject a listener for the backbutton on the document.
@@ -1531,14 +1537,14 @@ module.exports = {
     },
 
     /**
-    * Load the url into the webview or into new browser instance.
+    * Load the url into the WebView or into new browser instance.
     *
     * @param url           The URL to load
     * @param props         Properties that can be passed in to the activity:
     *      wait: int                           => wait msec before loading URL
     *      loadingDialog: "Title,Message"      => display a native loading dialog
     *      loadUrlTimeoutValue: int            => time in msec to wait before triggering a timeout error
-    *      clearHistory: boolean              => clear webview history (default=false)
+    *      clearHistory: boolean              => clear WebView history (default=false)
     *      openExternal: boolean              => open in a new browser (default=false)
     *
     * Example:
@@ -1624,6 +1630,85 @@ var splashscreen = {
 };
 
 module.exports = splashscreen;
+
+});
+
+// file: ../../cordova-js-src/plugin/android/statusbar.js
+define("cordova/plugin/android/statusbar", function(require, exports, module) {
+
+var exec = require('cordova/exec');
+
+var statusBarVisible = true;
+var statusBar = {};
+
+// This <script> element is explicitly used by Cordova's statusbar for computing color. (Do not use this element)
+const statusBarScript = document.createElement('script');
+document.head.appendChild(statusBarScript);
+
+Object.defineProperty(statusBar, 'visible', {
+    configurable: false,
+    enumerable: true,
+    get: function () {
+        if (window.StatusBar) {
+            // try to let the StatusBar plugin handle it
+            return window.StatusBar.isVisible;
+        }
+
+        return statusBarVisible;
+    },
+    set: function (value) {
+        if (window.StatusBar) {
+            // try to let the StatusBar plugin handle it
+            if (value) {
+                window.StatusBar.show();
+            } else {
+                window.StatusBar.hide();
+            }
+        } else {
+            statusBarVisible = value;
+            exec(null, null, 'SystemBarPlugin', 'setStatusBarVisible', [!!value]);
+        }
+    }
+});
+
+Object.defineProperty(statusBar, 'setBackgroundColor', {
+    configurable: false,
+    enumerable: false,
+    writable: false,
+    value: function (value) {
+        statusBarScript.style.color = value;
+        var rgbStr = window.getComputedStyle(statusBarScript).getPropertyValue('color');
+
+        if (!rgbStr.match(/^rgb/)) { return; }
+
+        var rgbVals = rgbStr.match(/\d+/g).map(function (v) { return parseInt(v, 10); });
+
+        if (rgbVals.length < 3) {
+            return;
+        } else if (rgbVals.length === 3) {
+            rgbVals = [255].concat(rgbVals);
+        }
+
+        // TODO: Use `padStart(2, '0')` once SDK 24 is dropped.
+        const padRgb = (val) => {
+            const hex = val.toString(16);
+            return hex.length === 1 ? '0' + hex : hex;
+        };
+        const a = padRgb(rgbVals[0]);
+        const r = padRgb(rgbVals[1]);
+        const g = padRgb(rgbVals[2]);
+        const b = padRgb(rgbVals[3]);
+        const hexStr = '#' + a + r + g + b;
+
+        if (window.StatusBar) {
+            window.StatusBar.backgroundColorByHexString(hexStr);
+        } else {
+            exec(null, null, 'SystemBarPlugin', 'setStatusBarBackgroundColor', rgbVals);
+        }
+    }
+});
+
+module.exports = statusBar;
 
 });
 

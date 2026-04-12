@@ -11,44 +11,20 @@ import {
   cableStations,
   oscWave1, oscWave2, updateOscilloscopes,
   wireObjects, scenarioTerminals, validationBoard,
+  workshopWiringStations,
   M
 } from './world.js';
+import { updateOutlets, markOutletFixed, outletSockets } from './outlets.js';
+import { initOutletScenario, openOutlet, closeOutlet } from './outlet-scenario.js';
+import { initSwitchScenario, openSwitch, closeSwitch } from './switch-scenario.js';
+import { initSwitches, switchStations, switchProxies, markSwitchFixed, drawSwitchMinimap } from './switches.js';
 import { Player, updatePlayer, getRoom, isMobile } from './player.js';
 
-// ══════════════════════════════════════════════════════════════════════════════
-// TOOL SYSTEM
-// ══════════════════════════════════════════════════════════════════════════════
-const TOOLS = {
-  wire_stripper:  { id: 'wire_stripper',  label: 'Wire Stripper',  applicableTo: ['wire-object']     },
-  screwdriver:    { id: 'screwdriver',    label: 'Screwdriver',    applicableTo: ['terminal-block']  },
-  multimeter:     { id: 'multimeter',     label: 'Multimeter',     applicableTo: ['multimeter','validate-board'] },
-  pliers:         { id: 'pliers',         label: 'Pliers',         applicableTo: ['wire-object']     },
-  voltage_tester: { id: 'voltage_tester', label: 'Voltage Tester', applicableTo: ['validate-board']  },
-};
 
-// activeTool is now a string key from TOOLS, or null (no tool)
-let activeTool = null;
+// Global Audio for menu.js
+window.GameAudio = Audio;
 
-function getToolLabel() {
-  return activeTool ? TOOLS[activeTool]?.label ?? activeTool : 'None';
-}
 
-// ── Update the persistent tool indicator in HUD ───────────────────────────────
-function updateToolHUD() {
-  const el = document.getElementById('toolIndicator');
-  if (!el) return;
-  if (activeTool) {
-    el.textContent = `🔧 ${getToolLabel()}`;
-    el.style.opacity = '1';
-    el.style.borderColor = 'rgba(255,184,0,0.7)';
-    el.style.color = '#FFB800';
-  } else {
-    el.textContent = 'No tool equipped';
-    el.style.opacity = '0.45';
-    el.style.borderColor = 'rgba(255,255,255,0.15)';
-    el.style.color = '#8899aa';
-  }
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // FEEDBACK LOG
@@ -76,250 +52,7 @@ function errorFlash() {
   el._t = setTimeout(() => { el.style.opacity = '0'; }, 350);
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// SCENARIO MANAGER — S01: Basic Panel Wiring
-// ══════════════════════════════════════════════════════════════════════════════
-const SCENARIO_S01 = [
-  { id: 's1_pickup_stripper', instruction: 'Step 1 — Pick up the Wire Stripper from the tool rack.',    done: false },
-  { id: 's1_strip_L',         instruction: 'Step 2 — Strip the BROWN wire (L — Line).',                 done: false },
-  { id: 's1_strip_N',         instruction: 'Step 3 — Strip the BLUE wire (N — Neutral).',               done: false },
-  { id: 's1_strip_PE',        instruction: 'Step 4 — Strip the GRN/YLW wire (PE — Earth).',             done: false },
-  { id: 's1_pickup_driver',   instruction: 'Step 5 — Return stripper. Pick up the Screwdriver.',        done: false },
-  { id: 's1_conn_L',          instruction: 'Step 6 — Connect BROWN wire → Terminal L.',                 done: false },
-  { id: 's1_conn_N',          instruction: 'Step 7 — Connect BLUE wire → Terminal N.',                  done: false },
-  { id: 's1_conn_PE',         instruction: 'Step 8 — Connect GRN/YLW wire → Terminal PE.',              done: false },
-  { id: 's1_pickup_meter',    instruction: 'Step 9 — Pick up the Multimeter.',                          done: false },
-  { id: 's1_measure',         instruction: 'Step 10 — Measure voltage at the terminal block.',          done: false },
-  { id: 's1_validate',        instruction: 'Step 11 — Press VALIDATE at the testing station.',         done: false },
-];
 
-const ScenarioManager = {
-  steps:       SCENARIO_S01,
-  currentIdx:  0,
-  active:      false,
-
-  start() {
-    this.steps.forEach(s => { s.done = false; });
-    this.currentIdx = 0;
-    this.active = true;
-    this.updateHUD();
-    feedbackLog('S01 Basic Panel Wiring — STARTED', 'ok');
-    notify('SCENARIO S01: Basic Panel Wiring — Follow the steps!', 4000);
-  },
-
-  current() {
-    return this.steps[this.currentIdx] || null;
-  },
-
-  advance(stepId) {
-    const step = this.steps[this.currentIdx];
-    if (!step || step.id !== stepId) return false;
-    step.done = true;
-    this.currentIdx++;
-    feedbackLog(`✓ ${step.instruction.replace(/^Step \d+ — /, '')}`, 'ok');
-    if (this.currentIdx >= this.steps.length) {
-      this._complete();
-    } else {
-      notify(this.steps[this.currentIdx].instruction, 4500);
-      this.updateHUD();
-    }
-    return true;
-  },
-
-  _complete() {
-    this.active = false;
-    validationBoard.leds.forEach(l => {
-      l.ledMat.color.setHex(0x00ff44);
-      l.glow.intensity = 1.8;
-      l.lit = true;
-    });
-    validationBoard.allGreen = true;
-    feedbackLog('🎓 SCENARIO S01 COMPLETE — All steps passed!', 'ok');
-    notify('SCENARIO S01 COMPLETE — Excellent work!', 6000);
-    if (Audio.ctx) Audio.success();
-    completeTask('dol_wiring');
-    this.updateHUD();
-  },
-
-  // Check if a given stepId is the current one
-  expects(stepId) {
-    const s = this.current();
-    return s ? s.id === stepId : false;
-  },
-
-  updateHUD() {
-    const stepEl = document.getElementById('stepProgress');
-    if (!stepEl) return;
-    if (!this.active) {
-      stepEl.textContent = this.currentIdx >= this.steps.length
-        ? '✓ Scenario S01 Complete'
-        : 'S01: Basic Panel Wiring (press T for tasks)';
-      return;
-    }
-    const cur = this.current();
-    if (cur) {
-      stepEl.textContent = `${cur.instruction}`;
-    }
-  },
-};
-
-// Auto-start S01 on load
-window._scenarioReady = false;
-function maybeStartScenario() {
-  if (!window._scenarioReady) {
-    window._scenarioReady = true;
-    ScenarioManager.start();
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// INTERACTION ENGINE
-// Evaluates (activeTool, objectType, objectState) → action OR failure
-// ══════════════════════════════════════════════════════════════════════════════
-const InteractionEngine = {
-  apply(tool, ud) {
-    const objType = ud.type;
-
-    // ── tool-pickup: no tool needed ──────────────────────────────────────────
-    if (objType === 'tool-pickup') {
-      return this._pickupTool(ud);
-    }
-
-    // ── schematic: no tool needed ─────────────────────────────────────────────
-    if (objType === 'schematic') {
-      return { ok: true, action: 'show-schematic' };
-    }
-
-    // ── validate-board: needs multimeter or voltage_tester ────────────────────
-    if (objType === 'validate-board') {
-      return this._runValidation(tool);
-    }
-
-    // ── wire-object: needs wire_stripper ──────────────────────────────────────
-    if (objType === 'wire-object') {
-      return this._applyToWire(tool, ud);
-    }
-
-    // ── terminal-block: needs screwdriver ─────────────────────────────────────
-    if (objType === 'terminal-block') {
-      return this._applyToTerminal(tool, ud);
-    }
-
-    // ── multimeter / oscilloscope direct ──────────────────────────────────────
-    if (objType === 'multimeter') {
-      if (tool === 'multimeter') {
-        const v = (230 + (Math.random() - .5) * 8).toFixed(1);
-        const f = (50 + (Math.random() - .5) * .4).toFixed(2);
-        feedbackLog(`METER: ${v}V AC  ${f}Hz — nominal`, 'ok');
-        if (ScenarioManager.expects('s1_measure')) ScenarioManager.advance('s1_measure');
-        return { ok: true, msg: `${v}V AC  ${f}Hz` };
-      } else {
-        return { ok: false, msg: `Equip the Multimeter to take readings` };
-      }
-    }
-
-    return null; // Not handled here — let doInteract fall through
-  },
-
-  _pickupTool(ud) {
-    const prev = activeTool;
-    activeTool = ud.toolId;
-    updateToolHUD();
-    feedbackLog(`Picked up: ${TOOLS[ud.toolId]?.label ?? ud.toolId}`, 'info');
-
-    // Scenario step advancement
-    if (ud.toolId === 'wire_stripper' && ScenarioManager.expects('s1_pickup_stripper')) {
-      ScenarioManager.advance('s1_pickup_stripper');
-    } else if (ud.toolId === 'screwdriver' && ScenarioManager.expects('s1_pickup_driver')) {
-      ScenarioManager.advance('s1_pickup_driver');
-    } else if (ud.toolId === 'multimeter' && ScenarioManager.expects('s1_pickup_meter')) {
-      ScenarioManager.advance('s1_pickup_meter');
-    }
-
-    return { ok: true, msg: `Tool equipped: ${TOOLS[ud.toolId]?.label ?? ud.toolId}` };
-  },
-
-  _applyToWire(tool, ud) {
-    if (!tool) {
-      return { ok: false, msg: `No tool equipped — select Wire Stripper from the rack first.` };
-    }
-    if (tool !== 'wire_stripper') {
-      return { ok: false, msg: `Wrong tool — use Wire Stripper to strip wires, not ${TOOLS[tool]?.label ?? tool}.` };
-    }
-    if (ud.state === 'stripped' || ud.state === 'connected') {
-      return { ok: false, msg: `Wire ${ud.wireId} is already stripped.`, already: true };
-    }
-    // SUCCESS — strip the wire
-    ud.state = 'stripped';
-    ud.wireMesh.material.color.setHex(ud.strippedColor);
-    if (ud.insMesh) ud.insMesh.visible = false; // remove insulation tip
-    feedbackLog(`Stripped wire ${ud.wireId} — copper exposed`, 'ok');
-
-    const stepMap = { L: 's1_strip_L', N: 's1_strip_N', PE: 's1_strip_PE' };
-    if (stepMap[ud.wireId] && ScenarioManager.expects(stepMap[ud.wireId])) {
-      ScenarioManager.advance(stepMap[ud.wireId]);
-    }
-    return { ok: true, msg: `Wire ${ud.wireId} stripped — copper exposed.` };
-  },
-
-  _applyToTerminal(tool, ud) {
-    if (!tool) {
-      return { ok: false, msg: `No tool equipped — pick up the Screwdriver first.` };
-    }
-    if (tool !== 'screwdriver') {
-      return { ok: false, msg: `Wrong tool — Screwdriver needed to tighten terminals.` };
-    }
-    // Check the corresponding wire is stripped
-    const wireObj = wireObjects.find(w => w.id === ud.terminalId);
-    if (!wireObj || wireObj.proxy.userData.state !== 'stripped') {
-      return { ok: false, msg: `Wire ${ud.terminalId} must be stripped before connecting to terminal.` };
-    }
-    if (ud.state === 'tightened') {
-      return { ok: false, msg: `Terminal ${ud.terminalId} already secured.`, already: true };
-    }
-    // SUCCESS
-    const terminalColor = ud.terminalId === 'L' ? 0xcc2200 : ud.terminalId === 'N' ? 0x2244cc : 0x228822;
-    ud.wirePlaceholderMat.color.setHex(terminalColor);
-    ud.state = 'tightened';
-    ud.wireMesh && (ud.wireMesh.material.color.setHex(terminalColor));
-    wireObj.proxy.userData.state = 'connected';
-    feedbackLog(`Terminal ${ud.terminalId} — wire secured and tightened ✓`, 'ok');
-
-    const stepMap = { L: 's1_conn_L', N: 's1_conn_N', PE: 's1_conn_PE' };
-    if (stepMap[ud.terminalId] && ScenarioManager.expects(stepMap[ud.terminalId])) {
-      ScenarioManager.advance(stepMap[ud.terminalId]);
-    }
-    return { ok: true, msg: `Terminal ${ud.terminalId} secured.` };
-  },
-
-  _runValidation(tool) {
-    if (!tool || (tool !== 'multimeter' && tool !== 'voltage_tester')) {
-      return { ok: false, msg: `Equip Multimeter or Voltage Tester to run validation.` };
-    }
-    // Check all wires connected
-    const allConnected = wireObjects.every(w =>
-      w.proxy.userData.state === 'connected' || w.proxy.userData.state === 'stripped'
-    );
-    const allTightened = scenarioTerminals.every(t => t.proxy.userData.state === 'tightened');
-
-    if (!allConnected || !allTightened) {
-      const missing = scenarioTerminals.filter(t => t.proxy.userData.state !== 'tightened').map(t => t.termId).join(', ');
-      return { ok: false, msg: `Incomplete — terminals not all secured: ${missing || 'check your work'}` };
-    }
-
-    // Light up each LED one at a time with delay
-    validationBoard.leds.forEach((l, i) => {
-      setTimeout(() => {
-        l.ledMat.color.setHex(0x00ff44);
-        l.glow.intensity = 1.8;
-        l.lit = true;
-      }, i * 400);
-    });
-
-    if (ScenarioManager.expects('s1_validate')) ScenarioManager.advance('s1_validate');
-    return { ok: true, msg: 'Validation PASSED — all checks green.' };
-  },
-};
 
 // ── ELECTRICAL STATE ──────────────────────────────────────────────────────────
 const ES = {
@@ -385,84 +118,93 @@ function setHUD(id, on) {
 const TASKS = {
   daily: [
     {
-      id: 'morning_inspection',
-      title: 'Morning Inspection',
-      desc: 'Check all breaker panels (click each panel breaker)',
-      location: 'Various',
+      id: 'safety_briefing',
+      title: 'Safety Briefing',
+      desc: 'Read the safety rules poster in the Lobby, then check the PPE rack in the Tool Room',
+      location: 'Lobby → Tool Room',
+      completed: false,
+    },
+    {
+      id: 'module_lesson',
+      title: 'Study Module Lesson',
+      desc: 'Enter the Classroom and read the whiteboard / projector slide for today\'s module',
+      location: 'Classroom',
+      completed: false,
+    },
+    {
+      id: 'panel_inspection',
+      title: 'Panel Room Inspection',
+      desc: 'Check all breaker panels in the Panel Distribution Room (click each panel breaker)',
+      location: 'Panel / Distribution Room',
       completed: false,
       subtasks: [
         { panel: 'main-panel', checked: false },
-        { panel: 'dist-a', checked: false },
-        { panel: 'dist-b', checked: false },
-        { panel: 'workshop', checked: false },
+        { panel: 'dist-a',    checked: false },
+        { panel: 'dist-b',    checked: false },
+        { panel: 'workshop',  checked: false },
       ]
     },
     {
-      id: 'generator_test',
-      title: 'Generator Test',
-      desc: 'Start generator and verify RPM ≥ 1400',
-      location: 'Generator Room',
+      id: 'dol_wiring',
+      title: 'DOL Motor Wiring',
+      desc: 'Connect 3-phase supply wires (L, N, PE) to terminal block at the Wiring Lab station',
+      location: 'Wiring Lab — Station B',
+      completed: false,
+    },
+    {
+      id: 'motor_control',
+      title: 'Motor Control Operation',
+      desc: 'Press START on the DOL panel in the Motor Control Lab and observe motor running',
+      location: 'Motor Control Lab',
       completed: false,
       _rpmCheckTimeout: null,
     },
     {
-      id: 'cable_check',
-      title: 'Cable Terminal Check',
-      desc: 'Verify all 3 wire terminal stations in Workshop',
-      location: 'Workshop',
-      completed: false,
-    },
-    {
-      id: 'scada_monitoring',
-      title: 'SCADA System Check',
-      desc: 'Activate all 3 monitoring terminals in Control Center',
-      location: 'Control Center',
-      completed: false,
-    },
-    {
-      id: 'utility_check',
-      title: 'Utility Room Check',
-      desc: 'Inspect the utility room and stairwell area',
-      location: 'Utility Room',
-      completed: false,
-    },
-    {
-      id: 'dol_wiring',
-      title: 'DOL Motor Starter',
-      desc: 'Connect 3-phase supply to motor terminals at Station B',
-      location: 'Workshop',
-      completed: false,
-    },
-    {
       id: 'schematic_quiz',
-      title: 'Schematic Reading Quiz',
-      desc: 'Answer 3 schematic questions at Station C',
-      location: 'Workshop',
+      title: 'Schematic Reading',
+      desc: 'View and identify the DOL Motor Control circuit diagram on the schematic board',
+      location: 'Motor Control Lab — North Wall',
+      completed: false,
+    },
+    {
+      id: 'cable_check',
+      title: 'Wire Terminal Check',
+      desc: 'Verify all 3 wire terminal stations in the Wiring Lab are correctly terminated',
+      location: 'Wiring Lab',
       completed: false,
     },
     {
       id: 'component_id',
-      title: 'Component Identifier',
-      desc: 'Identify all 6 electrical components at Station D',
-      location: 'Workshop',
+      title: 'Component Identification',
+      desc: 'Identify contactor, overload relay, and push-button on the DOL panel',
+      location: 'Motor Control Lab',
       completed: false,
     },
     {
-      id: 'server_fault',
-      title: 'Server Rack Fault',
-      desc: 'Reset tripped breakers in both server racks',
-      location: 'Workshop',
+      id: 'assessment',
+      title: 'Competency Assessment',
+      desc: 'Complete the validation check at the Assessment Room testing station',
+      location: 'Assessment Room',
       completed: false,
     },
     {
-      id: 'junction_wiring',
-      title: 'Junction Box Wiring',
-      desc: 'Wire junction box correctly at Station E',
-      location: 'Workshop',
+      id: 'instructor_check',
+      title: 'Instructor Sign-Off',
+      desc: 'Visit the Faculty Room and use the Instructor Terminal to submit your work',
+      location: 'Faculty / Instructor Room',
       completed: false,
+    },
+    {
+      id: 'outlet_repair',
+      title: 'Outlet Fault Repair',
+      desc: 'Find and repair all 5 broken electrical outlets scattered across the facility. Approach each glowing socket and press E / tap FIX.',
+      location: 'Lobby · Wiring Lab · Corridor · Control Room · Tool Room',
+      completed: false,
+      _fixedCount: 0,
     },
   ]
 };
+
 
 let activeTask = null;
 let taskStartTime = 0;
@@ -499,23 +241,35 @@ function updateTaskDisplay() {
   if (!list) return;
   list.innerHTML = '';
   TASKS.daily.forEach(task => {
+    const isActive = activeTask?.id === task.id;
     const div = document.createElement('div');
-    div.className = 'task-item';
     div.style.cssText = `
-      padding:8px 10px;margin:4px 0;
-      background:${task.completed ? '#152a1e' : (activeTask?.id === task.id ? '#1e2a3a' : '#1e1e2a')};
-      border-left:3px solid ${task.completed ? '#44ff88' : (activeTask?.id === task.id ? '#4488ff' : '#ff9944')};
-      font-size:12px;cursor:pointer;border-radius:2px;
-      transition:background .2s;
+      display:flex; align-items:flex-start; gap:12px;
+      padding:14px 16px;
+      background:${task.completed ? 'rgba(20,55,32,0.55)' : isActive ? 'rgba(20,40,70,0.65)' : 'rgba(14,24,40,0.55)'};
+      border:2px solid ${task.completed ? 'rgba(68,200,100,0.45)' : isActive ? 'rgba(255,215,0,0.6)' : 'rgba(255,255,255,0.1)'};
+      border-radius:12px;
+      cursor:${task.completed ? 'default' : 'pointer'};
+      transition:border-color 0.2s;
     `;
+    const badge = task.completed ? '✓' : isActive ? '▶' : '○';
+    const badgeColor = task.completed ? '#44c864' : isActive ? '#ffd700' : 'rgba(255,255,255,0.35)';
     div.innerHTML = `
-      <div style="font-weight:bold;color:${task.completed ? '#44ff88' : '#ffffff'};">
-        ${task.completed ? '[OK]' : (activeTask?.id === task.id ? '▶' : '[ ]')} ${task.title}
+      <div style="font-family:'Bebas Neue',cursive;font-size:22px;color:${badgeColor};flex-shrink:0;line-height:1;margin-top:2px;">${badge}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:'Bebas Neue',cursive;font-size:clamp(15px,2.5vw,20px);color:${task.completed ? '#44c864' : '#fff'};letter-spacing:1.5px;line-height:1.2;">${task.title}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;line-height:1.5;font-family:'Inter',sans-serif;">${task.desc}</div>
+        <div style="font-family:'Bebas Neue',cursive;font-size:12px;color:rgba(255,215,0,0.5);margin-top:6px;letter-spacing:1px;">&#128205; ${task.location}</div>
       </div>
-      <div style="color:#888;font-size:10px;margin-top:2px;">${task.desc}</div>
-      <div style="color:#556;font-size:10px;margin-top:1px;">📍 ${task.location}</div>
     `;
-    if (!task.completed) div.addEventListener('click', () => startTask(task.id));
+    if (!task.completed) {
+      div.addEventListener('click', () => {
+        startTask(task.id);
+        // Close modal after picking task
+        document.getElementById('taskPanel')?.classList.remove('task-open');
+        document.getElementById('btnTopTasks')?.classList.remove('pressed');
+      });
+    }
     list.appendChild(div);
   });
 }
@@ -525,13 +279,20 @@ function notify(msg, dur = 2800) {
   const el = document.getElementById('notification');
   if (!el) return;
   el.textContent = msg;
+  el.style.transition = 'none';
   el.style.display = 'block';
+  el.style.opacity = '0';
+  el.style.transform = 'translateX(-50%) translateY(-16px) scale(0.94)';
+  // Force reflow then animate in
+  void el.offsetWidth;
+  el.style.transition = 'opacity 0.28s ease, transform 0.28s cubic-bezier(0.22,1,0.36,1)';
   el.style.opacity = '1';
-  el.style.transform = 'translateY(0)';
+  el.style.transform = 'translateX(-50%) translateY(0) scale(1)';
   clearTimeout(el._t);
   el._t = setTimeout(() => {
+    el.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
     el.style.opacity = '0';
-    el.style.transform = 'translateY(-8px)';
+    el.style.transform = 'translateX(-50%) translateY(-10px) scale(0.96)';
     setTimeout(() => { el.style.display = 'none'; }, 320);
   }, dur);
 }
@@ -550,34 +311,13 @@ function doInteract() {
     if (Audio.ctx) Audio.click();
     return;
   }
-  if (Player.state === 'computer' || Player.state === 'cctv' || Player.state === 'circuit') return;
+  if (Player.state === 'computer' || Player.state === 'cctv' || Player.state === 'circuit' || Player.state === 'outlet' || Player.state === 'repair') return;
   if (!focusedObj) return;
 
   const ud = focusedObj.userData;
   if (Audio.ctx) Audio.click();
 
-  // ── Route through InteractionEngine FIRST for training objects ───────────
-  const engineTypes = ['tool-pickup','wire-object','terminal-block','validate-board','multimeter','schematic'];
-  if (engineTypes.includes(ud.type)) {
-    const result = InteractionEngine.apply(activeTool, ud);
-    if (!result) return;
 
-    if (result.action === 'show-schematic') {
-      openSchematicModal(ud.scenarioId);
-      return;
-    }
-
-    if (result.ok) {
-      if (result.msg) notify(result.msg, 2800);
-    } else {
-      // Wrong tool or wrong sequence — show failure
-      notify(`⚠ ${result.msg}`, 3500);
-      feedbackLog(`⚠ ${result.msg}`, 'error');
-      errorFlash();
-    }
-    ScenarioManager.updateHUD();
-    return;
-  }
 
   // ── Seating ───────────────────────────────────────────────────────────────
   if (ud.type === 'sit') {
@@ -606,6 +346,45 @@ function doInteract() {
     return;
   }
 
+  // ── Outlet Socket (repair scenario) ───────────────────────────────────────
+  if (ud.type === 'outlet-socket') {
+    if (window.currentLevelId === 2) return; // Level 2 = switch install only
+    if (ud.fixed) { notify('This outlet is already repaired.', 1800); return; }
+    Player.state = 'repair';
+    window._orCurrentSocket = ud.socketId;
+    document.exitPointerLock?.();
+    openOutlet(ud.socketId);
+    return;
+  }
+
+  // ── Switch Station (Level 2) ──────────────────────────────────────────────
+  if (ud.type === 'switch_station') {
+    const rec = ud._parentRecord;
+    if (rec?.fixed) { notify('This switch is already installed.', 1800); return; }
+    document.exitPointerLock?.();
+    openSwitch(ud.stationId);
+    return;
+  }
+
+  // ── Workshop Wiring Station ───────────────────────────────────────────────
+  if (ud.type === 'workshop-wiring') {
+    document.exitPointerLock?.();
+    notify(`Opening ${ud.label}...`, 1500);
+    // Check prior completion and show stars on the LED if done
+    try {
+      const raw = localStorage.getItem('wireverse_workshop');
+      const store = raw ? JSON.parse(raw) : {};
+      const prev = store[ud.switchType];
+      if (prev?.completed) {
+        notify(`${ud.label} — Best: ${'★'.repeat(prev.bestStars || 0)} — Opening again...`, 2200);
+      }
+    } catch(e) {}
+    setTimeout(() => {
+      window.location.href = `scenario2.html?type=${ud.switchType}&from=workshop`;
+    }, 400);
+    return;
+  }
+
   // ── Inspect ───────────────────────────────────────────────────────────────
   if (ud.type === 'inspect') {
     notify(`INSPECTED: ${ud.label}`, 3000);
@@ -615,6 +394,7 @@ function doInteract() {
   // ── Door ──────────────────────────────────────────────────────────────────
   if (ud.type === 'door') {
     ud.door.toggle(Audio.ctx ? Audio : null, notify);
+    showComponentInfo(ud);
     return;
   }
 
@@ -637,11 +417,12 @@ function doInteract() {
       if (Audio.ctx) Audio.breaker(br.on);
     }
     notify(`${ud.label}: ${br.on ? 'ON' : 'OFF'}`);
-    if (activeTask?.id === 'morning_inspection') {
+    showComponentInfo(ud);
+    if (activeTask?.id === 'panel_inspection') {
       const sub = activeTask.subtasks.find(s => s.panel === ud.panel);
       if (sub && !sub.checked) {
         sub.checked = true;
-        if (activeTask.subtasks.every(s => s.checked)) completeTask('morning_inspection');
+        if (activeTask.subtasks.every(s => s.checked)) completeTask('panel_inspection');
         else notify(`[OK] Panel ${ud.panel} checked (${activeTask.subtasks.filter(s => s.checked).length}/4)`, 2000);
       }
     }
@@ -655,6 +436,7 @@ function doInteract() {
     if (ud.id === 'main-switch') { ES.mains = ud.on; applyPower(); }
     if (ud.id === 'gen-switch')  { ES.generator = ud.on; applyPower(); }
     notify(`${ud.label}: ${ud.on ? 'ON' : 'OFF'}`);
+    showComponentInfo(ud);
     return;
   }
 
@@ -665,6 +447,7 @@ function doInteract() {
     if (Audio.ctx) Audio.chirp?.() || Audio.click();
     term.active = !term.active;
     notify(`${term.active ? '[OK]' : '[ ]'} SCADA Terminal ${ud.idx + 1} ${term.active ? 'Online' : 'Offline'}`);
+    showComponentInfo(ud);
     if (activeTask?.id === 'scada_monitoring') {
       const allActive = scadaTerminals.every(t => t.active);
       if (allActive) completeTask('scada_monitoring');
@@ -691,17 +474,18 @@ function doInteract() {
       generator.running = true;
       generator.targetRpm = 1500;
       if (Audio.ctx) Audio.hum(true);
-      notify('Generator cranking up...', 2500);
-      if (activeTask?.id === 'generator_test') {
+      showComponentInfo(ud);
+      notify('Motor starting — DOL sequence initiated...', 2500);
+      if (activeTask?.id === 'motor_control') {
         clearTimeout(activeTask._rpmCheckTimeout);
         activeTask._rpmCheckTimeout = setTimeout(() => {
           if (generator.rpm >= 1300) {
-            notify('[OK] Generator RPM nominal — hold for 5s', 2000);
-            setTimeout(() => { if (generator.running) completeTask('generator_test'); }, 5000);
-          } else notify('Generator RPM too low', 2000);
+            notify('[OK] Motor running at rated speed — task complete!', 2500);
+            setTimeout(() => { if (generator.running) completeTask('motor_control'); }, 3000);
+          } else notify('Motor RPM too low — check connections', 2000);
         }, 4000);
       }
-    } else notify('Generator already running', 1500);
+    } else notify('Motor already running', 1500);
     return;
   }
 
@@ -710,8 +494,8 @@ function doInteract() {
     if (generator.running) {
       generator.running = false; generator.targetRpm = 0;
       if (Audio.ctx) Audio.hum(false);
-      notify('Generator shutting down...', 2500);
-    } else notify('Generator not running', 1500);
+      notify('Motor stopped — DOL circuit opened.', 2500);
+    } else notify('Motor not running', 1500);
     return;
   }
 
@@ -724,6 +508,7 @@ function doInteract() {
       station.terminals.forEach(t => {
         t.conn.material = new THREE.MeshLambertMaterial({ color: 0x33dd66, emissive: new THREE.Color(0x33dd66), emissiveIntensity: .4 });
       });
+      showComponentInfo(ud);
       notify(`[OK] Wire Terminal ${ud.idx + 1} verified & secured`, 2500);
       if (activeTask?.id === 'cable_check') {
         const allDone = cableStations.every(s => s.completed);
@@ -737,6 +522,14 @@ function doInteract() {
   // ── Oscilloscope ──────────────────────────────────────────────────────────
   if (ud.type === 'oscilloscope') {
     notify('SCOPE: Waveform analysis active — 50Hz nominal', 3000);
+    showComponentInfo(ud);
+    return;
+  }
+
+  // ── Whiteboard — orientation card ─────────────────────────────────────────
+  if (ud.type === 'whiteboard') {
+    showOrientationCard();
+    showComponentInfo(ud);
     return;
   }
 }
@@ -768,18 +561,19 @@ const MM_ZONES = {
 };
 
 const MM_ROOMS = [
-  { abbr: 'ENT',   cx: 1,  cz: -24, w: 6,  d: 8,  zone: 'general' },
-  { abbr: 'HALL',  cx: 1,  cz:   3, w: 6,  d: 46, zone: 'general' },
-  { abbr: 'WKSP',  cx: 15, cz: -10, w: 22, d: 20, zone: 'power'   },
-  { abbr: 'GEN',   cx: 12, cz:   7, w: 16, d: 14, zone: 'power'   },
-  { abbr: 'CTRL',  cx: 27, cz:   1, w: 14, d: 18, zone: 'control' },
-  { abbr: 'DST-A', cx: -8, cz:  -5, w: 12, d: 14, zone: 'dist'    },
-  { abbr: 'DST-B', cx: -8, cz:   9, w: 12, d: 14, zone: 'dist'    },
-  { abbr: 'LAB',   cx: 27, cz:  16, w: 14, d: 12, zone: 'lab'     },
-  { abbr: 'STOR',  cx: -8, cz:  22, w: 12, d: 12, zone: 'general' },
-  { abbr: 'UTIL',  cx: 10, cz:  21, w: 12, d: 14, zone: 'control' },
-  { abbr: 'STWR',  cx:  7, cz:  30, w:  6, d:  8, zone: 'general' },
+  { abbr: 'LOBBY',  cx: 1,  cz: -24, w: 6,  d: 8,  zone: 'general' },
+  { abbr: 'HALL',   cx: 1,  cz:   3, w: 6,  d: 46, zone: 'general' },
+  { abbr: 'WIRING', cx: 15, cz: -10, w: 22, d: 20, zone: 'power'   },
+  { abbr: 'MOTOR',  cx: 12, cz:   7, w: 16, d: 14, zone: 'power'   },
+  { abbr: 'FACULTY',cx: 27, cz:   1, w: 14, d: 18, zone: 'control' },
+  { abbr: 'PANEL',  cx: -8, cz:  -5, w: 12, d: 14, zone: 'dist'    },
+  { abbr: 'TOOLS',  cx: -8, cz:   9, w: 12, d: 14, zone: 'dist'    },
+  { abbr: 'EXAM',   cx: 27, cz:  16, w: 14, d: 12, zone: 'lab'     },
+  { abbr: 'STORE',  cx: -8, cz:  22, w: 12, d: 12, zone: 'general' },
+  { abbr: 'CLASS',  cx: 10, cz:  21, w: 12, d: 14, zone: 'control' },
+  { abbr: 'STAIR',  cx:  7, cz:  30, w:  6, d:  8, zone: 'general' },
 ];
+
 
 let _mmLastX = 0, _mmLastZ = 0, _mmLastYaw = 0;
 
@@ -838,7 +632,7 @@ function drawMinimap() {
     // Label — only if room is wide enough
     if (rw > 14 && rh > 10) {
       mmCtx.fillStyle = zc.label;
-      mmCtx.font = `bold ${Math.min(7, rw / r.abbr.length * 0.9)}px monospace`;
+      mmCtx.font = `bold ${Math.min(10, rw / r.abbr.length * 1.3)}px monospace`;
       mmCtx.textAlign = 'center';
       mmCtx.textBaseline = 'middle';
       mmCtx.fillText(r.abbr, mpx(r.cx), mpz(r.cz));
@@ -852,6 +646,34 @@ function drawMinimap() {
     mmCtx.fillStyle = 'rgba(240,190,60,0.75)';
     mmCtx.fillRect(px - 2, pz - 1, 4, 2);
   });
+
+  // ── Switch Station Markers (Level 2) ─────────────────────────────────────
+  if (window.currentLevelId === 2) {
+    drawSwitchMinimap(mmCtx, mpx, mpz, W, H);
+  }
+
+  // ── Outlet Markers (Level 1 only) ────────────────────────────────────────
+  if (window.currentLevelId === 1 && typeof outletSockets !== 'undefined') {
+    outletSockets.forEach(s => {
+      const px = mpx(s.group.position.x);
+      const pz = mpz(s.group.position.z);
+      
+      mmCtx.beginPath();
+      mmCtx.arc(px, pz, 2.5, 0, Math.PI * 2);
+      mmCtx.fillStyle = s.fixed ? '#22c55e' : '#ff3300';
+      mmCtx.fill();
+
+      // Pulsing ring for broken outlets to attract attention
+      if (!s.fixed) {
+        const pulse = 4 + Math.sin(Date.now() / 200) * 1.5;
+        mmCtx.beginPath();
+        mmCtx.arc(px, pz, pulse, 0, Math.PI * 2);
+        mmCtx.strokeStyle = 'rgba(255, 51, 0, 0.45)';
+        mmCtx.lineWidth = 1;
+        mmCtx.stroke();
+      }
+    });
+  }
 
   // ── Player triangle ───────────────────────────────────────────────────────
   const ppx = mpx(Player.pos.x);
@@ -876,7 +698,7 @@ function drawMinimap() {
   // ── Corner label ─────────────────────────────────────────────────────────
   mmCtx.shadowBlur = 0;
   mmCtx.fillStyle = 'rgba(68,255,136,0.28)';
-  mmCtx.font = 'bold 7px monospace';
+  mmCtx.font = 'bold 11px Courier New';
   mmCtx.textAlign = 'left';
   mmCtx.textBaseline = 'top';
   mmCtx.fillText('F1', 4, 3);
@@ -893,6 +715,11 @@ const rnEl = document.getElementById('roomname');
 const fpsEl = document.getElementById('fpsCounter');
 let fpsSamples = [], lastFpsFlush = 0;
 
+let _hudCache = { room: null, genRunning: null, rpmPct: null, temp: null, prompt: null };
+let _lastRayT = 0;
+let _cachedTargets = null;
+const _objWP = new THREE.Vector3(); // reusable world-position buffer for proximity checks
+
 function updateHUD(dt, animT) {
   // FPS
   fpsSamples.push(1 / dt);
@@ -905,66 +732,130 @@ function updateHUD(dt, animT) {
 
   const onFloor2 = false;
 
-  // Room name
+  // Room name (cached update)
   if (rnEl) {
     const room = getRoom(Player.pos);
-    rnEl.textContent = onFloor2 ? `[F2] ${room}` : room;
+    const text = onFloor2 ? `[F2] ${room}` : room;
+    if (_hudCache.room !== text) {
+      rnEl.textContent = text;
+      _hudCache.room = text;
+    }
   }
 
-  drawMinimap();
+  // Throttle minimap redraws to max ~15 FPS to avoid heavy canvas ops during movement
+  if (typeof window._lastMmT === 'undefined') window._lastMmT = 0;
+  if (animT - window._lastMmT > 0.06) {
+    window._lastMmT = animT;
+    drawMinimap();
+  }
 
-  // Generator status
+  // Generator status (cached update to stop layout thrashing)
   const genStatus = document.getElementById('genStatus');
   if (genStatus) {
-    const statusColor = generator.running ? '#44ff88' : '#888888';
     const rpmPct = Math.round((generator.rpm / 1500) * 100);
-    genStatus.innerHTML = `
-      <div style="font-size:9px;color:#667788;letter-spacing:1px;">GENERATOR</div>
-      <div style="color:${statusColor};font-weight:bold;">
-        ${generator.running ? '▶ RUNNING' : '■ OFFLINE'}
-      </div>
-      <div style="display:flex;gap:8px;margin-top:2px;font-size:9px;color:#aaaaaa;">
-        <span>RPM <span style="color:${generator.rpm > 1400 ? '#44ff88' : '#ff9944'}">${Math.round(generator.rpm)}</span></span>
-        <span>°C <span style="color:${generator.temp > 75 ? '#ff4422' : '#ffcc44'}">${Math.round(generator.temp)}</span></span>
-        <span>⛽ <span style="color:${generator.fuel > 25 ? '#44ff88' : '#ff4422'}">${Math.round(generator.fuel)}%</span></span>
-      </div>
-      <div style="margin-top:3px;height:3px;background:#1a2233;border-radius:2px;">
-        <div style="height:100%;width:${rpmPct}%;background:${generator.running ? '#44ff88' : '#334455'};border-radius:2px;transition:width .3s;"></div>
-      </div>
-    `;
+    const temp = Math.round(generator.temp);
+    if (_hudCache.genRunning !== generator.running || _hudCache.rpmPct !== rpmPct || _hudCache.temp !== temp) {
+      const statusColor = generator.running ? '#44ff88' : '#888888';
+      genStatus.innerHTML = `
+        <div style="font-size:9px;color:#667788;letter-spacing:1px;">MOTOR CONTROL</div>
+        <div style="color:${statusColor};font-weight:bold;">
+          ${generator.running ? '▶ RUNNING' : '■ STOPPED'}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:2px;font-size:9px;color:#aaaaaa;">
+          <span>RPM <span style="color:${generator.rpm > 1400 ? '#44ff88' : '#ff9944'}">${Math.round(generator.rpm)}</span></span>
+          <span>°C <span style="color:${generator.temp > 75 ? '#ff4422' : '#ffcc44'}">${temp}</span></span>
+        </div>
+        <div style="margin-top:3px;height:3px;background:#1a2233;border-radius:2px;">
+          <div style="height:100%;width:${rpmPct}%;background:${generator.running ? '#44ff88' : '#334455'};border-radius:2px;transition:width .3s;"></div>
+        </div>
+      `;
+      _hudCache.genRunning = generator.running;
+      _hudCache.rpmPct = rpmPct;
+      _hudCache.temp = temp;
+    }
   }
 
   // Interaction prompt
   if (Player.state === 'sitting') {
-    if (promptEl) {
+    if (promptEl && _hudCache.prompt !== 'STAND UP') {
       promptEl.textContent = 'STAND UP';
-      promptEl.style.display = 'flex';
+      promptEl.style.setProperty('display', 'flex', 'important');
+      _hudCache.prompt = 'STAND UP';
     }
   } else if (Player.state === 'computer' || Player.state === 'cctv') {
-    if (promptEl) promptEl.style.display = 'none';
-  } else {
-    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-  const targets = [...allInteractables, ...doors.map(d => d.panel)];
-  const hits = raycaster.intersectObjects(targets, true);
-
-  if (hits.length && hits[0].distance < 4.2) {
-    let cur = hits[0].object;
-    while (cur && !cur.userData?.type) cur = cur.parent;
-    if (cur?.userData?.type) {
-      focusedObj = cur;
-      const label = cur.userData.door?.label || cur.userData.label || 'Interact';
-      if (promptEl) {
-        promptEl.textContent = (label).toUpperCase();
-        promptEl.style.display = 'flex';
-      }
-    } else {
-      focusedObj = null;
-      if (promptEl) promptEl.style.display = 'none';
+    if (promptEl && _hudCache.prompt !== 'NONE') {
+      promptEl.style.setProperty('display', 'none', 'important');
+      _hudCache.prompt = 'NONE';
     }
   } else {
-    focusedObj = null;
-    if (promptEl) promptEl.style.display = 'none';
-  }
+    // Throttle raycasting to max ~10fps
+    if (animT - _lastRayT > 0.1) {
+      _lastRayT = animT;
+      raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+      if (!_cachedTargets) {
+        const switchProxArr = typeof switchProxies !== 'undefined' ? switchProxies : [];
+        _cachedTargets = [...allInteractables, ...doors.map(d => d.panel), ...switchProxArr];
+      }
+      
+      const hits = raycaster.intersectObjects(_cachedTargets, true);
+
+      let newPrompt = 'NONE';
+      let foundViaRay = false;
+      if (hits.length && hits[0].distance < 4.2) {
+        let cur = hits[0].object;
+        while (cur && !cur.userData?.type) cur = cur.parent;
+        if (cur?.userData?.type) {
+          if (window.currentLevelId === 2 && cur.userData.type === 'outlet-socket') {
+            focusedObj = null; // suppress outlets in Level 2
+          } else {
+            focusedObj = cur;
+            foundViaRay = true;
+            const rawLabel = cur.userData.door?.label || cur.userData.label || 'Interact';
+            newPrompt = cur.userData.type === 'door'
+              ? 'ENTER'
+              : rawLabel.length > 12 ? rawLabel.slice(0, 10).toUpperCase() + '…' : rawLabel.toUpperCase();
+          }
+        }
+      }
+
+      // ── Proximity fallback — works when not aiming precisely (mobile) ──
+      if (!foundViaRay) {
+        const PROX = 2.2;
+        let nearDist = PROX, nearObj = null;
+        const cp = camera.position;
+        for (const obj of _cachedTargets) {
+          obj.getWorldPosition(_objWP); // use world pos — local pos is wrong for grouped objects
+          const d = cp.distanceTo(_objWP);
+          if (d < nearDist) { nearDist = d; nearObj = obj; }
+        }
+        if (nearObj) {
+          let cur = nearObj;
+          while (cur && !cur.userData?.type) cur = cur.parent;
+          if (cur?.userData?.type) {
+            if (window.currentLevelId === 2 && cur.userData.type === 'outlet-socket') {
+              focusedObj = null; // suppress outlets in Level 2
+            } else {
+              focusedObj = cur;
+              const rawLabel = cur.userData.door?.label || cur.userData.label || 'Interact';
+              newPrompt = cur.userData.type === 'door'
+                ? 'ENTER'
+                : rawLabel.length > 12 ? rawLabel.slice(0, 10).toUpperCase() + '…' : rawLabel.toUpperCase();
+            }
+          } else { focusedObj = null; }
+        } else { focusedObj = null; }
+      }
+
+      if (promptEl && _hudCache.prompt !== newPrompt) {
+        if (newPrompt === 'NONE') {
+          // Use setProperty with important to reliably override any CSS !important rules
+          promptEl.style.setProperty('display', 'none', 'important');
+        } else {
+          promptEl.textContent = newPrompt;
+          promptEl.style.setProperty('display', 'flex', 'important');
+        }
+        _hudCache.prompt = newPrompt;
+      }
+    }
   }
 
   // Warning light strobe
@@ -988,10 +879,13 @@ function updateHUD(dt, animT) {
     }
   }
 
-  // Auto-complete utility check when player enters that area
+  // Auto-complete 'Study Module Lesson' when player enters the Classroom
   if (Player.pos.x > 4 && Player.pos.x < 16 && Player.pos.z > 14 && Player.pos.z < 28) {
-    const utilTask = TASKS.daily.find(t => t.id === 'utility_check');
-    if (utilTask && !utilTask.completed) completeTask('utility_check');
+    const lessonTask = TASKS.daily.find(t => t.id === 'module_lesson');
+    if (lessonTask && !lessonTask.completed) {
+      notify('📖 You entered the Classroom — reading today\'s module!', 3000);
+      setTimeout(() => completeTask('module_lesson'), 2000);
+    }
   }
 }
 
@@ -999,20 +893,31 @@ function updateHUD(dt, animT) {
 const clock = new THREE.Clock();
 let animT = 0;
 
-function loop() {
+const _FPS_CAP = isMobile ? 30 : 60; // 30fps on mobile — halves GPU workload
+const _FPS_INTERVAL = 1000 / _FPS_CAP;
+let _lastFrameMs = 0;
+let _frameCount = 0;
+function loop(timestamp) {
   requestAnimationFrame(loop);
+  const elapsed = timestamp - _lastFrameMs;
+  if (elapsed < _FPS_INTERVAL) return; // skip frame to hold 60fps
+  _lastFrameMs = timestamp - (elapsed % _FPS_INTERVAL);
   const dt = Math.min(clock.getDelta(), 0.05);
   animT += dt;
+  _frameCount++;
 
   updatePlayer(dt);
-  applyPower();
-  updateGenerator(dt);
-  updateSCADA(dt, animT);
-  updateOscilloscopes(animT);
-  doors.forEach(d => d.update(dt));
+
+  // Stagger expensive updates across 2 frames at 60fps
+  const fm = _frameCount % 2;
+  if (fm === 0) { applyPower(); updateGenerator(dt); updateSCADA(dt, animT); updateOscilloscopes(animT); }
+  if (fm === 1) { updateOutlets(animT); doors.forEach(d => d.update(dt)); }
+
   updateHUD(dt, animT);
 
-  renderer.render(scene, camera);
+  // Use bloom composer on desktop if loaded, otherwise standard render
+  if (window._composer) window._composer.render();
+  else renderer.render(scene, camera);
 }
 
 // ── STARTUP ───────────────────────────────────────────────────────────────────
@@ -1024,42 +929,113 @@ document.addEventListener('deviceready', () => {
 const startBtn = document.getElementById('startBtn');
 if (startBtn) {
   startBtn.addEventListener('click', () => {
-    Audio.init();
-    if (Audio.ctx) Audio.hum(true);
+    const loadingScreen  = document.getElementById('loadingScreen');
+    const loadingBarFill = document.getElementById('loadingBarFill');
+    const loadingPct     = document.getElementById('loadingPct');
 
-    ['overlay', 'ptrMsg'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
+    if (loadingScreen) loadingScreen.style.display = 'flex';
+    if (loadingBarFill) loadingBarFill.style.width = '0%';
+    if (loadingPct) loadingPct.textContent = '0';
 
-    const hudEl = document.getElementById('hud');
-    if (hudEl) hudEl.style.display = 'block';
+    const overlay = document.getElementById('overlay');
+    if (overlay) overlay.style.display = 'none';
 
-    if (!isMobile) {
-      const msg = document.getElementById('ptrMsg');
-      if (msg) { msg.style.display = 'block'; msg.textContent = 'Click to lock mouse | WASD to move | E to interact | T toggle tasks'; }
-    }
+    // Start tip rotator
+    if (window._startTips) window._startTips();
 
-    applyPower();
-    updateTaskDisplay();
-    updateToolHUD();
-    maybeStartScenario();
+    // Smooth progress simulation — reaches ~95% by 2.8s, then snaps to 100%
+    let progress = 0;
+    const LOAD_STEPS = [
+      { target: 18,  label: 'Loading world geometry...' },
+      { target: 36,  label: 'Compiling shaders...' },
+      { target: 52,  label: 'Initializing lighting system...' },
+      { target: 68,  label: 'Setting up audio engine...' },
+      { target: 80,  label: 'Spawning interactables...' },
+      { target: 91,  label: 'Verifying circuit boards...' },
+      { target: 97,  label: 'Almost ready...' },
+    ];
+    let stepIdx = 0;
+    const tipEl = document.getElementById('loadingTip');
 
-    ['rightActionBar', 'btnPauseTop'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'flex';
-    });
+    const interval = setInterval(() => {
+      if (stepIdx < LOAD_STEPS.length) {
+        const step = LOAD_STEPS[stepIdx];
+        const jump = (step.target - progress) * 0.35 + Math.random() * 3;
+        progress = Math.min(step.target, progress + jump);
+        if (progress >= step.target - 1) {
+          if (tipEl) { tipEl.style.animation = 'none'; void tipEl.offsetWidth; tipEl.style.animation = 'loadTipFade 0.6s ease both'; tipEl.textContent = step.label; }
+          stepIdx++;
+        }
+      }
+      if (loadingBarFill) loadingBarFill.style.width = progress + '%';
+      if (loadingPct) loadingPct.textContent = Math.round(progress);
+    }, 320);
 
-    loop();
+    setTimeout(() => {
+      clearInterval(interval);
+      if (window._stopTips) window._stopTips();
+      if (loadingBarFill) loadingBarFill.style.width = '100%';
+      if (loadingPct) loadingPct.textContent = '100';
+      if (tipEl) { tipEl.style.animation = 'none'; void tipEl.offsetWidth; tipEl.style.animation = 'loadTipFade 0.4s ease both'; tipEl.textContent = 'Ready! Entering training facility...'; }
+
+      setTimeout(() => {
+        if (loadingScreen) {
+          loadingScreen.style.opacity = '0';
+          setTimeout(() => { loadingScreen.style.display = 'none'; }, 900);
+        }
+      }, 500);
+
+      try { Audio.init(); } catch (e) { console.error("Audio.init Error", e); }
+      // Stop main-menu BGM and switch to game ambience
+      try { if (window._stopMenuBGM) window._stopMenuBGM(); } catch (e) {}
+      try { if (Audio.ctx) Audio.hum(true); } catch (e) { console.error("Audio.hum Error", e); }
+      try { if (typeof _initOutlets === 'function') _initOutlets(); } catch (e) { console.error("_initOutlets Error", e); }
+      try { if (typeof _initSwitches === 'function') _initSwitches(); } catch (e) { console.error("_initSwitches Error", e); }
+
+      try {
+        const hudEl = document.getElementById('hud');
+        if (hudEl) hudEl.style.display = 'block';
+        if (!isMobile) {
+          const msg = document.getElementById('ptrMsg');
+          if (msg) { msg.style.display = 'block'; msg.textContent = 'Click to lock mouse | WASD to move | Space to jump | E to interact'; }
+        }
+      } catch (e) { console.error("UI init Error:", e); }
+
+      try { if (typeof applyPower === 'function') applyPower(); } catch (e) {}
+      try { if (typeof updateTaskDisplay === 'function') updateTaskDisplay(); } catch (e) {}
+      try { if (typeof updateToolHUD === 'function') updateToolHUD(); } catch (e) {}
+
+      try {
+        ['btnTopTasks', 'btnPauseTop'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'flex';
+        });
+      } catch (e) {}
+
+      try {
+        if (typeof loop === 'function') loop();
+        if (!isMobile) {
+          const cvs = document.getElementById('c');
+          if (cvs && cvs.requestPointerLock) cvs.requestPointerLock();
+        }
+      } catch (e) { console.error("Loop/Render Error:", e); }
+    }, 3200);
   });
 }
+
+
 
 // ── INPUT ─────────────────────────────────────────────────────────────────────
 window.addEventListener('keydown', e => {
   if (e.code === 'KeyE') doInteract();
   if (e.code === 'KeyT') {
     const panel = document.getElementById('taskPanel');
-    if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    if (panel) {
+      const isOpen = panel.classList.contains('task-open');
+      panel.classList.toggle('task-open', !isOpen);
+      document.getElementById('btnTopTasks')?.classList.toggle('pressed', !isOpen);
+      if (!isOpen) updateTaskDisplay();
+    }
   }
   if (e.code === 'KeyM') {
     const mm = document.getElementById('minimapWrapper');
@@ -1067,24 +1043,92 @@ window.addEventListener('keydown', e => {
   }
 });
 
+// Debounce guard — prevents click+touchstart double-fire (300ms window)
+let _interactFireT = 0;
+function _fireInteract() {
+  const now = Date.now();
+  if (now - _interactFireT < 300) return;
+  _interactFireT = now;
+  // Force an immediate raycast so focusedObj is fresh at press time
+  if (_cachedTargets) {
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+    const hits = raycaster.intersectObjects(_cachedTargets, true);
+    let foundViaRay = false;
+    if (hits.length && hits[0].distance < 4.2) {
+      let cur = hits[0].object;
+      while (cur && !cur.userData?.type) cur = cur.parent;
+      if (cur?.userData?.type) { focusedObj = cur; foundViaRay = true; }
+    }
+    // Proximity fallback — if center-aim misses, grab nearest within 2.2m
+    if (!foundViaRay) {
+      const PROX = 2.2;
+      let nearDist = PROX, nearObj = null;
+      const cp = camera.position;
+      for (const obj of _cachedTargets) {
+        obj.getWorldPosition(_objWP);
+        const d = cp.distanceTo(_objWP);
+        if (d < nearDist) { nearDist = d; nearObj = obj; }
+      }
+      if (nearObj) {
+        let cur = nearObj;
+        while (cur && !cur.userData?.type) cur = cur.parent;
+        focusedObj = cur?.userData?.type ? cur : null;
+      } else { focusedObj = null; }
+    }
+  }
+  doInteract();
+}
+
 const interactBtn = document.getElementById('btnInteract');
+
+// Ripple helper for tactile feedback on button press
+function _spawnRipple(btn) {
+  const r = document.createElement('span');
+  r.style.cssText = `
+    position:absolute; border-radius:50%;
+    width:80px; height:80px; margin:-40px 0 0 -40px;
+    background:rgba(255,215,0,0.28);
+    top:50%; left:50%;
+    transform:scale(0); opacity:1;
+    animation:useRipple 0.55s ease-out forwards;
+    pointer-events:none; z-index:10;
+  `;
+  btn.appendChild(r);
+  setTimeout(() => r.remove(), 600);
+}
+
 if (interactBtn) {
-  interactBtn.addEventListener('click', e => {
-    e.preventDefault();
-    doInteract();
-  });
   interactBtn.addEventListener('touchstart', e => {
     e.preventDefault();
-    doInteract();
+    e.stopPropagation();
+    _spawnRipple(interactBtn);
+    _fireInteract();
   }, { passive: false });
+  interactBtn.addEventListener('click', e => {
+    e.preventDefault();
+    _spawnRipple(interactBtn);
+    _fireInteract();
+  });
 }
 
 // Tap-anywhere interaction — brief touch (<200ms, <15px drift) on the look zone triggers USE
+// Also dynamically disable lookZone pointer-events when not freely standing (so overlays work)
 {
   const lz = document.getElementById('lookZone');
   if (lz) {
+    // Poll Player.state and reflect as CSS — runs alongside game loop
+    let _lzLastState = '';
+    setInterval(() => {
+      const st = Player.state;
+      if (st === _lzLastState) return;
+      _lzLastState = st;
+      lz.style.pointerEvents = (st === 'standing') ? 'all' : 'none';
+    }, 80);
+
     let _tapT = 0, _tapX = 0, _tapY = 0, _tapId = -1;
     lz.addEventListener('touchstart', e => {
+      // Only when player can actually interact
+      if (Player.state !== 'standing') return;
       if (e.changedTouches.length !== 1 || _tapId !== -1) return;
       const t = e.changedTouches[0];
       _tapT = Date.now(); _tapX = t.clientX; _tapY = t.clientY; _tapId = t.identifier;
@@ -1093,6 +1137,7 @@ if (interactBtn) {
       for (const t of e.changedTouches) {
         if (t.identifier !== _tapId) continue;
         _tapId = -1;
+        if (Player.state !== 'standing') break;
         if (Date.now() - _tapT < 200 && Math.hypot(t.clientX - _tapX, t.clientY - _tapY) < 15) {
           doInteract();
         }
@@ -1117,6 +1162,199 @@ Audio.success = function () {
   gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + .35);
   osc.start();
   osc.stop(ctx.currentTime + .35);
+};
+
+// ── LEVEL 1 MANAGER — star HUD + level complete flow ────────────────────────
+const Level1Manager = {
+  starsEarned: 0,
+  totalOutlets: 5,
+  active: false,
+
+  init() {
+    // Only activate when Stage 1, Level 1 is launched
+    if (window.currentStageId === 1 && window.currentLevelId === 1) {
+      this.active = true;
+      this.starsEarned = 0;
+      const hud = document.getElementById('starHUD');
+      if (hud) hud.style.display = 'flex';
+    }
+  },
+
+  onOutletFixed(socketId) {
+    if (!this.active) return;
+    this.starsEarned = Math.min(this.starsEarned + 1, this.totalOutlets);
+    this._updateHUD();
+    if (this.starsEarned >= this.totalOutlets) {
+      // Short delay so the outlet "FIXED" screen can be seen first
+      setTimeout(() => this._showComplete(), 2400);
+    }
+  },
+
+  _updateHUD() {
+    for (let i = 1; i <= this.totalOutlets; i++) {
+      const star = document.getElementById(`sh-s${i}`);
+      if (!star) continue;
+      if (i <= this.starsEarned) {
+        star.classList.add('lit');
+        if (i === this.starsEarned) {
+          // Pop animation on the newly lit star
+          star.classList.remove('pop');
+          void star.offsetWidth; // reflow to restart animation
+          star.classList.add('pop');
+        }
+      }
+    }
+  },
+
+  _showComplete() {
+    // Save to DB
+    if (window.DB) {
+      DB.saveProgress(1, 1, { completed: true, stars: this.starsEarned });
+    }
+    if (Audio.ctx) Audio.success();
+
+    // Show modal
+    const modal = document.getElementById('levelCompleteModal');
+    if (modal) modal.classList.add('show');
+
+    // Animate stars one by one with stagger
+    for (let i = 1; i <= this.starsEarned; i++) {
+      const star = document.getElementById(`lcm-s${i}`);
+      if (!star) continue;
+      setTimeout(() => {
+        star.classList.add('lit', 'drop');
+      }, i * 220);
+    }
+
+    // Bind back-to-menu button
+    const btn = document.getElementById('lcmBackBtn');
+    if (btn && !btn._bound) {
+      btn._bound = true;
+      btn.addEventListener('click', () => {
+        // A hard reload is the safest way to fully reset the WebGL world 
+        // back to the initial main menu state for the next level/session.
+        window.location.reload();
+      });
+    }
+  },
+};
+
+// ── LEVEL 2 MANAGER — star HUD + level complete flow ────────────────────────
+const Level2Manager = {
+  starsEarned: 0,
+  totalStations: 3,
+  active: false,
+
+  init() {
+    if (window.currentStageId === 1 && window.currentLevelId === 2) {
+      this.active = true;
+      this.starsEarned = 0;
+      const hud = document.getElementById('starHUD2');
+      if (hud) hud.style.display = 'flex';
+    }
+  },
+
+  onSwitchFixed(stationId) {
+    if (!this.active) return;
+    this.starsEarned = Math.min(this.starsEarned + 1, this.totalStations);
+    this._updateHUD();
+    if (this.starsEarned >= this.totalStations) {
+      setTimeout(() => this._showComplete(), 2400);
+    }
+  },
+
+  _updateHUD() {
+    for (let i = 1; i <= this.totalStations; i++) {
+      const star = document.getElementById(`sh2-s${i}`);
+      if (!star) continue;
+      if (i <= this.starsEarned) {
+        star.classList.add('lit');
+        if (i === this.starsEarned) {
+          star.classList.remove('pop');
+          void star.offsetWidth;
+          star.classList.add('pop');
+        }
+      }
+    }
+  },
+
+  _showComplete() {
+    if (window.DB) {
+      DB.saveProgress(1, 2, { completed: true, stars: this.starsEarned });
+    }
+    if (Audio.ctx) Audio.uiSuccess?.() || Audio.click();
+    const modal = document.getElementById('levelCompleteModal2');
+    if (modal) modal.style.display = 'flex';
+    for (let i = 1; i <= this.starsEarned; i++) {
+      const star = document.getElementById(`lcm2-s${i}`);
+      if (!star) continue;
+      setTimeout(() => { star.classList.add('lit', 'drop'); }, i * 220);
+    }
+    const btn = document.getElementById('lcm2BackBtn');
+    if (btn && !btn._bound) {
+      btn._bound = true;
+      btn.addEventListener('click', () => { window.location.reload(); });
+    }
+  },
+};
+
+// ── OUTLET REPAIR SCENARIO ────────────────────────────────────────────────────
+// Called once after DOM is ready (inside startBtn handler)
+function _initOutlets() {
+  Level1Manager.init();
+  initOutletScenario((socketId) => {
+    // socket was fixed — update world
+    markOutletFixed(socketId);
+    const pip = document.getElementById(`opip-${socketId}`);
+    if (pip) pip.classList.add('done');
+
+    // Level1Manager awards a star
+    Level1Manager.onOutletFixed(socketId);
+
+    // Also update the legacy task system
+    const task = TASKS.daily.find(t => t.id === 'outlet_repair');
+    if (task && !task.completed) {
+      task._fixedCount = (task._fixedCount || 0) + 1;
+      feedbackLog(`✓ Outlet #${socketId} repaired — ${task._fixedCount}/5 done`, 'ok');
+      notify(`Outlet #${socketId} repaired! ${task._fixedCount}/5 fixed.`, 3000);
+      if (task._fixedCount >= 5) {
+        completeTask('outlet_repair');
+        notify('ALL 5 OUTLETS REPAIRED — Task complete!', 5000);
+      }
+    }
+    // Auto-close overlay ~2.2s after "FIXED!" screen appears
+    setTimeout(() => {
+      closeOutlet();
+    }, 2200);
+  });
+}
+
+// ── SWITCH INSTALL SCENARIO (Level 2) ────────────────────────────────────────
+function _initSwitches() {
+  Level2Manager.init();
+  initSwitches();   // place 3 switch stations in Workshop
+  initSwitchScenario((stationId) => {
+    // Station was completed
+    markSwitchFixed(stationId);
+    feedbackLog(`✓ Switch Station #${stationId} installed`, 'ok');
+    notify(`Switch #${stationId} installed! ${Level2Manager.starsEarned + 1}/3 done.`, 3000);
+    Level2Manager.onSwitchFixed(stationId);
+    // Auto-close overlay ~2.2s after success screen
+    setTimeout(() => { closeSwitch(); }, 2200);
+  });
+}
+
+// Expose globals for switch overlay buttons (set in switch-scenario.js via window.closeSwitch etc.)
+
+// Expose closeOutlet globally so the HTML button onclick works
+window.closeOutlet = () => { closeOutlet(); }; // closeOutlet() itself restores Player.state
+// Expose play-again (resets scenario without closing overlay)
+window._orPlayAgain = () => { openOutlet(window._orCurrentSocket || 1); };
+// Expose tool select so or-toolbar onclick works
+window._orSelectTool = (t) => {
+  // delegate into the module's internal select — module wires this via the toolbar clicks
+  // since toolbar is in HTML we re-dispatch via a custom event the module can listen to
+  document.dispatchEvent(new CustomEvent('or-tool-select', { detail: t }));
 };
 
 // ── COMPUTER UI OVERLAY MANAGER ─────────────────────────────────────────────
@@ -1188,6 +1426,8 @@ window.addEventListener('mouseup', () => { cctvMouseDown = false; });
 // Touch drag for CCTV rotation
 let cctvTouchId = null, cctvTouchX = 0, cctvTouchY = 0;
 cctvOverlay.addEventListener('touchstart', e => {
+  // Don't capture touches that land on interactive UI elements (exit button etc.)
+  if (e.target.closest('button, a, [role="button"]')) return;
   e.preventDefault();
   if (Player.state !== 'cctv' || e.changedTouches.length === 0) return;
   const t = e.changedTouches[0];
@@ -1242,11 +1482,9 @@ cctvGridBtns.forEach(btn => {
 });
 
 if (btnExitCCTV) {
-  btnExitCCTV.addEventListener('click', () => {
+  function _exitCCTV() {
     cctvOverlay.style.display = 'none';
     if (cctvTimeInterval) { clearInterval(cctvTimeInterval); cctvTimeInterval = null; }
-
-    // Back to computer terminal
     Player.state = 'computer';
     if (Player.lastComputerPos) {
       Player.targetCamPos.copy(Player.lastComputerPos);
@@ -1257,31 +1495,97 @@ if (btnExitCCTV) {
     }
     camera.position.copy(Player.targetCamPos);
     window.openComputerUI();
-  });
+  }
+  btnExitCCTV.addEventListener('click', _exitCCTV);
+  // Touch: stop propagation so cctvOverlay doesn't capture it, then fire exit
+  btnExitCCTV.addEventListener('touchend', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    _exitCCTV();
+  }, { passive: false });
 }
 
 // ── NEW BUTTON SYSTEM ────────────────────────────────────────────────────────
 
-// ── Pause / Resume ─────────────────────────────────────────────────────────
+// ── Sensitivity Settings ────────────────────────────────────────────────────
+// Slider range: 1–20. Formula: sens = value / 10  →  0.1× – 2.0×
+// Default 10 = 1.0× (neutral). Saved/loaded from localStorage as raw slider int.
+
+const _sliderToSens = v => parseInt(v) / 10;
+const _sensLabel    = v => (_sliderToSens(v).toFixed(1)) + '\xd7'; // "1.0×"
+
+const _camDefault = localStorage.getItem('camSens') || '10';
+const _joyDefault = localStorage.getItem('joySens') || '10';
+window.camSensitivity = _sliderToSens(_camDefault);  // 0.1–2.0
+window.joySensitivity = _sliderToSens(_joyDefault);  // 0.1–2.0
+
+function _initPauseSensSliders() {
+  const camSlider = document.getElementById('pauseCamSens');
+  const joySlider = document.getElementById('pauseJoySens');
+  const camVal    = document.getElementById('pauseCamSensVal');
+  const joyVal    = document.getElementById('pauseJoySensVal');
+
+  if (camSlider) camSlider.value = _camDefault;
+  if (camVal)    camVal.textContent = _sensLabel(_camDefault);
+  if (joySlider) joySlider.value = _joyDefault;
+  if (joyVal)    joyVal.textContent = _sensLabel(_joyDefault);
+
+  if (camSlider) {
+    camSlider.addEventListener('input', () => {
+      window.camSensitivity = _sliderToSens(camSlider.value);
+      if (camVal) camVal.textContent = _sensLabel(camSlider.value);
+      localStorage.setItem('camSens', camSlider.value);
+    });
+  }
+  if (joySlider) {
+    joySlider.addEventListener('input', () => {
+      window.joySensitivity = _sliderToSens(joySlider.value);
+      if (joyVal) joyVal.textContent = _sensLabel(joySlider.value);
+      localStorage.setItem('joySens', joySlider.value);
+    });
+  }
+}
+setTimeout(_initPauseSensSliders, 0);
+
+// ── In-Game Hamburger Menu ────────────────────────────────────────────────
 let gamePaused = false;
 
-function setPaused(v) {
-  gamePaused = v;
-  const menu = document.getElementById('pauseMenu');
-  if (menu) menu.style.display = v ? 'flex' : 'none';
+const _igMenu     = document.getElementById('inGameMenu');
+const _igBackdrop = document.getElementById('igmBackdrop');
+
+function setInGameMenu(open) {
+  gamePaused = open;
+  if (_igMenu)     _igMenu.classList.toggle('open', open);
+  if (_igBackdrop) _igBackdrop.classList.toggle('open', open);
+  const hbg = document.getElementById('btnPauseTop');
+  if (hbg) hbg.classList.toggle('menu-open', open);
+  if (Audio.ctx) open ? Audio.uiSelect() : Audio.uiBack();
+  // Update room label inside menu
+  if (open) {
+    const rl = document.getElementById('igmRoomLabel');
+    const rn = document.getElementById('roomname');
+    if (rl && rn) rl.textContent = rn.textContent;
+  }
 }
 
+// Backward-compat alias used elsewhere
+function setPaused(v) { setInGameMenu(v); }
+
 const btnPauseTop = document.getElementById('btnPauseTop');
-if (btnPauseTop) btnPauseTop.addEventListener('click', () => setPaused(true));
+if (btnPauseTop) btnPauseTop.addEventListener('click', () => setInGameMenu(!gamePaused));
+
+if (_igBackdrop) _igBackdrop.addEventListener('click', () => setInGameMenu(false));
+
+const igmClose = document.getElementById('igmClose');
+if (igmClose) igmClose.addEventListener('click', () => setInGameMenu(false));
 
 const btnResume = document.getElementById('btnResume');
-if (btnResume) btnResume.addEventListener('click', () => setPaused(false));
+if (btnResume) btnResume.addEventListener('click', () => setInGameMenu(false));
 
 const btnRestartLevel = document.getElementById('btnRestartLevel');
 if (btnRestartLevel) btnRestartLevel.addEventListener('click', () => {
-  setPaused(false);
+  setInGameMenu(false);
   notify('Restarting level...', 2000);
-  // Level restart hook — extend here
 });
 
 const btnMainMenu = document.getElementById('btnMainMenu');
@@ -1289,52 +1593,50 @@ if (btnMainMenu) btnMainMenu.addEventListener('click', () => {
   location.reload();
 });
 
-// Pause via Escape key
+// Keyboard shortcut: Escape / P
 window.addEventListener('keydown', e => {
-  if (e.code === 'Escape' && gamePaused) setPaused(false);
-  if (e.code === 'KeyP') setPaused(!gamePaused);
+  if (e.code === 'Escape') setInGameMenu(!gamePaused);
+  if (e.code === 'KeyP')   setInGameMenu(!gamePaused);
 });
 
 // ── Tasks Panel ────────────────────────────────────────────────────────────
-const btnRTasks = document.getElementById('btnRTasks');
-if (btnRTasks) {
-  btnRTasks.addEventListener('click', () => {
+const btnTopTasks = document.getElementById('btnTopTasks');
+if (btnTopTasks) {
+  btnTopTasks.addEventListener('click', () => {
     const panel = document.getElementById('taskPanel');
     if (!panel) return;
-    const visible = panel.style.display !== 'none' && panel.style.display !== '';
-    panel.style.display = visible ? 'none' : 'block';
-    btnRTasks.classList.toggle('pressed', !visible);
+    const isOpen = panel.classList.contains('task-open');
+    panel.classList.toggle('task-open', !isOpen);
+    btnTopTasks.classList.toggle('pressed', !isOpen);
+    if (Audio.ctx) (!isOpen ? Audio.uiSelect() : Audio.uiBack());
+    if (!isOpen) updateTaskDisplay(); // refresh when opening
   });
 }
 
-// ── Schematic View ─────────────────────────────────────────────────────────
-const btnRSchematic = document.getElementById('btnRSchematic');
-if (btnRSchematic) {
-  btnRSchematic.addEventListener('click', () => {
-    openSchematicModal('S01');
-  });
-}
+// Close task modal via its close button
+document.addEventListener('DOMContentLoaded', () => {
+  const btnCloseTask = document.getElementById('btnCloseTask');
+  if (btnCloseTask) {
+    btnCloseTask.addEventListener('click', () => {
+      document.getElementById('taskPanel')?.classList.remove('task-open');
+      document.getElementById('btnTopTasks')?.classList.remove('pressed');
+    });
+  }
+});
 
-const btnRHint = document.getElementById('btnRHint');
-if (btnRHint) {
-  btnRHint.addEventListener('click', () => {
-    const cur = ScenarioManager.current();
-    if (cur) notify(`Hint: ${cur.instruction}`, 5000);
-    else notify('Scenario complete — no further hints.', 2000);
-  });
-}
+// Also close task modal via close button (handles late DOM)
+setTimeout(() => {
+  const btnCloseTask = document.getElementById('btnCloseTask');
+  if (btnCloseTask && !btnCloseTask._bound) {
+    btnCloseTask._bound = true;
+    btnCloseTask.addEventListener('click', () => {
+      document.getElementById('taskPanel')?.classList.remove('task-open');
+      document.getElementById('btnTopTasks')?.classList.remove('pressed');
+    });
+  }
+}, 0);
 
-// ── Tool Belt ─────────────────────────────────────────────────────────────
-const toolBelt = document.getElementById('toolBelt');
 
-const btnRTools = document.getElementById('btnRTools');
-if (btnRTools) {
-  btnRTools.addEventListener('click', () => {
-    if (!toolBelt) return;
-    toolBelt.classList.toggle('open');
-    btnRTools.classList.toggle('pressed', toolBelt.classList.contains('open'));
-  });
-}
 
 const btnCloseTools = document.getElementById('btnCloseTools');
 if (btnCloseTools) {
@@ -1523,7 +1825,7 @@ class WiringGame {
     ctx.fillRect(0, 0, W, H);
 
     // Column headers
-    ctx.font = `bold ${Math.max(9, Math.round(W * 0.018))}px Courier New`;
+    ctx.font = `bold ${Math.max(12, Math.round(W * 0.024))}px Courier New`;
     ctx.textAlign = 'center';
     ctx.fillStyle = '#2a5a3a';
     ctx.fillText('WIRE SOURCES', this._wires[0]?.px || W * 0.22, H * 0.12);
@@ -1554,7 +1856,7 @@ class WiringGame {
     }
 
     const R = Math.max(14, Math.round(W * 0.024));
-    const fontSize = Math.max(9, Math.round(W * 0.018));
+    const fontSize = Math.max(12, Math.round(W * 0.024));
 
     // Draw wire sources (left side)
     for (const w of this._wires) {
@@ -1639,7 +1941,7 @@ class WiringGame {
     }
 
     // Bottom instruction hint
-    ctx.font = `${Math.max(8, Math.round(W * 0.014))}px Courier New`;
+    ctx.font = `${Math.max(11, Math.round(W * 0.018))}px Courier New`;
     ctx.fillStyle = 'rgba(68,255,136,0.2)';
     ctx.textAlign = 'center';
     ctx.fillText('DRAG WIRE  →  TERMINAL  |  CHECK TO VERIFY', W / 2, H - 14);
@@ -1649,12 +1951,12 @@ class WiringGame {
       ctx.save();
       ctx.fillStyle = 'rgba(0,20,10,0.82)';
       ctx.fillRect(0, H / 2 - 38, W, 76);
-      ctx.font = `bold ${Math.max(18, Math.round(W * 0.04))}px Courier New`;
+      ctx.font = `bold ${Math.max(22, Math.round(W * 0.05))}px Courier New`;
       ctx.fillStyle = '#44ff88';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('CIRCUIT COMPLETE', W / 2, H / 2 - 10);
-      ctx.font = `${Math.max(10, Math.round(W * 0.02))}px Courier New`;
+      ctx.font = `${Math.max(13, Math.round(W * 0.025))}px Courier New`;
       ctx.fillStyle = '#33aa66';
       ctx.fillText('All wires correctly terminated', W / 2, H / 2 + 18);
       ctx.restore();

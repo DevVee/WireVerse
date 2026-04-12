@@ -91,6 +91,72 @@
       _set('settings', settings);
     },
 
+    // ── LEARN PROGRESS ──────────────────────────────────────────────────────────
+    getLearnProgress() {
+      return _get('learn') || {};
+    },
+
+    /**
+     * @param {string} type  '1way' | '2way' | '3way'
+     * @param {object} data  { completed, stars, hintsUsed, timeMs }
+     */
+    saveLearnProgress(type, data) {
+      const learn = DB.getLearnProgress();
+      const prev = learn[type] || { attempts: 0 };
+      learn[type] = {
+        ...prev,
+        ...data,
+        attempts: (prev.attempts || 0) + 1,
+        lastAt: Date.now(),
+        bestStars: Math.max(prev.bestStars || 0, data.stars || 0),
+      };
+      _set('learn', learn);
+    },
+
+    getLearnTypeProgress(type) {
+      return DB.getLearnProgress()[type] || null;
+    },
+
+    // ── ACHIEVEMENTS ────────────────────────────────────────────────────────────
+    getAchievements() {
+      return _get('achievements') || {};
+    },
+
+    /**
+     * @param {string} id    Unique achievement key
+     * @param {string} name  Display name
+     * @param {string} desc  Short description
+     */
+    unlockAchievement(id, name, desc) {
+      const ach = DB.getAchievements();
+      if (ach[id]) return false; // already earned
+      ach[id] = { name, desc, earnedAt: Date.now() };
+      _set('achievements', ach);
+      return true; // newly earned
+    },
+
+    isAchievementUnlocked(id) {
+      return !!DB.getAchievements()[id];
+    },
+
+    // ── WORKSHOP INTERACTIONS ────────────────────────────────────────────────────
+    getWorkshopProgress() {
+      return _get('workshop') || {};
+    },
+
+    saveWorkshopInteraction(type, data) {
+      const ws = DB.getWorkshopProgress();
+      const prev = ws[type] || { sessions: 0 };
+      ws[type] = {
+        ...prev,
+        ...data,
+        sessions: (prev.sessions || 0) + 1,
+        lastAt: Date.now(),
+        bestStars: Math.max(prev.bestStars || 0, data.stars || 0),
+      };
+      _set('workshop', ws);
+    },
+
     // ── RESET ───────────────────────────────────────────────────────────────────
     resetProgress() {
       localStorage.removeItem(PREFIX + 'progress');

@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Switch Wiring Simulator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:wght@400;500;600&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --y:#F5C518;--yd:#d4a800;--g:#22c55e;--r:#ef4444;--b:#3b82f6;
+  --panel:rgba(8,8,12,0.93);--panel-light:rgba(20,18,14,0.88);
+  --border:rgba(245,197,24,0.28);--border-bright:rgba(245,197,24,0.7);
+  --text-dim:rgba(255,255,255,0.45);--text-mid:rgba(255,255,255,0.75);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#0f0e0b}
+body{font-family:'Barlow',sans-serif;color:#fff}
+canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0}
+
+/* ── HUD ── */
+#hud{position:fixed;inset:0;pointer-events:none;z-index:10}
+
+/* TOPBAR */
+#topbar{
+  position:absolute;top:0;left:0;right:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 22px 18px;
+  background:linear-gradient(to bottom,rgba(0,0,0,.82) 0%,transparent 100%);
+}
+.tb-brand{
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.22em;color:var(--y);text-transform:uppercase;
+  display:flex;align-items:center;gap:8px;
+}
+.tb-brand::before{content:'';display:block;width:3px;height:14px;background:var(--y);border-radius:2px}
+.tb-progress{
+  display:flex;align-items:center;gap:10px;
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:7px;padding:6px 14px;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
+}
+.tb-progress .lbl{font-size:9px;font-weight:700;letter-spacing:.15em;color:var(--text-dim);text-transform:uppercase;margin-right:4px}
+#prog-dots{display:flex;gap:5px;align-items:center}
+.prog-dot{width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);transition:all .4s}
+.prog-dot.done{background:var(--g);border-color:var(--g);box-shadow:0 0 6px rgba(34,197,94,.5)}
+.tb-type-badge{
+  background:rgba(245,197,24,.12);border:1px solid var(--border-bright);
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.18em;color:var(--y);text-transform:uppercase;
+  border-radius:6px;padding:6px 14px;
+}
+
+/* INSTRUCTION BAR */
+#instr-bar{
+  position:absolute;bottom:116px;left:50%;transform:translateX(-50%);
+  background:var(--panel);border:1px solid var(--border);border-radius:10px;
+  padding:11px 22px;font-size:13.5px;font-weight:500;text-align:center;
+  max-width:560px;line-height:1.65;pointer-events:none;
+  backdrop-filter:blur(8px);display:none;
+}
+#instr-bar em{color:var(--y);font-style:normal;font-weight:600}
+
+/* GUIDE WIDGET */
+#guide{
+  position:absolute;bottom:116px;left:18px;
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:12px;padding:14px 16px;min-width:220px;max-width:280px;
+  pointer-events:auto;backdrop-filter:blur(8px);
+  display:none;
+}
+.guide-header{
+  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:.18em;color:var(--y);text-transform:uppercase;
+  margin-bottom:9px;display:flex;align-items:center;gap:7px;
+}
+.guide-header::after{content:'';flex:1;height:1px;background:var(--border)}
+.guide-dot{width:8px;height:8px;border-radius:50%;background:var(--g);flex-shrink:0;animation:guide-pulse 2s infinite}
+@keyframes guide-pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.5)}50%{opacity:.8;box-shadow:0 0 0 4px rgba(34,197,94,0)}}
+#guide-text{font-size:12px;color:var(--text-mid);line-height:1.6;min-height:36px;transition:color .3s}
+#guide-text em{color:var(--y);font-style:normal}
+#guide-actions{display:flex;gap:8px;margin-top:10px}
+#hint-btn{
+  flex:1;padding:7px 12px;background:rgba(245,197,24,.1);
+  border:1px solid var(--border-bright);border-radius:7px;
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.14em;color:var(--y);cursor:pointer;transition:all .18s;
+  text-transform:uppercase;
+}
+#hint-btn:hover{background:rgba(245,197,24,.2)}
+#cancel-wire-btn{
+  padding:7px 12px;background:rgba(239,68,68,.1);
+  border:1px solid rgba(239,68,68,.3);border-radius:7px;
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.14em;color:#f87171;cursor:pointer;transition:all .18s;
+  text-transform:uppercase;display:none;
+}
+#cancel-wire-btn:hover{background:rgba(239,68,68,.2)}
+
+/* WIRE TRAY */
+#wire-tray{
+  position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.78);border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;padding:10px 14px;pointer-events:auto;
+  display:none;gap:8px;flex-direction:column;min-width:260px;
+  backdrop-filter:blur(8px);animation:panel-in .25s ease;
+}
+.tray-label{
+  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:.18em;color:var(--text-dim);text-transform:uppercase;
+  text-align:center;
+}
+.tray-pills{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.wire-pill{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 14px;border-radius:22px;cursor:pointer;
+  border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);
+  font-size:11px;font-weight:600;letter-spacing:.05em;
+  transition:all .18s;white-space:nowrap;
+}
+.wire-pill:hover:not(.done){transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.wire-pill.held{border-color:var(--y)!important;background:rgba(245,197,24,.15)!important;box-shadow:0 0 14px rgba(245,197,24,.3)}
+.wire-pill.done{opacity:.28;pointer-events:none}
+.wire-pill-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* TERMINAL OVERLAYS */
+.term-dot{
+  position:absolute;pointer-events:auto;z-index:30;
+  width:38px;height:38px;border-radius:50%;
+  border:2.5px solid rgba(245,197,24,.7);
+  background:rgba(245,197,24,.08);
+  transform:translate(-50%,-50%);
+  cursor:pointer;transition:all .15s;
+  display:none;
+  animation:term-pulse 1.2s ease-out infinite;
+}
+.term-dot:hover{background:rgba(245,197,24,.25);border-color:var(--y);transform:translate(-50%,-50%) scale(1.15)}
+.term-dot.picked{border-color:var(--g);background:rgba(34,197,94,.2);animation:none}
+.term-dot-label{
+  position:absolute;left:50%;transform:translateX(-50%);
+  top:calc(100% + 4px);
+  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:.1em;color:var(--y);background:rgba(0,0,0,.85);
+  padding:2px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;
+}
+@keyframes term-pulse{0%{box-shadow:0 0 0 0 rgba(245,197,24,.5)}100%{box-shadow:0 0 0 12px rgba(245,197,24,0)}}
+
+/* INSPECT DRAWER (notification-style right panel) */
+#inspect-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.45);
+  z-index:34;display:none;backdrop-filter:blur(2px);pointer-events:auto;
+}
+#inspect-card{
+  position:fixed;top:62px;right:0;bottom:0;width:310px;
+  background:#0f1117;
+  border-left:1px solid rgba(255,255,255,.1);
+  pointer-events:auto;z-index:35;overflow-y:auto;
+  transform:translateX(100%);
+  transition:transform .32s cubic-bezier(.22,1,.36,1);
+}
+#inspect-card.open{transform:translateX(0)}
+.ic-header{
+  display:flex;align-items:center;gap:10px;
+  padding:18px 18px 14px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+  background:#0f1117;position:sticky;top:0;z-index:2;
+}
+.ic-type-icon{
+  width:36px;height:36px;border-radius:9px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+}
+.ic-title-wrap{flex:1;min-width:0}
+.ic-name{
+  font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;
+  color:#fff;letter-spacing:.02em;line-height:1.1;
+}
+.ic-type-lbl{font-size:10px;color:var(--text-dim);letter-spacing:.08em;margin-top:2px}
+.ic-close{
+  width:28px;height:28px;border-radius:50%;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+  color:rgba(255,255,255,.4);cursor:pointer;flex-shrink:0;
+  font-size:13px;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.ic-close:hover{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)}
+.ic-section{
+  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:.22em;color:var(--text-dim);text-transform:uppercase;
+  padding:14px 18px 6px;
+}
+.ic-term-row{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:11px 18px;border-bottom:1px solid rgba(255,255,255,.045);
+  cursor:default;transition:background .14s;
+}
+.ic-term-row:hover{background:rgba(255,255,255,.04)}
+.ic-term-badge{
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:900;
+  letter-spacing:.06em;padding:4px 0;border-radius:6px;
+  min-width:52px;text-align:center;flex-shrink:0;margin-top:1px;
+}
+.ic-term-info{flex:1}
+.ic-term-name{font-size:13px;font-weight:600;color:#fff;margin-bottom:3px}
+.ic-term-desc{font-size:11px;color:var(--text-dim);line-height:1.55}
+.ic-how-wrap{padding:14px 18px 22px}
+.ic-how-label{
+  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:.22em;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px;
+}
+.ic-how{
+  font-size:12px;color:var(--text-mid);line-height:1.75;
+  background:rgba(255,255,255,.04);border-radius:8px;
+  padding:13px 15px;border-left:3px solid var(--border-bright);
+}
+
+/* TOAST */
+#toast{
+  position:absolute;top:66px;left:50%;transform:translateX(-50%);
+  padding:9px 20px;border-radius:30px;font-size:13px;font-weight:500;
+  opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;
+  backdrop-filter:blur(6px);
+}
+#toast.show{opacity:1}
+#toast.ok{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.5);color:#4ade80}
+#toast.err{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#f87171}
+#toast.info{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4);color:#60a5fa}
+#toast.warn{background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.4);color:var(--y)}
+
+/* TUTORIAL RING */
+#tgt-ring{position:absolute;pointer-events:none;z-index:25;width:68px;height:68px;border-radius:50%;border:2.5px solid var(--y);transform:translate(-50%,-50%);display:none}
+#tgt-pulse{position:absolute;pointer-events:none;z-index:24;width:68px;height:68px;border-radius:50%;border:1.5px solid rgba(245,197,24,.4);transform:translate(-50%,-50%);animation:rpulse 1.4s ease-out infinite;display:none}
+@keyframes rpulse{0%{transform:translate(-50%,-50%) scale(1);opacity:.8}100%{transform:translate(-50%,-50%) scale(2.2);opacity:0}}
+#tgt-label{position:absolute;pointer-events:none;z-index:26;background:rgba(0,0,0,.88);border:1px solid var(--y);color:var(--y);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;padding:3px 11px;border-radius:4px;transform:translateX(-50%);display:none;white-space:nowrap;animation:lbl-bounce .75s ease-in-out infinite alternate}
+@keyframes lbl-bounce{from{transform:translateX(-50%) translateY(0)}to{transform:translateX(-50%) translateY(8px)}}
+
+/* SUCCESS OVERLAY */
+#success-overlay{position:absolute;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;pointer-events:auto;backdrop-filter:blur(4px)}
+#success-overlay.show{display:flex;animation:fade-in .4s ease}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+.so-check{width:80px;height:80px;border-radius:50%;border:3px solid var(--g);display:flex;align-items:center;justify-content:center;font-size:36px;animation:check-in .4s .1s cubic-bezier(.22,1,.36,1) both}
+@keyframes check-in{from{transform:scale(0) rotate(-20deg)}to{transform:scale(1) rotate(0)}}
+.so-title{font-family:'Barlow Condensed',sans-serif;font-size:64px;font-weight:900;color:var(--g);line-height:1}
+.so-sub{font-size:14px;color:rgba(255,255,255,.6);max-width:340px;text-align:center;line-height:1.6}
+.so-divider{width:80px;height:1px;background:rgba(255,255,255,.12)}
+.so-stats{display:flex;gap:24px}
+.so-stat{text-align:center}
+.so-stat-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:#fff}
+.so-stat-lbl{font-size:11px;color:var(--text-dim);letter-spacing:.06em}
+.so-btns{display:flex;gap:10px;margin-top:6px}
+.so-btn{padding:12px 28px;border-radius:9px;background:var(--y);color:#000;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:900;letter-spacing:.08em;border:none;cursor:pointer;transition:all .15s}
+.so-btn:hover{transform:scale(1.04);background:#ffd740}
+.so-btn:active{transform:scale(.98)}
+.so-btn.sec{background:rgba(245,197,24,.12);color:var(--y);border:1px solid var(--border-bright)}
+.so-btn.sec:hover{background:rgba(245,197,24,.22)}
+
+/* SELECTION SCREEN */
+#sel-screen{
+  position:absolute;inset:0;background:rgba(10,9,7,.96);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:32px;pointer-events:auto;z-index:100;
+  backdrop-filter:blur(4px);
+}
+.sel-header{text-align:center}
+.sel-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:900;
+  color:#fff;letter-spacing:.08em;text-transform:uppercase;line-height:1;
+}
+.sel-sub{font-size:13px;color:var(--text-dim);margin-top:6px;letter-spacing:.06em}
+.sel-cards{display:flex;gap:16px;align-items:stretch}
+.type-card{
+  width:200px;background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;padding:22px 18px;cursor:pointer;
+  transition:all .22s;display:flex;flex-direction:column;gap:10px;
+  pointer-events:auto;
+}
+.type-card:hover{border-color:var(--border-bright);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.type-card.c1:hover{border-color:rgba(34,197,94,.6);box-shadow:0 12px 40px rgba(34,197,94,.12)}
+.type-card.c2:hover{border-color:rgba(59,130,246,.6);box-shadow:0 12px 40px rgba(59,130,246,.12)}
+.type-card.c3:hover{border-color:rgba(245,158,11,.6);box-shadow:0 12px 40px rgba(245,158,11,.12)}
+.tc-icon{font-size:32px;margin-bottom:2px}
+.tc-badge{
+  display:inline-block;font-family:'Barlow Condensed',sans-serif;font-size:10px;
+  font-weight:700;letter-spacing:.16em;padding:3px 10px;border-radius:4px;
+  text-transform:uppercase;align-self:flex-start;
+}
+.c1 .tc-badge{background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.35)}
+.c2 .tc-badge{background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.35)}
+.c3 .tc-badge{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.35)}
+.tc-name{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:#fff;line-height:1.1}
+.tc-diff{display:flex;gap:3px;margin-top:2px}
+.tc-star{width:8px;height:8px;border-radius:2px}
+.tc-star.on{background:var(--y)}
+.tc-star.off{background:rgba(255,255,255,.12)}
+.tc-desc{font-size:11px;color:var(--text-dim);line-height:1.6;flex:1}
+.tc-btn{
+  margin-top:6px;padding:9px 0;text-align:center;border-radius:8px;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;border:none;cursor:pointer;
+  transition:all .15s;
+}
+.c1 .tc-btn{background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.3)}
+.c2 .tc-btn{background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.3)}
+.c3 .tc-btn{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.3)}
+.type-card:hover .tc-btn{transform:none}
+.c1:hover .tc-btn{background:rgba(34,197,94,.3)}
+.c2:hover .tc-btn{background:rgba(59,130,246,.3)}
+.c3:hover .tc-btn{background:rgba(245,158,11,.3)}
+
+/* WIRE CONNECTED animation */
+@keyframes wire-in{from{opacity:0}to{opacity:1}}
+@keyframes panel-in{from{opacity:0;transform:translateX(-50%) scale(.97)}to{opacity:1;transform:translateX(-50%) scale(1)}}
+@keyframes fade-up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shake{0%,100%{transform:translate(-50%,-50%)}25%{transform:translate(calc(-50% - 5px),-50%)}75%{transform:translate(calc(-50% + 5px),-50%)}}
+.term-dot.reject{animation:shake .3s}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">
+
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button id="btn-back" onclick="goBack()" style="
+        display:flex;align-items:center;gap:6px;padding:6px 14px;
+        background:rgba(245,197,24,.10);border:1px solid rgba(245,197,24,.4);
+        border-radius:7px;font-family:'Barlow Condensed',sans-serif;font-size:11px;
+        font-weight:700;letter-spacing:.14em;color:var(--y);cursor:pointer;
+        text-transform:uppercase;transition:all .18s;pointer-events:auto;
+      ">&#8592; BACK</button>
+      <div class="tb-brand" id="tb-brand">Switch Wiring Simulator</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="tb-progress" id="tb-prog" style="display:none">
+        <span class="lbl">wires</span>
+        <div id="prog-dots"></div>
+        <span id="prog-count" style="color:var(--y);margin-left:2px">0/0</span>
+      </div>
+      <div class="tb-type-badge" id="tb-badge" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- INSTRUCTION BAR -->
+  <div id="instr-bar"></div>
+
+  <!-- GUIDE WIDGET -->
+  <div id="guide">
+    <div class="guide-header"><div class="guide-dot"></div>Guide</div>
+    <div id="guide-text">Loading...</div>
+    <div id="guide-actions">
+      <button id="hint-btn" onclick="showHint()">HINT</button>
+      <button id="cancel-wire-btn" onclick="cancelWire()">CANCEL</button>
+    </div>
+  </div>
+
+  <!-- WIRE TRAY -->
+  <div id="wire-tray">
+    <div class="tray-label">Wire Tray — tap a wire then connect its terminals</div>
+    <div class="tray-pills" id="tray-pills"></div>
+  </div>
+
+  <!-- TERMINAL DOTS (populated dynamically) -->
+  <div id="term-dots-layer"></div>
+
+  <!-- INSPECT OVERLAY + DRAWER -->
+  <div id="inspect-overlay" onclick="closeInspect()"></div>
+  <div id="inspect-card">
+    <div class="ic-header">
+      <div class="ic-type-icon" id="ic-icon"></div>
+      <div class="ic-title-wrap">
+        <div class="ic-name" id="ic-name"></div>
+        <div class="ic-type-lbl" id="ic-type-lbl">COMPONENT INFO</div>
+      </div>
+      <button class="ic-close" onclick="closeInspect()">&#x2715;</button>
+    </div>
+    <div class="ic-section">Terminals</div>
+    <div id="ic-terminals"></div>
+    <div class="ic-how-wrap">
+      <div class="ic-how-label">How it works</div>
+      <div class="ic-how" id="ic-how"></div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <!-- TUTORIAL RING -->
+  <div id="tgt-ring"></div>
+  <div id="tgt-pulse"></div>
+  <div id="tgt-label">TAP HERE</div>
+
+  <!-- SELECTION SCREEN -->
+  <div id="sel-screen">
+    <div class="sel-header">
+      <div class="sel-title">Switch Wiring Simulator</div>
+      <div class="sel-sub">Choose a circuit type to explore and wire up</div>
+    </div>
+    <div class="sel-cards">
+      <div class="type-card c1" onclick="startType('1way')">
+        <div class="tc-icon">&#9889;</div>
+        <div class="tc-badge">1-SWITCH</div>
+        <div class="tc-name">Single Location Control</div>
+        <div class="tc-diff"><div class="tc-star on"></div><div class="tc-star off"></div><div class="tc-star off"></div></div>
+        <div class="tc-desc">One switch controls one light. The simplest circuit — live wire interrupted by a single pole.</div>
+        <button class="tc-btn">BEGIN</button>
+      </div>
+      <div class="type-card c2" onclick="startType('2way')">
+        <div class="tc-icon">&#8644;</div>
+        <div class="tc-badge">2-SWITCH</div>
+        <div class="tc-name">Two Location Control</div>
+        <div class="tc-diff"><div class="tc-star on"></div><div class="tc-star on"></div><div class="tc-star off"></div></div>
+        <div class="tc-desc">Two switches share control of one light. Uses traveler wires between 3-way switches.</div>
+        <button class="tc-btn">BEGIN</button>
+      </div>
+      <div class="type-card c3" onclick="startType('3way')">
+        <div class="tc-icon">&#8645;</div>
+        <div class="tc-badge">3-SWITCH</div>
+        <div class="tc-name">Three Location Control</div>
+        <div class="tc-diff"><div class="tc-star on"></div><div class="tc-star on"></div><div class="tc-star on"></div></div>
+        <div class="tc-desc">Three switches with an intermediate (4-way) unit in the center. Any switch toggles the light.</div>
+        <button class="tc-btn">BEGIN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUCCESS OVERLAY -->
+  <div id="success-overlay">
+    <div class="so-check">&#10003;</div>
+    <div class="so-title" id="so-title">WIRED!</div>
+    <div class="so-sub" id="so-sub"></div>
+    <div class="so-divider"></div>
+    <div class="so-stats">
+      <div class="so-stat"><div class="so-stat-val" id="so-errors">--</div><div class="so-stat-lbl">Mistakes</div></div>
+      <div class="so-stat"><div class="so-stat-val" id="so-hints">--</div><div class="so-stat-lbl">Hints Used</div></div>
+      <div class="so-stat"><div class="so-stat-val" id="so-rating">--</div><div class="so-stat-lbl">Rating</div></div>
+    </div>
+    <div class="so-btns">
+      <button class="so-btn sec" onclick="goSelection()">CHANGE TYPE</button>
+      <button class="so-btn" onclick="playAgain()">PLAY AGAIN</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ════════════════════════════════════════════════════════
+// RENDERER
+// ════════════════════════════════════════════════════════
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d1220);
+scene.fog = new THREE.FogExp2(0x0d1220, 0.028);
+
+const camera = new THREE.PerspectiveCamera(44, innerWidth / innerHeight, 0.1, 100);
+camera.position.set(0, 1.2, 9.5);
+camera.lookAt(0, 1.0, 0);
+
+// ════════════════════════════════════════════════════════
+// LIGHTING
+// ════════════════════════════════════════════════════════
+scene.add(new THREE.AmbientLight(0xc8deff, 0.55));  // cool blue ambient for training room
+const keyLight = new THREE.SpotLight(0xfff5e8, 2.8, 28, Math.PI * 0.15, 0.3, 1.4);
+keyLight.position.set(0, 9, 7); keyLight.castShadow = true;
+keyLight.shadow.mapSize.setScalar(1024); scene.add(keyLight); scene.add(keyLight.target);
+const rimL = new THREE.DirectionalLight(0x3366cc, 0.7); rimL.position.set(-8, 4, -2); scene.add(rimL);
+const rimR = new THREE.DirectionalLight(0x5588ff, 0.4); rimR.position.set(8, 2, -2); scene.add(rimR);
+const fill = new THREE.DirectionalLight(0xffffff, 0.35); fill.position.set(0, 6, 8); scene.add(fill);
+const bulbGlow = new THREE.PointLight(0xfbbf24, 0, 7, 1.8); bulbGlow.position.set(0, 2.85, 0.4); scene.add(bulbGlow);
+const bounce = new THREE.PointLight(0x1a3a8a, 0.5, 14); bounce.position.set(0, -1, 4); scene.add(bounce);
+
+// ════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════
+function box(w, h, d, color, rough = 0.7, metal = 0.05, emit = 0) {
+  const m = new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal });
+  if (emit) { m.emissive = new THREE.Color(color); m.emissiveIntensity = emit; }
+  return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+}
+function cyl(rt, rb, h, seg, color, rough = 0.5, metal = 0.3) {
+  return new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg),
+    new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal }));
+}
+function mkWire(color, pts, radius = 0.028) {
+  const curve = new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(...p)));
+  const m = new THREE.Mesh(
+    new THREE.TubeGeometry(curve, 40, radius, 8, false),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, transparent: true, opacity: 0 })
+  );
+  m.visible = false; scene.add(m); return m;
+}
+
+// ════════════════════════════════════════════════════════
+// STATIC ROOM
+// ════════════════════════════════════════════════════════
+const wallMesh = new THREE.Mesh(new THREE.PlaneGeometry(18, 11),
+  new THREE.MeshStandardMaterial({ color: 0x1a5276, roughness: 0.88 }));
+wallMesh.position.z = -1.8; wallMesh.receiveShadow = true; scene.add(wallMesh);
+const baseboard = box(18, 0.22, 0.08, 0x0d2e4a, 0.85, 0.05);
+baseboard.position.set(0, -4.8, -1.74); scene.add(baseboard);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(18, 10),
+  new THREE.MeshStandardMaterial({ color: 0xb8a882, roughness: 0.92, metalness: 0.01 }));
+floor.rotation.x = -Math.PI / 2; floor.position.y = -3.8; floor.receiveShadow = true; scene.add(floor);
+const ceiling = box(18, 0.06, 0.1, 0x0e2c42, 0.9, 0);
+ceiling.position.set(0, 4.2, -1.5); scene.add(ceiling);
+
+// ════════════════════════════════════════════════════════
+// SWITCH FACTORY
+// ════════════════════════════════════════════════════════
+function buildSwitch(x, y, z, variant = 'standard') {
+  const root = new THREE.Group();
+  root.position.set(x, y, z);
+  scene.add(root);
+
+  const faceColor  = variant === 'intermediate' ? 0xc8c4b8 : 0xd8d4c8;
+  const rimColor   = variant === 'intermediate' ? 0xe0dcd0 : 0xf0ece0;
+  const labelColor = variant === 'intermediate' ? 0x6688aa : 0x555550;
+
+  // Back box
+  const back = box(1.0, 1.75, 0.18, 0x333028, 0.85, 0.05);
+  back.position.z = -0.09; back.receiveShadow = true; root.add(back);
+  // Face plate
+  const face = box(0.88, 1.52, 0.08, faceColor, 0.6, 0.04);
+  face.castShadow = true; root.add(face);
+  // Rim
+  const rim = box(0.86, 1.50, 0.01, rimColor, 0.4, 0.0);
+  rim.position.z = 0.045; root.add(rim);
+  // Screws [idx 3,4 area] — stored at indices 3-6
+  const screwPositions = [[-0.3, 0.62], [0.3, 0.62], [-0.3, -0.62], [0.3, -0.62]];
+  screwPositions.forEach(([sx, sy]) => {
+    const sc = cyl(0.05, 0.045, 0.055, 12, 0xb8b4a8, 0.25, 0.7);
+    sc.rotation.x = Math.PI / 2; sc.position.set(sx, sy, 0.07); root.add(sc);
+    const sl = box(0.08, 0.012, 0.025, 0x222222, 0.9, 0);
+    sl.position.set(sx, sy, 0.1); root.add(sl);
+  });
+  // Rocker body [idx ~11]
+  const rBody = box(0.52, 1.08, 0.09, 0xe8e4d8, 0.55, 0.03);
+  rBody.position.set(0, 0, 0.085); root.add(rBody);
+  // Rocker top half [idx ~12] — this is what we animate
+  const rTop = box(0.50, 0.52, 0.06, 0xf5f2e8, 0.45, 0.02);
+  rTop.position.set(0, 0.275, 0.125); root.add(rTop);
+  // Pivot line [idx ~13]
+  const pivot = box(0.48, 0.008, 0.07, 0xaaa8a0, 0.5, 0.1);
+  pivot.position.set(0, 0, 0.125); root.add(pivot);
+  // Indicator dot [idx ~14]
+  const dotCol = variant === 'intermediate' ? 0xf59e0b : 0x22c55e;
+  const dot = box(0.08, 0.08, 0.025, dotCol, 0.3, 0.1, 0.8);
+  dot.position.set(0, 0.42, 0.135); root.add(dot);
+  // Label strip
+  const lbl = box(0.38, 0.06, 0.015, labelColor, 0.8, 0);
+  lbl.position.set(0, -0.58, 0.11); root.add(lbl);
+  // Wall label
+  const wlbl = box(0.6, 0.055, 0.015, 0x555550, 0.9, 0);
+  wlbl.position.set(0, 0.93, 0.01); root.add(wlbl);
+
+  // Store references by userData
+  root.userData.rockerTop = rTop;
+  root.userData.indicatorDot = dot;
+  root.userData.state = false;
+
+  return root;
+}
+
+function buildLightFixture() {
+  const root = new THREE.Group();
+  root.position.set(0, 2.85, -1.4); scene.add(root);
+
+  const canopy = cyl(0.45, 0.42, 0.1, 24, 0x777777, 0.4, 0.55);
+  canopy.rotation.x = Math.PI / 2; canopy.position.set(0, 0.05, 0); root.add(canopy);
+  const canopyRim = new THREE.Mesh(new THREE.TorusGeometry(0.44, 0.018, 8, 32),
+    new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.3, metalness: 0.65 }));
+  canopyRim.rotation.x = Math.PI / 2; root.add(canopyRim);
+  const stem = cyl(0.04, 0.04, 0.55, 8, 0x888888, 0.3, 0.7);
+  stem.position.set(0, -0.275, 0); root.add(stem);
+  const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.55, 0.55, 32),
+    new THREE.MeshStandardMaterial({ color: 0x4a4030, roughness: 0.5, metalness: 0.2 }));
+  shade.position.set(0, -0.82, 0); root.add(shade);
+  const shadeInner = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.53, 0.52, 32, 1, true),
+    new THREE.MeshStandardMaterial({
+      color: 0xfff8e0, roughness: 0.85, metalness: 0,
+      emissive: new THREE.Color(0x332200), emissiveIntensity: 0.1, side: THREE.BackSide
+    }));
+  shadeInner.position.set(0, -0.82, 0); root.add(shadeInner);
+  const bulbGeo = new THREE.SphereGeometry(0.22, 20, 14);
+  const bulbMat = new THREE.MeshStandardMaterial({
+    color: 0xfff9e8, roughness: 0.05, metalness: 0,
+    transparent: true, opacity: 0.5,
+    emissive: new THREE.Color(0x221800), emissiveIntensity: 0.15
+  });
+  const bulbMesh = new THREE.Mesh(bulbGeo, bulbMat);
+  bulbMesh.position.set(0, -1.15, 0); root.add(bulbMesh);
+  const bBase = cyl(0.12, 0.11, 0.16, 16, 0x999999, 0.25, 0.7);
+  bBase.position.set(0, -0.99, 0); root.add(bBase);
+  const sockRing = new THREE.Mesh(new THREE.TorusGeometry(0.135, 0.015, 8, 24),
+    new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.2, metalness: 0.8 }));
+  sockRing.position.set(0, -0.91, 0); root.add(sockRing);
+  const jBox = box(0.85, 0.22, 0.7, 0x555555, 0.7, 0.3);
+  jBox.position.set(0, 0.16, 0); root.add(jBox);
+
+  root.userData.bulbMat = bulbMat;
+  root.userData.shadeInner = shadeInner;
+  return root;
+}
+
+// ════════════════════════════════════════════════════════
+// TYPE CONFIGS
+// ════════════════════════════════════════════════════════
+const TYPES = {
+  '1way': {
+    name: '1-Switch Control',
+    badge: '1-SWITCH',
+    switchCount: 1,
+    switchPositions: [[0, 0, -1.68]],
+    switchVariants: ['standard'],
+    conduitSpans: [],         // no horizontal conduit
+    wires: [
+      { id: 'live',    color: 0xdc2626, css: '#dc2626', label: 'LIVE',       clickTargets: ['sw0_L'] },
+      { id: 'tolight', color: 0xef4444, css: '#ef4444', label: 'SW → LIGHT', clickTargets: ['sw0_LOAD', 'light_L'] },
+      { id: 'neutral', color: 0x3b82f6, css: '#3b82f6', label: 'NEUTRAL',    clickTargets: ['light_N'] },
+    ],
+    // terminal defs: swIdx=-1 means lightRoot
+    terminals: [
+      { id: 'sw0_L',    swIdx: 0, lx: -0.28, label: 'L',     detail: 'LINE — incoming live supply' },
+      { id: 'sw0_LOAD', swIdx: 0, lx:  0.28, label: 'LOAD',  detail: 'LOAD — output to light' },
+      { id: 'light_L',  swIdx: -1, lx:  0.25, label: 'L-IN', detail: 'Live wire input to fixture' },
+      { id: 'light_N',  swIdx: -1, lx: -0.25, label: 'N',    detail: 'Neutral return' },
+    ],
+    wirePaths: {
+      live:    [[-5.5,0,-1.65],[-1,0,-1.62],[-0.28,-0.72,-1.63]],
+      tolight: [[0.28,-0.72,-1.63],[0.3,0.6,-1.55],[0.2,1.8,-1.48],[0.1,2.6,-1.42],[0,2.65,-1.4]],
+      neutral: [[-5.5,0.4,-1.65],[-1.5,0.4,-1.6],[0,0.4,-1.52],[0,1.5,-1.48],[0,2.65,-1.4]],
+    },
+    lightLogic: (sw) => sw[0],
+    inspect: {
+      sw0: { name: 'Single-Pole Switch', terminals: [
+        { label: 'L (LINE)', desc: 'Incoming live supply wire' },
+        { label: 'LOAD', desc: 'Output — feeds the light when switch closes' },
+      ], how: 'When closed, connects LINE to LOAD. When open, breaks the circuit. Only interrupts the LIVE wire — neutral bypasses the switch entirely.' },
+      light: { name: 'Light Fixture', terminals: [
+        { label: 'L-IN', desc: 'Switched live wire input' },
+        { label: 'N', desc: 'Neutral return wire' },
+      ], how: 'Glows when both L-IN and N are connected and the switch is closed, completing the circuit.' },
+    },
+    guide: {
+      start: 'Explore the scene freely — tap any component to learn what it does. When ready, pick a wire from the tray below.',
+      hint0: 'Pick the <em>LIVE</em> wire from the tray, then tap the <em>L terminal</em> on the switch.',
+      hint1: 'Now pick <em>SW → LIGHT</em> and connect the switch <em>LOAD terminal</em> to the <em>light fixture</em>.',
+      hint2: 'Last wire — pick <em>NEUTRAL</em> and tap the <em>N terminal</em> on the fixture.',
+      testing: 'All wired! Tap the switch on the wall to toggle the light.',
+      done: 'Circuit verified — you\'ve confirmed the switch controls the light.',
+    }
+  },
+
+  '2way': {
+    name: '2-Switch Control',
+    badge: '2-SWITCH',
+    switchCount: 2,
+    switchPositions: [[-2.5, 0, -1.68], [2.5, 0, -1.68]],
+    switchVariants: ['standard', 'standard'],
+    conduitSpans: [[-2.5, 2.5]],
+    wires: [
+      { id: 'live',    color: 0xdc2626, css: '#dc2626', label: 'LIVE',       clickTargets: ['sw0_COM'] },
+      { id: 't1',      color: 0xd97706, css: '#d97706', label: 'TRAVELER 1', clickTargets: ['sw0_T1', 'sw1_T1'] },
+      { id: 't2',      color: 0xf59e0b, css: '#f59e0b', label: 'TRAVELER 2', clickTargets: ['sw0_T2', 'sw1_T2'] },
+      { id: 'tolight', color: 0xef4444, css: '#ef4444', label: 'SW2 → LIGHT',clickTargets: ['sw1_COM', 'light_L'] },
+      { id: 'neutral', color: 0x3b82f6, css: '#3b82f6', label: 'NEUTRAL',    clickTargets: ['light_N'] },
+    ],
+    terminals: [
+      { id: 'sw0_COM', swIdx: 0, lx: -0.28, label: 'COM', detail: 'Common — connects to live supply' },
+      { id: 'sw0_T1',  swIdx: 0, lx:  0,    label: 'T1',  detail: 'Traveler 1 — links to SW2 T1' },
+      { id: 'sw0_T2',  swIdx: 0, lx:  0.28, label: 'T2',  detail: 'Traveler 2 — links to SW2 T2' },
+      { id: 'sw1_COM', swIdx: 1, lx: -0.28, label: 'COM', detail: 'Common — output to light fixture' },
+      { id: 'sw1_T1',  swIdx: 1, lx:  0,    label: 'T1',  detail: 'Traveler 1 — links back to SW1 T1' },
+      { id: 'sw1_T2',  swIdx: 1, lx:  0.28, label: 'T2',  detail: 'Traveler 2 — links back to SW1 T2' },
+      { id: 'light_L', swIdx: -1, lx:  0.25, label: 'L-IN', detail: 'Live wire input to fixture' },
+      { id: 'light_N', swIdx: -1, lx: -0.25, label: 'N',    detail: 'Neutral return' },
+    ],
+    wirePaths: {
+      live:    [[-5.5,0,-1.65],[-3.8,0,-1.62],[-2.78,0,-1.6],[-2.5-0.28,-0.72,-1.63]],
+      t1:      [[-2.5+0,-0.72,-1.63],[-2.5,-1.1,-1.5],[-2.2,-1.32,-1.3],[0,-1.32,-1.2],[2.2,-1.32,-1.3],[2.5,-1.1,-1.5],[2.5+0,-0.72,-1.63]],
+      t2:      [[-2.5+0.28,-0.72,-1.63],[-2.5+0.28,-1.0,-1.45],[-2.2,-1.55,-1.25],[0,-1.55,-1.15],[2.2,-1.55,-1.25],[2.5-0.28,-1.0,-1.45],[2.5-0.28,-0.72,-1.63]],
+      tolight: [[2.5+0.28,-0.72,-1.63],[2.8,0.6,-1.55],[2.4,1.8,-1.48],[0.4,2.6,-1.42],[0,2.65,-1.4]],
+      neutral: [[-5.5,0.4,-1.65],[-3.5,0.4,-1.6],[-1.5,0.4,-1.55],[0,0.4,-1.52],[0,1.5,-1.48],[0,2.65,-1.4]],
+    },
+    lightLogic: (sw) => sw[0] ^ sw[1] ? true : false,
+    inspect: {
+      sw0: { name: 'Switch 1 (3-Way)', terminals: [
+        { label: 'COM', desc: 'Common — always connected to the live supply' },
+        { label: 'T1', desc: 'Traveler 1 — one of two paths between switches' },
+        { label: 'T2', desc: 'Traveler 2 — the other path between switches' },
+      ], how: 'A 3-way switch always connects COM to either T1 or T2. Toggling switches between traveler paths.' },
+      sw1: { name: 'Switch 2 (3-Way)', terminals: [
+        { label: 'COM', desc: 'Common — output side, feeds the light' },
+        { label: 'T1', desc: 'Traveler 1 — receives from SW1 T1' },
+        { label: 'T2', desc: 'Traveler 2 — receives from SW1 T2' },
+      ], how: 'Identical to SW1 but mirrored. COM is the output. Light is ON when both switches connect through the same traveler.' },
+      light: { name: 'Light Fixture', terminals: [
+        { label: 'L-IN', desc: 'Switched live from SW2 COM' },
+        { label: 'N', desc: 'Neutral return' },
+      ], how: 'Light is ON when SW1 and SW2 route current through the same traveler wire.' },
+    },
+    guide: {
+      start: 'This circuit has two switches — explore them both. The key is the TRAVELER wires that link them.',
+      hint0: 'Start with the <em>LIVE</em> wire — tap SW1\'s <em>COM terminal</em>.',
+      hint1: 'Now connect the two <em>TRAVELER</em> wires between SW1 and SW2 (T1↔T1, T2↔T2).',
+      hint2: 'Connect <em>SW2 → LIGHT</em> from SW2\'s COM to the fixture.',
+      hint3: 'Last wire — connect <em>NEUTRAL</em> to the fixture N terminal.',
+      testing: 'All wired! Tap either switch to see how both locations control the light.',
+      done: 'Both switches independently control the light. That\'s the 3-way switch principle.',
+    }
+  },
+
+  '3way': {
+    name: '3-Switch Control',
+    badge: '3-SWITCH',
+    switchCount: 3,
+    switchPositions: [[-3.2, 0, -1.68], [0, 0, -1.68], [3.2, 0, -1.68]],
+    switchVariants: ['standard', 'intermediate', 'standard'],
+    conduitSpans: [[-3.2, 3.2]],
+    wires: [
+      { id: 'live',   color: 0xdc2626, css: '#dc2626', label: 'LIVE',       clickTargets: ['sw0_COM'] },
+      { id: 'lt1',    color: 0xd97706, css: '#d97706', label: 'LEFT T1',    clickTargets: ['sw0_T1', 'sw1_L1'] },
+      { id: 'lt2',    color: 0xf59e0b, css: '#f59e0b', label: 'LEFT T2',    clickTargets: ['sw0_T2', 'sw1_L2'] },
+      { id: 'rt1',    color: 0x16a34a, css: '#16a34a', label: 'RIGHT T1',   clickTargets: ['sw1_L3', 'sw2_T1'] },
+      { id: 'rt2',    color: 0x15803d, css: '#15803d', label: 'RIGHT T2',   clickTargets: ['sw1_L4', 'sw2_T2'] },
+      { id: 'tolight',color: 0xef4444, css: '#ef4444', label: 'SW3 → LIGHT',clickTargets: ['sw2_COM', 'light_L'] },
+      { id: 'neutral',color: 0x3b82f6, css: '#3b82f6', label: 'NEUTRAL',    clickTargets: ['light_N'] },
+    ],
+    terminals: [
+      { id: 'sw0_COM', swIdx: 0, lx: -0.28, label: 'COM', detail: 'Common — live supply input' },
+      { id: 'sw0_T1',  swIdx: 0, lx:  0,    label: 'T1',  detail: 'Traveler 1 — to intermediate L1' },
+      { id: 'sw0_T2',  swIdx: 0, lx:  0.28, label: 'T2',  detail: 'Traveler 2 — to intermediate L2' },
+      { id: 'sw1_L1',  swIdx: 1, lx: -0.28, label: 'L1',  detail: 'Input 1 from SW1 T1' },
+      { id: 'sw1_L2',  swIdx: 1, lx: -0.09, label: 'L2',  detail: 'Input 2 from SW1 T2' },
+      { id: 'sw1_L3',  swIdx: 1, lx:  0.09, label: 'L3',  detail: 'Output 1 — to SW3 T1' },
+      { id: 'sw1_L4',  swIdx: 1, lx:  0.28, label: 'L4',  detail: 'Output 2 — to SW3 T2' },
+      { id: 'sw2_COM', swIdx: 2, lx: -0.28, label: 'COM', detail: 'Common — output to light' },
+      { id: 'sw2_T1',  swIdx: 2, lx:  0,    label: 'T1',  detail: 'Traveler 1 — from intermediate L3' },
+      { id: 'sw2_T2',  swIdx: 2, lx:  0.28, label: 'T2',  detail: 'Traveler 2 — from intermediate L4' },
+      { id: 'light_L', swIdx: -1, lx:  0.25, label: 'L-IN', detail: 'Switched live from SW3' },
+      { id: 'light_N', swIdx: -1, lx: -0.25, label: 'N',    detail: 'Neutral return' },
+    ],
+    wirePaths: {
+      live:    [[-5.5,0,-1.65],[-4.5,0,-1.62],[-3.48,0,-1.6],[-3.2-0.28,-0.72,-1.63]],
+      lt1:     [[-3.2,-0.72,-1.63],[-3.2,-1.1,-1.5],[-2.5,-1.32,-1.3],[-0.09,-1.32,-1.2],[0-0.28,-0.72,-1.63]],
+      lt2:     [[-3.2+0.28,-0.72,-1.63],[-3.2+0.28,-1.0,-1.45],[-2.5,-1.55,-1.25],[-0.09,-1.55,-1.15],[0-0.09,-0.72,-1.63]],
+      rt1:     [[0+0.09,-0.72,-1.63],[0.09,-1.32,-1.2],[2.5,-1.32,-1.3],[3.2,-1.1,-1.5],[3.2,-0.72,-1.63]],
+      rt2:     [[0+0.28,-0.72,-1.63],[0.28,-1.55,-1.15],[2.5,-1.55,-1.25],[3.2+0.28,-1.0,-1.45],[3.2+0.28,-0.72,-1.63]],
+      tolight: [[3.2-0.28,-0.72,-1.63],[3.5,0.6,-1.55],[3.0,1.8,-1.48],[0.4,2.6,-1.42],[0,2.65,-1.4]],
+      neutral: [[-5.5,0.4,-1.65],[-3.5,0.4,-1.6],[0,0.4,-1.52],[0,1.5,-1.48],[0,2.65,-1.4]],
+    },
+    lightLogic: (sw) => (sw[0] ^ sw[1] ^ sw[2]) ? true : false,
+    inspect: {
+      sw0: { name: 'Switch 1 (3-Way)', terminals: [
+        { label: 'COM', desc: 'Common — live supply in' },
+        { label: 'T1', desc: 'Traveler 1 to intermediate L1' },
+        { label: 'T2', desc: 'Traveler 2 to intermediate L2' },
+      ], how: '3-way end switch. COM receives live supply and routes to T1 or T2 based on position.' },
+      sw1: { name: 'Intermediate Switch (4-Way)', terminals: [
+        { label: 'L1', desc: 'Input from SW1 T1' },
+        { label: 'L2', desc: 'Input from SW1 T2' },
+        { label: 'L3', desc: 'Output to SW3 T1' },
+        { label: 'L4', desc: 'Output to SW3 T2' },
+      ], how: 'The 4-way intermediate switch. In STRAIGHT mode: L1→L3, L2→L4. In CROSS mode: L1→L4, L2→L3. This lets any of the 3 switches change the light state.' },
+      sw2: { name: 'Switch 3 (3-Way)', terminals: [
+        { label: 'COM', desc: 'Common — output to light' },
+        { label: 'T1', desc: 'Traveler 1 from intermediate L3' },
+        { label: 'T2', desc: 'Traveler 2 from intermediate L4' },
+      ], how: 'Mirrors SW1 on the output side. COM feeds the light when circuit is complete.' },
+      light: { name: 'Light Fixture', terminals: [
+        { label: 'L-IN', desc: 'Switched live from SW3 COM' },
+        { label: 'N', desc: 'Neutral return' },
+      ], how: 'Light state changes whenever any of the three switches is toggled — XOR logic.' },
+    },
+    guide: {
+      start: 'Three switches, one light. Explore each switch — notice the center one is an INTERMEDIATE type with 4 terminals.',
+      hint0: 'Start with <em>LIVE</em> — tap SW1\'s <em>COM terminal</em>.',
+      hint1: 'Wire the two <em>LEFT travelers</em> from SW1 (T1, T2) to the intermediate switch (L1, L2).',
+      hint2: 'Wire the two <em>RIGHT travelers</em> from the intermediate (L3, L4) to SW3 (T1, T2).',
+      hint3: 'Connect <em>SW3 → LIGHT</em> from SW3 COM to the fixture.',
+      hint4: 'Last — connect <em>NEUTRAL</em> to the fixture N terminal.',
+      testing: 'All wired! Tap any of the three switches — each one independently toggles the light.',
+      done: 'All three switches control the light. The intermediate switch makes this possible.',
+    }
+  }
+};
+
+// ════════════════════════════════════════════════════════
+// GAME STATE
+// ════════════════════════════════════════════════════════
+const APP = {
+  state: 'selection',  // selection | explore | testing | done
+  type: null,
+  heldWire: null,      // wire id currently held from tray
+  pendingTerm: null,   // first terminal clicked (for 2-target wires)
+  connected: new Set(),// set of wire IDs connected
+  switchStates: [],    // boolean per switch
+  lightOn: false,
+  switchesToggledInTest: new Set(),
+  errors: 0,
+  hintsUsed: 0,
+  guideIndex: 0,
+};
+
+// Scene objects
+let switchRoots = [];
+let lightRoot = null;
+let wireMeshes = {};   // wireId → THREE.Mesh
+let conduitMeshes = [];
+let terminalDefs = [];  // current type's terminal definitions
+let termDots = {};     // termId → DOM element
+
+// Camera
+let camTweening = false, camT = 0, camDur = 0, camCB = null;
+let camFrom = new THREE.Vector3(), camTo = new THREE.Vector3();
+let camLookFrom = new THREE.Vector3(), camLookTo = new THREE.Vector3();
+const clock = new THREE.Clock();
+let idleT = 0;
+
+function animCam(toPos, toLook, dur, cb) {
+  camFrom.copy(camera.position); camTo.copy(toPos);
+  const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+  camLookFrom.copy(camera.position).addScaledVector(dir, 5);
+  camLookTo.copy(toLook);
+  camT = 0; camDur = dur; camCB = cb; camTweening = true;
+}
+function eio(t) { return t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+
+// Tutorial ring
+const tgtRing = document.getElementById('tgt-ring');
+const tgtPulse = document.getElementById('tgt-pulse');
+const tgtLbl = document.getElementById('tgt-label');
+let tutTarget = null;
+function setTut(obj, lbl = 'TAP HERE') {
+  tutTarget = obj; tgtLbl.textContent = lbl;
+}
+function clearTut() {
+  tutTarget = null;
+  tgtRing.style.display = 'none'; tgtPulse.style.display = 'none'; tgtLbl.style.display = 'none';
+}
+function updateTut() {
+  if (!tutTarget) { return; }
+  const wp = new THREE.Vector3(); tutTarget.getWorldPosition(wp);
+  const v = wp.clone().project(camera);
+  if (v.z > 1) { tgtRing.style.display='none'; tgtPulse.style.display='none'; tgtLbl.style.display='none'; return; }
+  const sx = (v.x+1)/2*innerWidth, sy = (-v.y+1)/2*innerHeight;
+  [tgtRing, tgtPulse].forEach(el => { el.style.display='block'; el.style.left=sx+'px'; el.style.top=sy+'px'; });
+  tgtLbl.style.display='block'; tgtLbl.style.left=sx+'px'; tgtLbl.style.top=(sy+46)+'px';
+}
+
+// ════════════════════════════════════════════════════════
+// SCENE INIT
+// ════════════════════════════════════════════════════════
+function clearScene() {
+  switchRoots.forEach(r => { scene.remove(r); r.traverse(c => { if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); }); });
+  switchRoots = [];
+  if (lightRoot) { scene.remove(lightRoot); lightRoot.traverse(c => { if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); }); lightRoot = null; }
+  Object.values(wireMeshes).forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
+  wireMeshes = {};
+  conduitMeshes.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
+  conduitMeshes = [];
+}
+
+function initScene(type) {
+  clearScene();
+  const cfg = TYPES[type];
+
+  // Build switches
+  cfg.switchPositions.forEach(([x, y, z], i) => {
+    switchRoots.push(buildSwitch(x, y, z, cfg.switchVariants[i]));
+  });
+
+  // Build light
+  lightRoot = buildLightFixture();
+
+  // Conduit — orange-red PVC round pipes + gray junction boxes
+  const CR = 0.028, CC = 0xC84010;  // conduit radius / orange-red color
+  // Horizontal conduit spans between switches (2-way and 3-way)
+  cfg.conduitSpans.forEach(([xl, xr]) => {
+    const span = xr - xl;
+    const hc = cyl(CR, CR, span + 0.5, 10, CC, 0.55, 0.08);
+    hc.rotation.z = Math.PI / 2;
+    hc.position.set((xl + xr) / 2, -0.7, -1.74); scene.add(hc); conduitMeshes.push(hc);
+  });
+  // Vertical conduit drops + junction boxes at each switch
+  cfg.switchPositions.forEach(([sx]) => {
+    const vc = cyl(CR, CR, 1.3, 10, CC, 0.55, 0.08);
+    vc.position.set(sx, -1.35, -1.74); scene.add(vc); conduitMeshes.push(vc);
+    const jb = cyl(0.12, 0.12, 0.045, 18, 0x7a7a7a, 0.4, 0.45);
+    jb.rotation.x = Math.PI / 2; jb.position.set(sx, -0.68, -1.77); scene.add(jb); conduitMeshes.push(jb);
+    const jbf = cyl(0.10, 0.10, 0.014, 18, 0xaaaaaa, 0.3, 0.5);
+    jbf.rotation.x = Math.PI / 2; jbf.position.set(sx, -0.68, -1.735); scene.add(jbf); conduitMeshes.push(jbf);
+  });
+  // Vertical conduit to light fixture
+  const vl = cyl(CR, CR, 3.8, 10, CC, 0.55, 0.08);
+  vl.position.set(0, 1.5, -1.74); scene.add(vl); conduitMeshes.push(vl);
+  // Junction box at top for light
+  const jbL = cyl(0.12, 0.12, 0.045, 18, 0x7a7a7a, 0.4, 0.45);
+  jbL.rotation.x = Math.PI / 2; jbL.position.set(0, 3.35, -1.77); scene.add(jbL); conduitMeshes.push(jbL);
+
+  // Build wire meshes
+  cfg.wires.forEach(w => {
+    wireMeshes[w.id] = mkWire(w.color, cfg.wirePaths[w.id]);
+  });
+
+  terminalDefs = cfg.terminals;
+  APP.switchStates = new Array(cfg.switchCount).fill(false);
+}
+
+// ════════════════════════════════════════════════════════
+// TERMINAL OVERLAY SYSTEM
+// ════════════════════════════════════════════════════════
+function getTerminalWorldPos(termDef) {
+  const ly = -0.72, lz = 0.1;
+  if (termDef.swIdx === -1) {
+    // Light fixture junction box
+    const wp = new THREE.Vector3(termDef.lx, 0.16, 0);
+    lightRoot.localToWorld(wp); return wp;
+  }
+  const sw = switchRoots[termDef.swIdx];
+  const wp = new THREE.Vector3(termDef.lx, ly, lz);
+  sw.localToWorld(wp); return wp;
+}
+
+function project3D(worldPos) {
+  const v = worldPos.clone().project(camera);
+  return { x: (v.x+1)/2*innerWidth, y: (-v.y+1)/2*innerHeight };
+}
+
+function buildTermDots() {
+  // Remove old dots
+  const layer = document.getElementById('term-dots-layer');
+  layer.innerHTML = '';
+  termDots = {};
+
+  terminalDefs.forEach(td => {
+    const div = document.createElement('div');
+    div.className = 'term-dot';
+    div.setAttribute('data-term', td.id);
+    const lbl = document.createElement('div');
+    lbl.className = 'term-dot-label';
+    lbl.textContent = td.label;
+    div.appendChild(lbl);
+    div.addEventListener('click', (e) => { e.stopPropagation(); onTermClick(td.id); });
+    layer.appendChild(div);
+    termDots[td.id] = div;
+  });
+}
+
+function updateTermDotPositions() {
+  terminalDefs.forEach(td => {
+    const dot = termDots[td.id];
+    if (!dot || dot.style.display === 'none') return;
+    const wp = getTerminalWorldPos(td);
+    const sp = project3D(wp);
+    dot.style.left = sp.x + 'px';
+    dot.style.top  = sp.y + 'px';
+  });
+}
+
+function showTermDotsForWire(wireId) {
+  hideAllTermDots();
+  const cfg = TYPES[APP.type];
+  const wireDef = cfg.wires.find(w => w.id === wireId);
+  if (!wireDef) return;
+  wireDef.clickTargets.forEach(termId => {
+    const dot = termDots[termId];
+    if (dot) {
+      dot.style.display = 'block';
+      dot.classList.remove('picked');
+    }
+  });
+}
+
+function hideAllTermDots() {
+  Object.values(termDots).forEach(d => { d.style.display = 'none'; d.classList.remove('picked'); });
+}
+
+// ════════════════════════════════════════════════════════
+// WIRE TRAY
+// ════════════════════════════════════════════════════════
+function buildWireTray() {
+  const cfg = TYPES[APP.type];
+  const pills = document.getElementById('tray-pills');
+  pills.innerHTML = '';
+  cfg.wires.forEach(w => {
+    const pill = document.createElement('div');
+    pill.className = 'wire-pill';
+    pill.id = 'pill-' + w.id;
+    pill.innerHTML = `<div class="wire-pill-dot" style="background:${w.css}"></div><span>${w.label}</span>`;
+    pill.addEventListener('click', () => pickWire(w.id));
+    pills.appendChild(pill);
+  });
+  document.getElementById('wire-tray').style.display = 'flex';
+}
+
+function pickWire(wireId) {
+  if (APP.connected.has(wireId)) return;
+  if (APP.heldWire === wireId) { cancelWire(); return; }
+
+  cancelWire();
+  APP.heldWire = wireId;
+  APP.pendingTerm = null;
+
+  // Highlight pill
+  document.getElementById('pill-' + wireId)?.classList.add('held');
+  showTermDotsForWire(wireId);
+
+  const cfg = TYPES[APP.type];
+  const wireDef = cfg.wires.find(w => w.id === wireId);
+  const targets = wireDef.clickTargets.map(id => {
+    const td = terminalDefs.find(t => t.id === id);
+    return td ? td.label : id;
+  }).join(' and ');
+
+  document.getElementById('cancel-wire-btn').style.display = 'block';
+  say(`Tap the <em>${targets}</em> terminal${wireDef.clickTargets.length > 1 ? 's' : ''} to connect.`);
+}
+
+function cancelWire() {
+  if (APP.heldWire) {
+    document.getElementById('pill-' + APP.heldWire)?.classList.remove('held');
+  }
+  APP.heldWire = null;
+  APP.pendingTerm = null;
+  hideAllTermDots();
+  clearTut();
+  document.getElementById('cancel-wire-btn').style.display = 'none';
+  if (APP.state === 'explore') {
+    const cfg = TYPES[APP.type];
+    say(cfg.guide.start);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// TERMINAL CLICK → WIRE CONNECTION
+// ════════════════════════════════════════════════════════
+function onTermClick(termId) {
+  if (!APP.heldWire) return;
+
+  const cfg = TYPES[APP.type];
+  const wireDef = cfg.wires.find(w => w.id === APP.heldWire);
+  if (!wireDef) return;
+
+  const targets = wireDef.clickTargets;
+
+  // Validate this terminal is a valid target
+  if (!targets.includes(termId)) {
+    showToast('Wrong terminal for this wire', 'err');
+    APP.errors++;
+    const dot = termDots[termId];
+    if (dot) { dot.classList.add('reject'); setTimeout(() => dot.classList.remove('reject'), 350); }
+    return;
+  }
+
+  if (targets.length === 1) {
+    // Single-target wire — done immediately
+    completeWireConnection(APP.heldWire);
+  } else {
+    // Two-target wire
+    if (!APP.pendingTerm) {
+      // First click
+      APP.pendingTerm = termId;
+      const dot = termDots[termId];
+      if (dot) dot.classList.add('picked');
+      const td = terminalDefs.find(t => t.id === termId);
+      say(`<em>${td ? td.label : termId}</em> selected — now tap the other end.`);
+    } else if (APP.pendingTerm === termId) {
+      // Clicked same terminal again — deselect
+      const dot = termDots[termId];
+      if (dot) dot.classList.remove('picked');
+      APP.pendingTerm = null;
+      say('Deselected. Tap a valid terminal to start again.');
+    } else {
+      // Both ends clicked
+      completeWireConnection(APP.heldWire);
+    }
+  }
+}
+
+function completeWireConnection(wireId) {
+  APP.connected.add(wireId);
+  APP.heldWire = null;
+  APP.pendingTerm = null;
+  hideAllTermDots();
+  clearTut();
+
+  // Show wire mesh with fade-in
+  const mesh = wireMeshes[wireId];
+  if (mesh) {
+    mesh.visible = true;
+    mesh.material.opacity = 0;
+    let t = 0;
+    const fade = () => {
+      t += 0.04;
+      mesh.material.opacity = Math.min(t, 1);
+      if (t < 1) requestAnimationFrame(fade);
+      else { mesh.material.transparent = false; mesh.material.opacity = 1; }
+    };
+    requestAnimationFrame(fade);
+  }
+
+  // Update tray pill
+  document.getElementById('pill-' + wireId)?.classList.add('done');
+  document.getElementById('cancel-wire-btn').style.display = 'none';
+
+  showToast('Connected ✓', 'ok');
+  updateProgress();
+  afterWireConnected();
+}
+
+function afterWireConnected() {
+  const cfg = TYPES[APP.type];
+  const total = cfg.wires.length;
+  const done = APP.connected.size;
+
+  if (done === total) {
+    // All wires done — enter testing phase
+    setTimeout(() => enterTesting(), 700);
+  } else {
+    autoGuide();
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// PROGRESS UI
+// ════════════════════════════════════════════════════════
+function updateProgress() {
+  const cfg = TYPES[APP.type];
+  const total = cfg.wires.length;
+  const done = APP.connected.size;
+  document.getElementById('prog-count').textContent = done + '/' + total;
+
+  const dots = document.getElementById('prog-dots');
+  dots.innerHTML = '';
+  cfg.wires.forEach((w, i) => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot' + (APP.connected.has(w.id) ? ' done' : '');
+    dots.appendChild(d);
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// GUIDE + AUTO-COACHING
+// ════════════════════════════════════════════════════════
+function say(html) {
+  document.getElementById('guide-text').innerHTML = html;
+}
+
+function autoGuide() {
+  const cfg = TYPES[APP.type];
+  const done = APP.connected.size;
+
+  if (APP.type === '1way') {
+    if (!APP.connected.has('live'))    say(cfg.guide.hint0);
+    else if (!APP.connected.has('tolight')) say(cfg.guide.hint1);
+    else if (!APP.connected.has('neutral')) say(cfg.guide.hint2);
+  } else if (APP.type === '2way') {
+    if (!APP.connected.has('live'))    say(cfg.guide.hint0);
+    else if (!APP.connected.has('t1') || !APP.connected.has('t2')) say(cfg.guide.hint1);
+    else if (!APP.connected.has('tolight')) say(cfg.guide.hint2);
+    else if (!APP.connected.has('neutral')) say(cfg.guide.hint3);
+  } else if (APP.type === '3way') {
+    if (!APP.connected.has('live'))    say(cfg.guide.hint0);
+    else if (!APP.connected.has('lt1') || !APP.connected.has('lt2')) say(cfg.guide.hint1);
+    else if (!APP.connected.has('rt1') || !APP.connected.has('rt2')) say(cfg.guide.hint2);
+    else if (!APP.connected.has('tolight')) say(cfg.guide.hint3);
+    else if (!APP.connected.has('neutral')) say(cfg.guide.hint4);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// HINT SYSTEM
+// ════════════════════════════════════════════════════════
+function showHint() {
+  APP.hintsUsed++;
+  clearTut();
+  const cfg = TYPES[APP.type];
+
+  if (APP.state === 'testing') {
+    say(cfg.guide.testing);
+    if (switchRoots.length > 0) setTut(switchRoots[0], 'TAP SWITCH');
+    return;
+  }
+
+  // Find next unconnected wire
+  const nextWire = cfg.wires.find(w => !APP.connected.has(w.id));
+  if (!nextWire) return;
+
+  // Point at first target terminal
+  const firstTermId = nextWire.clickTargets[0];
+  const td = terminalDefs.find(t => t.id === firstTermId);
+  if (td) {
+    const group = td.swIdx === -1 ? lightRoot : switchRoots[td.swIdx];
+    if (group) setTut(group, td.label + ' TERMINAL');
+  }
+
+  autoGuide();
+  showToast('Pick "' + nextWire.label + '" from the wire tray', 'info');
+}
+
+// ════════════════════════════════════════════════════════
+// INSPECT CARD
+// ════════════════════════════════════════════════════════
+// Component icon/color map
+const IC_META = {
+  sw0: { icon: '⚡', color: '#1d4ed8', bg: 'rgba(29,78,216,.2)', lbl: 'SWITCH' },
+  sw1: { icon: '↔', color: '#b45309', bg: 'rgba(180,83,9,.2)',  lbl: 'INTERMEDIATE SWITCH' },
+  sw2: { icon: '⚡', color: '#1d4ed8', bg: 'rgba(29,78,216,.2)', lbl: 'SWITCH' },
+  light: { icon: '💡', color: '#ca8a04', bg: 'rgba(202,138,4,.18)', lbl: 'LIGHT FIXTURE' },
+};
+
+function openInspect(componentKey, screenX, screenY) {
+  if (APP.heldWire) return;
+  const cfg = TYPES[APP.type];
+  const info = cfg.inspect[componentKey];
+  if (!info) return;
+
+  const meta = IC_META[componentKey] || IC_META.sw0;
+  // Icon badge
+  const iconEl = document.getElementById('ic-icon');
+  iconEl.textContent = meta.icon;
+  iconEl.style.background = meta.bg;
+  iconEl.style.fontSize = '18px';
+
+  document.getElementById('ic-name').textContent = info.name;
+  document.getElementById('ic-type-lbl').textContent = meta.lbl;
+
+  // Terminal rows
+  const badgeColors = ['#b45309','#1d4ed8','#15803d','#7c3aed','#be123c'];
+  let termHtml = '';
+  info.terminals.forEach((t, i) => {
+    const bc = badgeColors[i % badgeColors.length];
+    termHtml += `
+      <div class="ic-term-row">
+        <div class="ic-term-badge" style="background:${bc}22;color:${bc};border:1.5px solid ${bc}66">${t.label}</div>
+        <div class="ic-term-info">
+          <div class="ic-term-name">${t.label}</div>
+          <div class="ic-term-desc">${t.desc}</div>
+        </div>
+      </div>`;
+  });
+  document.getElementById('ic-terminals').innerHTML = termHtml;
+  document.getElementById('ic-how').textContent = info.how;
+
+  document.getElementById('inspect-overlay').style.display = 'block';
+  const card = document.getElementById('inspect-card');
+  card.style.display = 'block'; // must be block before adding class
+  requestAnimationFrame(() => card.classList.add('open'));
+}
+
+function closeInspect() {
+  const card = document.getElementById('inspect-card');
+  card.classList.remove('open');
+  document.getElementById('inspect-overlay').style.display = 'none';
+  setTimeout(() => { card.style.display = 'none'; }, 320);
+}
+
+// ════════════════════════════════════════════════════════
+// SWITCH TOGGLE (test phase)
+// ════════════════════════════════════════════════════════
+function toggleSwitch(idx) {
+  if (APP.state !== 'testing') return;
+  const sw = switchRoots[idx];
+  const newState = !APP.switchStates[idx];
+  APP.switchStates[idx] = newState;
+  APP.switchesToggledInTest.add(idx);
+
+  // Animate rocker
+  const rocker = sw.userData.rockerTop;
+  if (rocker) rocker.position.y = newState ? -0.275 : 0.275;
+
+  // Indicator dot color
+  const dot = sw.userData.indicatorDot;
+  if (dot) {
+    dot.material.color.setHex(newState ? 0xef4444 : 0x22c55e);
+    dot.material.emissive.setHex(newState ? 0xef4444 : 0x22c55e);
+  }
+
+  // Evaluate circuit
+  const cfg = TYPES[APP.type];
+  APP.lightOn = cfg.lightLogic(APP.switchStates);
+  updateLightVisual();
+
+  showToast(APP.lightOn ? 'Light ON ✓' : 'Light OFF', APP.lightOn ? 'ok' : 'info');
+
+  // Check success: all switches toggled at least once, light currently ON
+  const allToggled = APP.switchesToggledInTest.size >= cfg.switchCount;
+  if (allToggled && APP.lightOn) {
+    setTimeout(circuitSuccess, 800);
+  }
+}
+
+function updateLightVisual() {
+  const on = APP.lightOn;
+  if (!lightRoot) return;
+  const bm = lightRoot.userData.bulbMat;
+  const si = lightRoot.userData.shadeInner;
+  if (bm) { bm.emissiveIntensity = on ? 1.4 : 0.12; bm.emissive.setHex(on ? 0xfbbf24 : 0x221800); bm.opacity = on ? 0.88 : 0.5; }
+  if (si) si.material.emissiveIntensity = on ? 0.6 : 0.1;
+  bulbGlow.intensity = on ? 2.2 : 0;
+}
+
+// ════════════════════════════════════════════════════════
+// RAYCASTER — canvas clicks
+// ════════════════════════════════════════════════════════
+const rc = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+canvas.addEventListener('click', e => {
+  if (APP.state === 'selection' || APP.state === 'done') return;
+  if (APP.heldWire) return; // terminal dots handle their own clicks
+
+  mouse.x = (e.clientX / innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+  rc.setFromCamera(mouse, camera);
+
+  // Collect all scene children for raycasting (switches + light)
+  const allObjs = [];
+  switchRoots.forEach(r => allObjs.push(...r.children));
+  if (lightRoot) allObjs.push(...lightRoot.children);
+
+  const hits = rc.intersectObjects(allObjs, false);
+  if (!hits.length) { closeInspect(); return; }
+
+  const hit = hits[0].object;
+
+  // Test phase: clicking switch toggles it
+  if (APP.state === 'testing') {
+    for (let i = 0; i < switchRoots.length; i++) {
+      if (switchRoots[i].children.includes(hit)) {
+        toggleSwitch(i);
+        return;
+      }
+    }
+    return;
+  }
+
+  // Explore phase: clicking opens inspect card
+  for (let i = 0; i < switchRoots.length; i++) {
+    if (switchRoots[i].children.includes(hit)) {
+      openInspect('sw' + i, e.clientX, e.clientY);
+      // Zoom gently toward the switch
+      const pos = TYPES[APP.type].switchPositions[i];
+      animCam(new THREE.Vector3(pos[0], 0.8, 6.5), new THREE.Vector3(pos[0], 0.6, 0), 700, ()=>{});
+      return;
+    }
+  }
+  if (lightRoot && lightRoot.children.includes(hit)) {
+    openInspect('light', e.clientX, e.clientY);
+    animCam(new THREE.Vector3(0, 1.6, 8.5), new THREE.Vector3(0, 1.6, 0), 700, ()=>{});
+    return;
+  }
+
+  closeInspect();
+});
+
+// ════════════════════════════════════════════════════════
+// PHASE TRANSITIONS
+// ════════════════════════════════════════════════════════
+function enterTesting() {
+  APP.state = 'testing';
+  APP.switchesToggledInTest = new Set();
+  const cfg = TYPES[APP.type];
+  say(cfg.guide.testing);
+  showToast('All wires connected! Tap the switches to test.', 'ok');
+  clearTut();
+  animCam(new THREE.Vector3(0, 1.2, 9.5), new THREE.Vector3(0, 1.0, 0), 900, () => {
+    if (switchRoots.length > 0) setTut(switchRoots[0], 'TAP TO TEST');
+  });
+}
+
+function circuitSuccess() {
+  if (APP.state === 'done') return;
+  APP.state = 'done';
+  clearTut();
+
+  const cfg = TYPES[APP.type];
+  const rating = APP.errors === 0 && APP.hintsUsed === 0 ? 'S' :
+                 APP.errors <= 1 && APP.hintsUsed <= 1  ? 'A' :
+                 APP.errors <= 3 && APP.hintsUsed <= 2  ? 'B' : 'C';
+
+  document.getElementById('so-title').textContent = APP.type === '3way' ? 'MASTERED!' : 'WIRED!';
+  document.getElementById('so-sub').textContent =
+    APP.type === '1way' ? 'Single-pole circuit complete. The switch now controls the light.' :
+    APP.type === '2way' ? '2-switch circuit complete. Both locations independently control the light.' :
+    'Three-switch circuit complete. All three switches control the light.';
+  document.getElementById('so-errors').textContent = APP.errors;
+  document.getElementById('so-hints').textContent = APP.hintsUsed;
+  document.getElementById('so-rating').textContent = rating;
+
+  // Save to DB
+  const stars = rating === 'S' ? 3 : rating === 'A' ? 2 : rating === 'B' ? 1 : 0;
+  _saveCompletion(APP.type, stars, APP.errors, APP.hintsUsed);
+
+  animCam(new THREE.Vector3(0, 1.2, 9.5), new THREE.Vector3(0, 1.0, 0), 1000, () => {
+    document.getElementById('success-overlay').classList.add('show');
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// START / RESET
+// ════════════════════════════════════════════════════════
+function startType(type) {
+  APP.type = type;
+  APP.state = 'explore';
+  APP.heldWire = null;
+  APP.pendingTerm = null;
+  APP.connected = new Set();
+  APP.switchStates = [];
+  APP.lightOn = false;
+  APP.switchesToggledInTest = new Set();
+  APP.errors = 0;
+  APP.hintsUsed = 0;
+
+  // Hide selection screen
+  const sel = document.getElementById('sel-screen');
+  sel.style.opacity = '0';
+  sel.style.transition = 'opacity .4s';
+  setTimeout(() => { sel.style.display = 'none'; }, 400);
+
+  // Show HUD
+  document.getElementById('tb-brand').textContent = TYPES[type].name;
+  document.getElementById('tb-badge').textContent = TYPES[type].badge;
+  document.getElementById('tb-badge').style.display = 'block';
+  document.getElementById('tb-prog').style.display = 'flex';
+  document.getElementById('guide').style.display = 'block';
+  document.getElementById('success-overlay').classList.remove('show');
+  closeInspect();
+
+  // Build scene
+  initScene(type);
+  buildTermDots();
+  buildWireTray();
+  updateProgress();
+  updateLightVisual();
+
+  // Guide
+  say(TYPES[type].guide.start);
+  clearTut();
+
+  animCam(new THREE.Vector3(0, 1.2, 9.5), new THREE.Vector3(0, 1.0, 0), 0, ()=>{});
+}
+
+function playAgain() {
+  document.getElementById('success-overlay').classList.remove('show');
+  startType(APP.type);
+}
+
+function goSelection() {
+  document.getElementById('success-overlay').classList.remove('show');
+  clearScene();
+  APP.state = 'selection';
+  APP.heldWire = null;
+  APP.pendingTerm = null;
+  APP.lightOn = false;
+  document.getElementById('tb-prog').style.display = 'none';
+  document.getElementById('tb-badge').style.display = 'none';
+  document.getElementById('guide').style.display = 'none';
+  document.getElementById('wire-tray').style.display = 'none';
+  document.getElementById('term-dots-layer').innerHTML = '';
+  document.getElementById('cancel-wire-btn').style.display = 'none';
+  closeInspect();
+  clearTut();
+  bulbGlow.intensity = 0;
+
+  const sel = document.getElementById('sel-screen');
+  sel.style.transition = 'opacity .4s';
+  sel.style.opacity = '0'; sel.style.display = 'flex';
+  requestAnimationFrame(() => requestAnimationFrame(() => { sel.style.opacity = '1'; }));
+}
+
+// ════════════════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ════════════════════════════════════════════════════════
+// RENDER LOOP
+// ════════════════════════════════════════════════════════
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  idleT += dt;
+
+  // Gentle breathing
+  switchRoots.forEach((sw, i) => {
+    sw.position.y = Math.sin(idleT * 0.45 + i * 1.1) * 0.018;
+  });
+  if (lightRoot) {
+    lightRoot.position.y = 2.85 + Math.sin(idleT * 0.32) * 0.014;
+  }
+
+  // Bulb glow pulse when on
+  if (APP.lightOn) bulbGlow.intensity = 2.2 + Math.sin(idleT * 3.5) * 0.12;
+
+  // Camera tween
+  if (camTweening) {
+    camT += dt * 1000;
+    const p = eio(Math.min(camT / camDur, 1));
+    camera.position.lerpVectors(camFrom, camTo, p);
+    camera.lookAt(new THREE.Vector3().lerpVectors(camLookFrom, camLookTo, p));
+    if (camT >= camDur) { camTweening = false; if (camCB) { const cb = camCB; camCB = null; cb(); } }
+  }
+
+  updateTut();
+  updateTermDotPositions();
+  renderer.render(scene, camera);
+}
+animate();
+
+// Resize
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// Escape cancels held wire
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') cancelWire();
+});
+
+// ════════════════════════════════════════════════════════
+// URL PARAMS — auto-select type + context tracking
+// ════════════════════════════════════════════════════════
+(function() {
+  const params = new URLSearchParams(location.search);
+  const urlType = params.get('type');
+  const urlFrom = params.get('from') || 'standalone';
+  window._simContext = urlFrom; // 'learn' | 'workshop' | 'standalone'
+
+  if (urlType && TYPES[urlType]) {
+    // Auto-start the selected type, skip selection screen
+    setTimeout(() => startType(urlType), 80);
+  }
+})();
+
+// ════════════════════════════════════════════════════════
+// DB SAVE — writes to localStorage (wireverse_ prefix)
+// Called from circuitSuccess() below
+// ════════════════════════════════════════════════════════
+function _saveCompletion(type, stars, errors, hints) {
+  try {
+    const PREFIX = 'wireverse_';
+    const context = window._simContext || 'standalone';
+    const key = context === 'workshop' ? 'workshop' : 'learn';
+    const raw = localStorage.getItem(PREFIX + key);
+    const store = raw ? JSON.parse(raw) : {};
+    const prev = store[type] || { attempts: 0, bestStars: 0 };
+    store[type] = {
+      completed: true,
+      stars,
+      errors,
+      hints,
+      attempts: (prev.attempts || 0) + 1,
+      bestStars: Math.max(prev.bestStars || 0, stars),
+      lastAt: Date.now(),
+    };
+    localStorage.setItem(PREFIX + key, JSON.stringify(store));
+
+    // Achievements
+    const achRaw = localStorage.getItem(PREFIX + 'achievements');
+    const ach = achRaw ? JSON.parse(achRaw) : {};
+    const ACHIEVE = {
+      '1way': { id: 'wired_1way', name: 'First Wire', desc: 'Complete the 1-Switch circuit' },
+      '2way': { id: 'wired_2way', name: 'Two Paths', desc: 'Complete the 2-Switch circuit' },
+      '3way': { id: 'wired_3way', name: 'Master Wirer', desc: 'Complete the 3-Switch circuit' },
+    };
+    const a = ACHIEVE[type];
+    let newAch = null;
+    if (a && !ach[a.id]) {
+      ach[a.id] = { name: a.name, desc: a.desc, earnedAt: Date.now() };
+      localStorage.setItem(PREFIX + 'achievements', JSON.stringify(ach));
+      newAch = a;
+    }
+    if (stars === 3 && !ach['perfect_wiring']) {
+      ach['perfect_wiring'] = { name: 'Perfect Wiring', desc: 'Complete any circuit with 0 errors and 0 hints', earnedAt: Date.now() };
+      localStorage.setItem(PREFIX + 'achievements', JSON.stringify(ach));
+      newAch = newAch || { name: 'Perfect Wiring', desc: 'No errors, no hints!' };
+    }
+    if (newAch) {
+      // Show achievement popup
+      setTimeout(() => _showAchievementPopup(newAch.name, newAch.desc), 1200);
+    }
+  } catch(e) { console.warn('[DB] Save failed', e); }
+}
+
+function _showAchievementPopup(name, desc) {
+  const el = document.createElement('div');
+  el.style.cssText = `
+    position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:linear-gradient(135deg,rgba(8,8,14,.98),rgba(12,12,20,.98));
+    border:1px solid rgba(245,197,24,.6);border-radius:12px;
+    padding:14px 20px;display:flex;align-items:center;gap:14px;
+    z-index:999;pointer-events:none;
+    box-shadow:0 8px 32px rgba(0,0,0,.6),0 0 24px rgba(245,197,24,.15);
+    opacity:0;transition:opacity .35s,transform .35s;min-width:260px;
+  `;
+  el.innerHTML = `
+    <div style="width:36px;height:36px;border-radius:50%;background:rgba(245,197,24,.2);
+      border:2px solid var(--y);display:flex;align-items:center;justify-content:center;
+      font-size:18px;flex-shrink:0;">★</div>
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
+        letter-spacing:.2em;color:var(--y);text-transform:uppercase;margin-bottom:3px;">
+        ACHIEVEMENT UNLOCKED</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;
+        color:#fff;line-height:1.1;">${name}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px;">${desc}</div>
+    </div>
+  `;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    el.style.opacity = '1'; el.style.transform = 'translateX(-50%) translateY(0)';
+  }));
+  setTimeout(() => {
+    el.style.opacity = '0'; el.style.transform = 'translateX(-50%) translateY(10px)';
+    setTimeout(() => el.remove(), 400);
+  }, 3800);
+}
+
+// Back to menu / context navigation
+function goBack() {
+  const ctx = window._simContext || 'standalone';
+  if (ctx === 'learn' || ctx === 'workshop') {
+    window.location.href = 'index.html';
+  } else {
+    // standalone — go to selection screen if in a type, else do nothing
+    if (APP.state !== 'selection') goSelection();
+  }
+}
+</script>
+</body>
+</html>

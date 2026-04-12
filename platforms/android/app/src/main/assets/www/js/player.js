@@ -21,7 +21,7 @@ export const Player = {
   SPEED: 4.5,
   SPRINT: 8.0,
   JUMP: 8.0,
-  BASE_Y: 1.72,
+  BASE_Y: 1.88,   // eye height — raised for better vertical FOV
   sprinting: false,
 };
 
@@ -47,76 +47,57 @@ if (!isMobile && cvs) {
 
   document.addEventListener('mousemove', e => {
     if (!pointerLocked) return;
-    Player.yawVel -= e.movementX * 0.0018;
-    Player.pitchVel -= e.movementY * 0.0018;
+    const sens = window.camSensitivity || 0.7;
+    Player.yawVel -= e.movementX * 0.0016 * sens;
+    Player.pitchVel -= e.movementY * 0.0016 * sens;
   });
 }
 
-// ── VIRTUAL JOYSTICK ──────────────────────────────────────────────────────────
-export const jsVec = { x: 0, y: 0 };
+// ── D-PAD MOVEMENT BUTTONS ────────────────────────────────────────────────────
 let touchSprinting = false;
 
-const joystickOuter = document.getElementById('joystickOuter');
-const joystickInner = document.getElementById('joystickInner');
-const JS_RADIUS = 44;
-let jsActive = false, jsTouchId = null;
-
-// Cache rect so getBoundingClientRect isn't called on every touchmove
-let _jsRect = null;
-const _refreshJsRect = () => { if (joystickOuter) _jsRect = joystickOuter.getBoundingClientRect(); };
-window.addEventListener('resize', _refreshJsRect);
-// Defer initial read until layout is settled
-setTimeout(_refreshJsRect, 100);
-
-if (joystickOuter) {
-  joystickOuter.addEventListener('touchstart', e => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (jsActive) return;
-    _refreshJsRect(); // update rect in case scroll/zoom changed it
-    jsTouchId = e.changedTouches[0].identifier;
-    jsActive = true;
-  }, { passive: false });
-
-  document.addEventListener('touchmove', e => {
-    if (!jsActive || !_jsRect) return;
-    for (const t of e.changedTouches) {
-      if (t.identifier !== jsTouchId) continue;
-      const cx = _jsRect.left + _jsRect.width  / 2;
-      const cy = _jsRect.top  + _jsRect.height / 2;
-      let dx = t.clientX - cx;
-      let dy = t.clientY - cy;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const clamped = Math.min(dist, JS_RADIUS);
-      if (dist > 0) { dx = dx / dist * clamped; dy = dy / dist * clamped; }
-      jsVec.x = dx / JS_RADIUS;
-      jsVec.y = dy / JS_RADIUS;
-      touchSprinting = (clamped / JS_RADIUS) > 0.85;
-      if (joystickInner) joystickInner.style.transform = `translate(${dx}px, ${dy}px)`;
-      joystickOuter.classList.toggle('sprinting', touchSprinting);
-    }
-  }, { passive: false });
-
-  const joystickEnd = e => {
-    for (const t of e.changedTouches) {
-      if (t.identifier === jsTouchId) {
-        jsActive = false; jsTouchId = null;
-        jsVec.x = 0; jsVec.y = 0;
-        touchSprinting = false;
-        if (joystickInner) joystickInner.style.transform = 'translate(0px, 0px)';
-        joystickOuter.classList.remove('sprinting');
-      }
-    }
-  };
-  document.addEventListener('touchend', joystickEnd, { passive: false });
-  document.addEventListener('touchcancel', joystickEnd, { passive: false });
+// Bind a D-pad button: sets keys[code]=true while held, clears on release
+function _dpadBind(id, code) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  const dn = e => { e.preventDefault(); keys[code] = true; };
+  const up = e => { e.preventDefault(); keys[code] = false; };
+  btn.addEventListener('touchstart', dn, { passive: false });
+  btn.addEventListener('touchend',   up, { passive: false });
+  btn.addEventListener('touchcancel',up, { passive: false });
+  btn.addEventListener('mousedown', dn);
+  btn.addEventListener('mouseup',   up);
+  btn.addEventListener('mouseleave', up);
 }
+
+// Sprint button
+const _btnSprint = document.getElementById('btnDpadSprint');
+if (_btnSprint) {
+  const sprintDn = e => { e.preventDefault(); touchSprinting = true; };
+  const sprintUp = e => { e.preventDefault(); touchSprinting = false; };
+  _btnSprint.addEventListener('touchstart',  sprintDn, { passive: false });
+  _btnSprint.addEventListener('touchend',    sprintUp, { passive: false });
+  _btnSprint.addEventListener('touchcancel', sprintUp, { passive: false });
+  _btnSprint.addEventListener('mousedown',  sprintDn);
+  _btnSprint.addEventListener('mouseup',    sprintUp);
+  _btnSprint.addEventListener('mouseleave', sprintUp);
+}
+
+// Wire D-pad direction buttons — run AFTER DOM is ready so IDs exist
+setTimeout(() => {
+  _dpadBind('dpadUp',    'ArrowUp');
+  _dpadBind('dpadDown',  'ArrowDown');
+  _dpadBind('dpadLeft',  'DpadLeft');
+  _dpadBind('dpadRight', 'DpadRight');
+}, 0);
 
 // ── TOUCH LOOK ────────────────────────────────────────────────────────────────
 const lookZone = document.getElementById('lookZone');
 const lookTouches = {};
 if (lookZone) {
   lookZone.addEventListener('touchstart', e => {
+    // Only capture look when player is free-standing — never steal touches from overlays
+    if (Player.state !== 'standing') return;
     e.preventDefault();
     for (const t of e.changedTouches) {
       lookTouches[t.identifier] = { x: t.clientX, y: t.clientY };
@@ -124,13 +105,15 @@ if (lookZone) {
   }, { passive: false });
 
   lookZone.addEventListener('touchmove', e => {
+    if (Player.state !== 'standing') return;
     e.preventDefault();
+    const sens = window.camSensitivity || 0.7;
     for (const t of e.changedTouches) {
       if (lookTouches[t.identifier]) {
         const dx = t.clientX - lookTouches[t.identifier].x;
         const dy = t.clientY - lookTouches[t.identifier].y;
-        Player.yawVel -= dx * 0.0015;
-        Player.pitchVel -= dy * 0.0015;
+        Player.yawVel -= dx * 0.00065 * sens;
+        Player.pitchVel -= dy * 0.00065 * sens;
         lookTouches[t.identifier] = { x: t.clientX, y: t.clientY };
       }
     }
@@ -144,22 +127,39 @@ if (lookZone) {
 // ── KEYBOARD ─────────────────────────────────────────────────────────────────
 export const keys = {};
 window.addEventListener('keydown', e => { keys[e.code] = true; });
-window.addEventListener('keyup',   e => { keys[e.code] = false; });
+window.addEventListener('keyup', e => { keys[e.code] = false; });
 
-// Sprint handled by joystick deflection (touchSprinting declared above)
+const btnJump = document.getElementById('btnJump');
+if (btnJump) {
+  const jumpStart = (e) => {
+    e.preventDefault();
+    keys['Space'] = true;
+    if (window.GameAudio && typeof window.GameAudio.click === 'function') window.GameAudio.click();
+  };
+  const jumpEnd = (e) => {
+    e.preventDefault();
+    keys['Space'] = false;
+  };
+  btnJump.addEventListener('touchstart', jumpStart, { passive: false });
+  btnJump.addEventListener('touchend', jumpEnd, { passive: false });
+  btnJump.addEventListener('touchcancel', jumpEnd, { passive: false });
+  btnJump.addEventListener('mousedown', jumpStart);
+  btnJump.addEventListener('mouseup', jumpEnd);
+  btnJump.addEventListener('mouseleave', jumpEnd);
+}
 
 // ── ROOM DETECTION ────────────────────────────────────────────────────────────
 export function getRoom(p) {
-  if (p.z < -18)                           return 'ENTRANCE';
-  if (p.x > 4  && p.z < -2)               return 'WORKSHOP';
-  if (p.x > 20 && p.z > -8 && p.z < 14)  return 'CONTROL CENTER';
-  if (p.x > 4  && p.z > 0  && p.z < 14)  return 'GENERATOR ROOM';
-  if (p.x < -1 && p.z > -14 && p.z < 4)  return 'DIST-A PANEL';
-  if (p.x < -1 && p.z > 4  && p.z < 18)  return 'DIST-B PANEL';
-  if (p.x > 4  && p.z > 14 && p.z < 28)  return 'UTILITY ROOM';
-  if (p.x < -1 && p.z > 18)              return 'STORAGE';
-  if (p.x > 20 && p.z > 10)              return 'TESTING LAB';
-  if (p.z > 26)                           return 'STAIRWELL';
+  if (p.z < -18) return 'ENTRANCE';
+  if (p.x > 4 && p.z < -2) return 'WORKSHOP';
+  if (p.x > 20 && p.z > -8 && p.z < 14) return 'CONTROL CENTER';
+  if (p.x > 4 && p.z > 0 && p.z < 14) return 'GENERATOR ROOM';
+  if (p.x < -1 && p.z > -14 && p.z < 4) return 'DIST-A PANEL';
+  if (p.x < -1 && p.z > 4 && p.z < 18) return 'DIST-B PANEL';
+  if (p.x > 4 && p.z > 14 && p.z < 28) return 'UTILITY ROOM';
+  if (p.x < -1 && p.z > 18) return 'STORAGE';
+  if (p.x > 20 && p.z > 10) return 'TESTING LAB';
+  if (p.z > 26) return 'STAIRWELL';
   return 'CORRIDOR';
 }
 
@@ -168,29 +168,33 @@ let groundY = 0;
 let prevSinBob = 0;
 
 // Pre-allocated reusables — avoid per-frame GC pressure
-const _fwd   = new THREE.Vector3();
-const _rgt   = new THREE.Vector3();
-const _wish  = new THREE.Vector3();
-const _np    = new THREE.Vector3();
-const _tx    = new THREE.Vector3();
-const _tz    = new THREE.Vector3();
+const _fwd = new THREE.Vector3();
+const _rgt = new THREE.Vector3();
+const _wish = new THREE.Vector3();
+const _np = new THREE.Vector3();
+const _tx = new THREE.Vector3();
+const _tz = new THREE.Vector3();
 const _camQuat = new THREE.Quaternion();
 
 export function updatePlayer(dt) {
-  // If in CCTV mode, camera is completely controlled by CCTV logic in main.js
-  if (Player.state === 'cctv') return;
+  // If in CCTV or REPAIR mode, camera is completely controlled by external logic
+  if (Player.state === 'cctv' || Player.state === 'repair') return;
 
   // Smooth look inertia for standing
   if (Player.state === 'standing') {
-    const SMOOTH = isMobile ? 0.22 : 0.14;
-    Player.yaw   += Player.yawVel;
+    // Lower SMOOTH = crisper/lighter feel; higher = more glide/inertia
+    const SMOOTH = isMobile ? 0.28 : 0.40;
+    Player.yaw += Player.yawVel;
     Player.pitch += Player.pitchVel;
-    Player.yawVel   *= SMOOTH;
+    Player.yawVel *= SMOOTH;
     Player.pitchVel *= SMOOTH;
-    Player.pitch = Math.max(-1.15, Math.min(1.15, Player.pitch));
+    // Clamp tiny values to zero to prevent micro-drift
+    if (Math.abs(Player.yawVel) < 0.00008) Player.yawVel = 0;
+    if (Math.abs(Player.pitchVel) < 0.00008) Player.pitchVel = 0;
+    Player.pitch = Math.max(-1.38, Math.min(1.38, Player.pitch)); // ±79° up/down
 
-    if (keys['ArrowLeft'])  Player.yaw   += dt * 1.8;
-    if (keys['ArrowRight']) Player.yaw   -= dt * 1.8;
+    if (keys['ArrowLeft']) Player.yaw += dt * 1.8;
+    if (keys['ArrowRight']) Player.yaw -= dt * 1.8;
 
     camera.rotation.order = 'YXZ';
     camera.rotation.y = Player.yaw;
@@ -204,14 +208,13 @@ export function updatePlayer(dt) {
   const maxSpd = Player.sprinting ? Player.SPRINT : Player.SPEED;
   const sinY = Math.sin(Player.yaw), cosY = Math.cos(Player.yaw);
   _fwd.set(-sinY, 0, -cosY);
-  _rgt.set( cosY, 0, -sinY);
+  _rgt.set(cosY, 0, -sinY);
 
   let wx = 0, wy = 0;
-  if (Math.abs(jsVec.x) > 0.12 || Math.abs(jsVec.y) > 0.12) { wx = jsVec.x; wy = jsVec.y; }
   if (keys['KeyW'] || keys['ArrowUp'])    wy = -1;
   if (keys['KeyS'] || keys['ArrowDown'])  wy =  1;
-  if (keys['KeyA'])                       wx = -1;
-  if (keys['KeyD'])                       wx =  1;
+  if (keys['KeyA'] || keys['DpadLeft'])   wx = -1;
+  if (keys['KeyD'] || keys['DpadRight'])  wx =  1;
 
   _wish.set(0, 0, 0);
   if (Player.state === 'standing') {
@@ -224,7 +227,7 @@ export function updatePlayer(dt) {
     if (Player.vel.length() > maxSpd) Player.vel.normalize().multiplyScalar(maxSpd);
   } else {
     const spd = Player.vel.length();
-    if (spd > 0.01) Player.vel.multiplyScalar(Math.max(0, 1 - 18*dt/spd));
+    if (spd > 0.01) Player.vel.multiplyScalar(Math.max(0, 1 - 18 * dt / spd));
     else Player.vel.set(0, 0, 0);
   }
 
@@ -244,8 +247,8 @@ export function updatePlayer(dt) {
   // Head bob
   const spd2 = Player.vel.length(), moving = spd2 > 0.2;
   const bobSpd = Player.sprinting ? 11 : 7;
-  if (moving) { Player.bobT += dt * bobSpd * (spd2/maxSpd); Player.bobAmt = Math.min(1, Player.bobAmt + dt*7); }
-  else        { Player.bobAmt = Math.max(0, Player.bobAmt - dt*6); }
+  if (moving) { Player.bobT += dt * bobSpd * (spd2 / maxSpd); Player.bobAmt = Math.min(1, Player.bobAmt + dt * 7); }
+  else { Player.bobAmt = Math.max(0, Player.bobAmt - dt * 6); }
 
   const curSin = Math.sin(Player.bobT);
   // Footstep: trigger on BOTH zero crossings (left & right foot)
@@ -263,7 +266,12 @@ export function updatePlayer(dt) {
   Player.grounded = Player.pos.y <= (targetGroundY + Player.BASE_Y + 0.12);
 
   if (Player.grounded) {
-    Player.vy = 0;
+    if (Player.vy < 0) Player.vy = 0; // stop falling
+    // Allow jumping
+    if ((keys['Space'] || keys['Spacebar']) && Player.state === 'standing') {
+      Player.vy = Player.JUMP;
+      Player.grounded = false;
+    }
   } else {
     Player.vy -= gravity * dt;
   }
@@ -279,7 +287,7 @@ export function updatePlayer(dt) {
 
   // Camera application
   const physicalY = Player.pos.y;
-  
+
   if (Player.state === 'standing') {
     // Add bobbing on top of physical Y
     const finalY = physicalY + curSin * 0.03 * Player.bobAmt;
@@ -288,18 +296,18 @@ export function updatePlayer(dt) {
     // Smoothly interpolate camera to target pos/rot
     const tPos = Player.targetCamPos;
     const tRot = Player.targetCamRot;
-    
+
     // Lerp position
     camera.position.lerp(tPos, dt * 6);
-    
+
     // Slerp rotation requires quaternions
     _camQuat.setFromEuler(tRot);
     camera.quaternion.slerp(_camQuat, dt * 6);
-    
+
     // Keep Euler angles synced for when we stand back up
     Player.yaw = camera.rotation.y;
     Player.pitch = camera.rotation.x;
-    
+
     // Snap Player pos beneath camera to prevent drifting through walls/floors when standing up
     Player.pos.x = camera.position.x;
     Player.pos.z = camera.position.z;

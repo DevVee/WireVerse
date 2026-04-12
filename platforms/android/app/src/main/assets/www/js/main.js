@@ -10,9 +10,49 @@ import {
   scadaTerminals, updateSCADA,
   cableStations,
   oscWave1, oscWave2, updateOscilloscopes,
+  wireObjects, scenarioTerminals, validationBoard,
+  workshopWiringStations,
   M
 } from './world.js';
+import { updateOutlets, markOutletFixed, outletSockets } from './outlets.js';
+import { initOutletScenario, openOutlet, closeOutlet } from './outlet-scenario.js';
+import { initSwitchScenario, openSwitch, closeSwitch } from './switch-scenario.js';
+import { initSwitches, switchStations, switchProxies, markSwitchFixed, drawSwitchMinimap } from './switches.js';
 import { Player, updatePlayer, getRoom, isMobile } from './player.js';
+
+
+// Global Audio for menu.js
+window.GameAudio = Audio;
+
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FEEDBACK LOG
+// ══════════════════════════════════════════════════════════════════════════════
+const LOG_MAX = 4;
+const logLines = [];
+
+function feedbackLog(msg, type = 'info') {
+  // type: 'info' | 'ok' | 'error' | 'warn'
+  const colors = { info: '#aab8cc', ok: '#44ff88', error: '#ff5544', warn: '#FFB800' };
+  logLines.push({ msg, color: colors[type] || colors.info });
+  if (logLines.length > LOG_MAX) logLines.shift();
+  const el = document.getElementById('feedbackLog');
+  if (!el) return;
+  el.innerHTML = logLines.map(l =>
+    `<div style="color:${l.color};margin:1px 0;">${l.msg}</div>`
+  ).join('');
+}
+
+function errorFlash() {
+  const el = document.getElementById('errorFlash');
+  if (!el) return;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, 350);
+}
+
+
 
 // ── ELECTRICAL STATE ──────────────────────────────────────────────────────────
 const ES = {
@@ -44,231 +84,7 @@ const lightTargets = {
   stairwell: 3.0,
 };
 
-// ── VOICE ASSISTANT (A.I.D.A) ────────────────────────────────────────────────
-class VoiceAssistant {
-  constructor() {
-    this.synth = window.speechSynthesis;
-    this.voice = null;
-    this.muted = false;
-    this.playing = false;
-    this.queue = [];
-    this._hideTimer = null;
-
-    const loadVoices = () => {
-      const voices = this.synth.getVoices();
-      this.voice = voices.find(v =>
-        v.name.includes('Google US English') ||
-        v.name.includes('Google UK English Female') ||
-        v.name.includes('Samantha') || v.name.includes('Zira') ||
-        v.name.includes('Female')
-      ) || voices[0] || null;
-    };
-    if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = loadVoices;
-    loadVoices();
-
-    this._buildUI();
-  }
-
-  _buildUI() {
-    if (document.getElementById('aidaBar')) return;
-
-    const bar = document.createElement('div');
-    bar.id = 'aidaBar';
-    bar.style.cssText = [
-      'position:fixed',
-      'bottom:0',
-      'left:0',
-      'right:0',
-      'background:rgba(13,21,38,0.97)',
-      'border-top:2px solid rgba(255,184,0,0.55)',
-      'display:none',
-      'align-items:center',
-      'gap:10px',
-      'padding:8px 14px',
-      'z-index:9999',
-      'pointer-events:all',
-      'box-shadow:0 -4px 20px rgba(0,0,0,0.6)',
-    ].join(';');
-
-    const avatar = document.createElement('div');
-    avatar.style.cssText = 'width:36px;height:36px;flex-shrink:0;background:radial-gradient(circle,#FFB800 0%,#8a6000 100%);border-radius:50%;border:2px solid rgba(255,184,0,0.7);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 12px rgba(255,184,0,0.4);';
-    avatar.textContent = '🤖';
-
-    const textEl = document.createElement('div');
-    textEl.id = 'aidaText';
-    textEl.style.cssText = 'flex:1;font-size:clamp(11px,2.2vw,14px);color:#fff;font-family:Inter,Roboto,Arial,sans-serif;font-weight:600;line-height:1.35;';
-
-    const muteBtn = document.createElement('button');
-    muteBtn.id = 'aidaMute';
-    muteBtn.textContent = '🔊';
-    muteBtn.style.cssText = 'background:rgba(255,184,0,0.12);border:1px solid rgba(255,184,0,0.4);border-radius:8px;color:#FFB800;font-size:16px;width:38px;height:38px;cursor:pointer;flex-shrink:0;';
-    muteBtn.addEventListener('click', () => {
-      this.muted = !this.muted;
-      muteBtn.textContent = this.muted ? '🔇' : '🔊';
-      if (this.muted && this.synth) this.synth.cancel();
-    });
-
-    const skipBtn = document.createElement('button');
-    skipBtn.id = 'aidaSkip';
-    skipBtn.textContent = 'SKIP ›';
-    skipBtn.style.cssText = 'background:rgba(255,184,0,0.15);border:1px solid rgba(255,184,0,0.5);border-radius:8px;color:#FFB800;font-size:10px;font-weight:700;letter-spacing:1px;padding:0 12px;height:38px;cursor:pointer;flex-shrink:0;font-family:Inter,Roboto,Arial,sans-serif;';
-    skipBtn.addEventListener('click', () => this._skip());
-
-    bar.appendChild(avatar);
-    bar.appendChild(textEl);
-    bar.appendChild(muteBtn);
-    bar.appendChild(skipBtn);
-    document.body.appendChild(bar);
-  }
-
-  _skip() {
-    if (this.synth) this.synth.cancel();
-    this.playing = false;
-    clearTimeout(this._hideTimer);
-    if (this.queue.length > 0) {
-      this.processQueue();
-    } else {
-      this._hide();
-    }
-  }
-
-  _show(text) {
-    const bar = document.getElementById('aidaBar');
-    const textEl = document.getElementById('aidaText');
-    if (bar) bar.style.display = 'flex';
-    if (textEl) textEl.textContent = `🤖 A.I.D.A: "${text}"`;
-    clearTimeout(this._hideTimer);
-  }
-
-  _hide() {
-    clearTimeout(this._hideTimer);
-    this._hideTimer = setTimeout(() => {
-      const bar = document.getElementById('aidaBar');
-      if (bar && !this.playing && this.queue.length === 0) bar.style.display = 'none';
-    }, 4000);
-  }
-
-  speak(text, callback = null) {
-    this.queue.push({ text, callback });
-    this.processQueue();
-  }
-
-  processQueue() {
-    if (this.playing || this.queue.length === 0) return;
-    this.playing = true;
-    const item = this.queue.shift();
-
-    this._show(item.text);
-
-    const done = () => {
-      this.playing = false;
-      if (item.callback) item.callback();
-      if (this.queue.length > 0) this.processQueue();
-      else this._hide();
-    };
-
-    if (!this.muted && this.synth) {
-      try {
-        const utterance = new SpeechSynthesisUtterance(item.text);
-        if (this.voice) utterance.voice = this.voice;
-        utterance.pitch = 0.95;
-        utterance.rate = 0.9;
-        utterance.onend = done;
-        utterance.onerror = done; // fallback: speech failed, just show text
-        this.synth.speak(utterance);
-
-        // Watchdog: some Android browsers never fire onend
-        const watchdog = setTimeout(() => {
-          if (this.playing) { this.synth.cancel(); done(); }
-        }, Math.max(item.text.length * 80, 4000));
-        utterance.onend = () => { clearTimeout(watchdog); done(); };
-        utterance.onerror = () => { clearTimeout(watchdog); done(); };
-      } catch (_) {
-        done();
-      }
-    } else {
-      // Muted or no speech — display text for reading, auto-advance after reading time
-      const readMs = Math.max(item.text.length * 50, 2500);
-      setTimeout(done, readMs);
-    }
-  }
-}
-const AIDA = new VoiceAssistant();
-
-// ── TUTORIAL SYSTEM ──────────────────────────────────────────────────────────
-const Tutorial = {
-  step: 0,
-  active: false,
-  start() {
-    this.active = true;
-    this.step = 1;
-    setTimeout(() => {
-      AIDA.speak("Initialization complete. Welcome to the simulator. I am AIDA, your automated diagnostic assistant.", () => {
-        AIDA.speak("Let us begin your orientation. First, use your W A S D keys, or the joystick, to walk around the room.", () => {
-          this.waitForMovement();
-        });
-      });
-    }, 1500); // Give user a moment to load in
-  },
-  
-  waitForMovement() {
-    const startPos = Player.pos.clone();
-    const checkMovement = setInterval(() => {
-      if (Player.pos.distanceTo(startPos) > 1.0) {
-        clearInterval(checkMovement);
-        this.step = 2;
-        setTimeout(() => {
-          AIDA.speak("Excellent movement. Next, use your touch screen or mouse to look around the facility.", () => {
-            this.waitForRotation();
-          });
-        }, 800);
-      }
-    }, 500);
-  },
-
-  waitForRotation() {
-    const startRot = camera.rotation.y;
-    const checkRotation = setInterval(() => {
-      if (Math.abs(camera.rotation.y - startRot) > 0.4) {
-        clearInterval(checkRotation);
-        this.step = 3;
-        setTimeout(() => {
-          AIDA.speak("Sensors calibrated. Please approach the Main Power breaker panel on the wall near the door, and flip the main power switch ON.", () => {
-            this.waitForMainSwitch();
-          });
-        }, 800);
-      }
-    }, 500);
-  },
-
-  waitForMainSwitch() {
-    const checkSwitch = setInterval(() => {
-      // The user must turn mainSwitch ON.
-      if (mainSwitch && mainSwitch.userData.on) {
-        clearInterval(checkSwitch);
-        this.step = 4;
-        setTimeout(() => {
-          AIDA.speak("Power restored successfully. To complete your orientation, please sit at the workshop computer terminal to review the facility map.", () => {
-            this.waitForComputer();
-          });
-        }, 1200);
-      }
-    }, 500);
-  },
-
-  waitForComputer() {
-    const checkComp = setInterval(() => {
-      if (Player.state === 'computer') {
-        clearInterval(checkComp);
-        this.step = 5;
-        this.active = false;
-        setTimeout(() => {
-          AIDA.speak("Diagnostics complete. You have successfully passed orientation. Please proceed to explore the simulator.");
-        }, 1500);
-      }
-    }, 500);
-  }
-};
+// ── ASSISTANT/TUTORIAL SYSTEM REMOVED ──────────────────────────────────────
 
 // Memoised HUD state — only write to DOM when values change
 const _hudPrev = { mains: null, gen: null, work: null, ctrl: null };
@@ -302,49 +118,93 @@ function setHUD(id, on) {
 const TASKS = {
   daily: [
     {
-      id: 'morning_inspection',
-      title: 'Morning Inspection',
-      desc: 'Check all breaker panels (click each panel breaker)',
-      location: 'Various',
+      id: 'safety_briefing',
+      title: 'Safety Briefing',
+      desc: 'Read the safety rules poster in the Lobby, then check the PPE rack in the Tool Room',
+      location: 'Lobby → Tool Room',
+      completed: false,
+    },
+    {
+      id: 'module_lesson',
+      title: 'Study Module Lesson',
+      desc: 'Enter the Classroom and read the whiteboard / projector slide for today\'s module',
+      location: 'Classroom',
+      completed: false,
+    },
+    {
+      id: 'panel_inspection',
+      title: 'Panel Room Inspection',
+      desc: 'Check all breaker panels in the Panel Distribution Room (click each panel breaker)',
+      location: 'Panel / Distribution Room',
       completed: false,
       subtasks: [
         { panel: 'main-panel', checked: false },
-        { panel: 'dist-a', checked: false },
-        { panel: 'dist-b', checked: false },
-        { panel: 'workshop', checked: false },
+        { panel: 'dist-a',    checked: false },
+        { panel: 'dist-b',    checked: false },
+        { panel: 'workshop',  checked: false },
       ]
     },
     {
-      id: 'generator_test',
-      title: 'Generator Test',
-      desc: 'Start generator and verify RPM ≥ 1400',
-      location: 'Generator Room',
+      id: 'dol_wiring',
+      title: 'DOL Motor Wiring',
+      desc: 'Connect 3-phase supply wires (L, N, PE) to terminal block at the Wiring Lab station',
+      location: 'Wiring Lab — Station B',
+      completed: false,
+    },
+    {
+      id: 'motor_control',
+      title: 'Motor Control Operation',
+      desc: 'Press START on the DOL panel in the Motor Control Lab and observe motor running',
+      location: 'Motor Control Lab',
       completed: false,
       _rpmCheckTimeout: null,
     },
     {
+      id: 'schematic_quiz',
+      title: 'Schematic Reading',
+      desc: 'View and identify the DOL Motor Control circuit diagram on the schematic board',
+      location: 'Motor Control Lab — North Wall',
+      completed: false,
+    },
+    {
       id: 'cable_check',
-      title: 'Cable Terminal Check',
-      desc: 'Verify all 3 wire terminal stations in Workshop',
-      location: 'Workshop',
+      title: 'Wire Terminal Check',
+      desc: 'Verify all 3 wire terminal stations in the Wiring Lab are correctly terminated',
+      location: 'Wiring Lab',
       completed: false,
     },
     {
-      id: 'scada_monitoring',
-      title: 'SCADA System Check',
-      desc: 'Activate all 3 monitoring terminals in Control Center',
-      location: 'Control Center',
+      id: 'component_id',
+      title: 'Component Identification',
+      desc: 'Identify contactor, overload relay, and push-button on the DOL panel',
+      location: 'Motor Control Lab',
       completed: false,
     },
     {
-      id: 'utility_check',
-      title: 'Utility Room Check',
-      desc: 'Inspect the utility room and stairwell area',
-      location: 'Utility Room',
+      id: 'assessment',
+      title: 'Competency Assessment',
+      desc: 'Complete the validation check at the Assessment Room testing station',
+      location: 'Assessment Room',
       completed: false,
+    },
+    {
+      id: 'instructor_check',
+      title: 'Instructor Sign-Off',
+      desc: 'Visit the Faculty Room and use the Instructor Terminal to submit your work',
+      location: 'Faculty / Instructor Room',
+      completed: false,
+    },
+    {
+      id: 'outlet_repair',
+      title: 'Outlet Fault Repair',
+      desc: 'Find and repair all 5 broken electrical outlets scattered across the facility. Approach each glowing socket and press E / tap FIX.',
+      location: 'Lobby · Wiring Lab · Corridor · Control Room · Tool Room',
+      completed: false,
+      _fixedCount: 0,
     },
   ]
 };
+
 
 let activeTask = null;
 let taskStartTime = 0;
@@ -381,23 +241,35 @@ function updateTaskDisplay() {
   if (!list) return;
   list.innerHTML = '';
   TASKS.daily.forEach(task => {
+    const isActive = activeTask?.id === task.id;
     const div = document.createElement('div');
-    div.className = 'task-item';
     div.style.cssText = `
-      padding:8px 10px;margin:4px 0;
-      background:${task.completed ? '#152a1e' : (activeTask?.id === task.id ? '#1e2a3a' : '#1e1e2a')};
-      border-left:3px solid ${task.completed ? '#44ff88' : (activeTask?.id === task.id ? '#4488ff' : '#ff9944')};
-      font-size:12px;cursor:pointer;border-radius:2px;
-      transition:background .2s;
+      display:flex; align-items:flex-start; gap:12px;
+      padding:14px 16px;
+      background:${task.completed ? 'rgba(20,55,32,0.55)' : isActive ? 'rgba(20,40,70,0.65)' : 'rgba(14,24,40,0.55)'};
+      border:2px solid ${task.completed ? 'rgba(68,200,100,0.45)' : isActive ? 'rgba(255,215,0,0.6)' : 'rgba(255,255,255,0.1)'};
+      border-radius:12px;
+      cursor:${task.completed ? 'default' : 'pointer'};
+      transition:border-color 0.2s;
     `;
+    const badge = task.completed ? '✓' : isActive ? '▶' : '○';
+    const badgeColor = task.completed ? '#44c864' : isActive ? '#ffd700' : 'rgba(255,255,255,0.35)';
     div.innerHTML = `
-      <div style="font-weight:bold;color:${task.completed ? '#44ff88' : '#ffffff'};">
-        ${task.completed ? '[OK]' : (activeTask?.id === task.id ? '▶' : '[ ]')} ${task.title}
+      <div style="font-family:'Bebas Neue',cursive;font-size:22px;color:${badgeColor};flex-shrink:0;line-height:1;margin-top:2px;">${badge}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:'Bebas Neue',cursive;font-size:clamp(15px,2.5vw,20px);color:${task.completed ? '#44c864' : '#fff'};letter-spacing:1.5px;line-height:1.2;">${task.title}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;line-height:1.5;font-family:'Inter',sans-serif;">${task.desc}</div>
+        <div style="font-family:'Bebas Neue',cursive;font-size:12px;color:rgba(255,215,0,0.5);margin-top:6px;letter-spacing:1px;">&#128205; ${task.location}</div>
       </div>
-      <div style="color:#888;font-size:10px;margin-top:2px;">${task.desc}</div>
-      <div style="color:#556;font-size:10px;margin-top:1px;">📍 ${task.location}</div>
     `;
-    if (!task.completed) div.addEventListener('click', () => startTask(task.id));
+    if (!task.completed) {
+      div.addEventListener('click', () => {
+        startTask(task.id);
+        // Close modal after picking task
+        document.getElementById('taskPanel')?.classList.remove('task-open');
+        document.getElementById('btnTopTasks')?.classList.remove('pressed');
+      });
+    }
     list.appendChild(div);
   });
 }
@@ -407,13 +279,20 @@ function notify(msg, dur = 2800) {
   const el = document.getElementById('notification');
   if (!el) return;
   el.textContent = msg;
+  el.style.transition = 'none';
   el.style.display = 'block';
+  el.style.opacity = '0';
+  el.style.transform = 'translateX(-50%) translateY(-16px) scale(0.94)';
+  // Force reflow then animate in
+  void el.offsetWidth;
+  el.style.transition = 'opacity 0.28s ease, transform 0.28s cubic-bezier(0.22,1,0.36,1)';
   el.style.opacity = '1';
-  el.style.transform = 'translateY(0)';
+  el.style.transform = 'translateX(-50%) translateY(0) scale(1)';
   clearTimeout(el._t);
   el._t = setTimeout(() => {
+    el.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
     el.style.opacity = '0';
-    el.style.transform = 'translateY(-8px)';
+    el.style.transform = 'translateX(-50%) translateY(-10px) scale(0.96)';
     setTimeout(() => { el.style.display = 'none'; }, 320);
   }, dur);
 }
@@ -424,22 +303,23 @@ raycaster.far = 4.2;
 let focusedObj = null;
 
 function doInteract() {
-  // Global catch for special states
+  // State guards
   if (Player.state === 'sitting') {
-    // Couch — stand up
     Player.state = 'standing';
-    Player.pos.z += 0.8; // Safely step out of the couch area into the room
+    Player.pos.z += 0.8;
     if (focusedObj?.userData) focusedObj.userData.label = 'Sit Down (Couch)';
     if (Audio.ctx) Audio.click();
     return;
   }
-  if (Player.state === 'computer' || Player.state === 'cctv') return;
-
+  if (Player.state === 'computer' || Player.state === 'cctv' || Player.state === 'circuit' || Player.state === 'outlet' || Player.state === 'repair') return;
   if (!focusedObj) return;
+
   const ud = focusedObj.userData;
   if (Audio.ctx) Audio.click();
 
-  // ── Seating (couch) ──────────────────────────────────────────────────────────────────
+
+
+  // ── Seating ───────────────────────────────────────────────────────────────
   if (ud.type === 'sit') {
     Player.state = 'sitting';
     Player.targetCamPos.copy(ud.sitPos);
@@ -448,7 +328,7 @@ function doInteract() {
     return;
   }
 
-  // ── Computer ──────────────────────────────────────────────────────────────────────
+  // ── Computer ──────────────────────────────────────────────────────────────
   if (ud.type === 'computer') {
     Player.state = 'computer';
     Player.lastComputerPos = ud.compPos || new THREE.Vector3(2.5, 1.10, -22.83);
@@ -458,17 +338,63 @@ function doInteract() {
     window.openComputerUI();
     return;
   }
-  
-  // ── Inspect Object ────────────────────────────────────────────────────────
+
+  // ── Circuit Bench (wiring modal) ──────────────────────────────────────────
+  if (ud.type === 'circuit-bench') {
+    Player.state = 'circuit';
+    window.openCircuitModal(ud.label, ud.benchId);
+    return;
+  }
+
+  // ── Outlet Socket (repair scenario) ───────────────────────────────────────
+  if (ud.type === 'outlet-socket') {
+    if (window.currentLevelId === 2) return; // Level 2 = switch install only
+    if (ud.fixed) { notify('This outlet is already repaired.', 1800); return; }
+    Player.state = 'repair';
+    window._orCurrentSocket = ud.socketId;
+    document.exitPointerLock?.();
+    openOutlet(ud.socketId);
+    return;
+  }
+
+  // ── Switch Station (Level 2) ──────────────────────────────────────────────
+  if (ud.type === 'switch_station') {
+    const rec = ud._parentRecord;
+    if (rec?.fixed) { notify('This switch is already installed.', 1800); return; }
+    document.exitPointerLock?.();
+    openSwitch(ud.stationId);
+    return;
+  }
+
+  // ── Workshop Wiring Station ───────────────────────────────────────────────
+  if (ud.type === 'workshop-wiring') {
+    document.exitPointerLock?.();
+    notify(`Opening ${ud.label}...`, 1500);
+    // Check prior completion and show stars on the LED if done
+    try {
+      const raw = localStorage.getItem('wireverse_workshop');
+      const store = raw ? JSON.parse(raw) : {};
+      const prev = store[ud.switchType];
+      if (prev?.completed) {
+        notify(`${ud.label} — Best: ${'★'.repeat(prev.bestStars || 0)} — Opening again...`, 2200);
+      }
+    } catch(e) {}
+    setTimeout(() => {
+      window.location.href = `scenario2.html?type=${ud.switchType}&from=workshop`;
+    }, 400);
+    return;
+  }
+
+  // ── Inspect ───────────────────────────────────────────────────────────────
   if (ud.type === 'inspect') {
     notify(`INSPECTED: ${ud.label}`, 3000);
-    if (Audio.ctx) Audio.click();
     return;
   }
 
   // ── Door ──────────────────────────────────────────────────────────────────
   if (ud.type === 'door') {
     ud.door.toggle(Audio.ctx ? Audio : null, notify);
+    showComponentInfo(ud);
     return;
   }
 
@@ -476,9 +402,9 @@ function doInteract() {
   if (ud.type === 'breaker') {
     const panelMap = {
       'main-panel': mainPanel,
-      'dist-a': distAPanel,
-      'dist-b': distBPanel,
-      'workshop': wsPanel,
+      'dist-a':     distAPanel,
+      'dist-b':     distBPanel,
+      'workshop':   wsPanel,
     };
     const panel = panelMap[ud.panel];
     if (!panel) return;
@@ -490,13 +416,13 @@ function doInteract() {
       applyPower();
       if (Audio.ctx) Audio.breaker(br.on);
     }
-    notify(`${ud.label}: ${br.on ? 'ON ' : 'OFF ✗'}`);
-
-    if (activeTask?.id === 'morning_inspection') {
+    notify(`${ud.label}: ${br.on ? 'ON' : 'OFF'}`);
+    showComponentInfo(ud);
+    if (activeTask?.id === 'panel_inspection') {
       const sub = activeTask.subtasks.find(s => s.panel === ud.panel);
       if (sub && !sub.checked) {
         sub.checked = true;
-        if (activeTask.subtasks.every(s => s.checked)) completeTask('morning_inspection');
+        if (activeTask.subtasks.every(s => s.checked)) completeTask('panel_inspection');
         else notify(`[OK] Panel ${ud.panel} checked (${activeTask.subtasks.filter(s => s.checked).length}/4)`, 2000);
       }
     }
@@ -508,21 +434,31 @@ function doInteract() {
     ud.on = !ud.on;
     ud.mesh.material = ud.on ? M.green : M.red;
     if (ud.id === 'main-switch') { ES.mains = ud.on; applyPower(); }
-    if (ud.id === 'gen-switch') { ES.generator = ud.on; applyPower(); }
-    notify(`${ud.label}: ${ud.on ? 'ON ' : 'OFF ✗'}`);
+    if (ud.id === 'gen-switch')  { ES.generator = ud.on; applyPower(); }
+    notify(`${ud.label}: ${ud.on ? 'ON' : 'OFF'}`);
+    showComponentInfo(ud);
     return;
   }
 
   // ── SCADA Terminal ────────────────────────────────────────────────────────
   if (ud.type === 'scada-terminal') {
-    notify(`${ud.label} — System locked. Maintenance required.`, 2500);
-    if (Audio.ctx) Audio.click();
+    const term = scadaTerminals[ud.idx];
+    if (!term) return;
+    if (Audio.ctx) Audio.chirp?.() || Audio.click();
+    term.active = !term.active;
+    notify(`${term.active ? '[OK]' : '[ ]'} SCADA Terminal ${ud.idx + 1} ${term.active ? 'Online' : 'Offline'}`);
+    showComponentInfo(ud);
+    if (activeTask?.id === 'scada_monitoring') {
+      const allActive = scadaTerminals.every(t => t.active);
+      if (allActive) completeTask('scada_monitoring');
+      else notify(`SCADA ${scadaTerminals.filter(t => t.active).length}/3 active`, 1800);
+    }
     return;
   }
 
   // ── Emergency Stop ────────────────────────────────────────────────────────
   if (ud.type === 'estop') {
-    if (Audio.ctx) Audio.alert();
+    if (Audio.ctx) Audio.alert?.() || Audio.click();
     ES.mains = false; ES.generator = false;
     generator.running = false;
     generator.targetRpm = 0;
@@ -538,55 +474,28 @@ function doInteract() {
       generator.running = true;
       generator.targetRpm = 1500;
       if (Audio.ctx) Audio.hum(true);
-      notify('Generator cranking up...', 2500);
-
-      if (activeTask?.id === 'generator_test') {
+      showComponentInfo(ud);
+      notify('Motor starting — DOL sequence initiated...', 2500);
+      if (activeTask?.id === 'motor_control') {
         clearTimeout(activeTask._rpmCheckTimeout);
         activeTask._rpmCheckTimeout = setTimeout(() => {
           if (generator.rpm >= 1300) {
-            notify('[OK] Generator RPM nominal — hold for 5s', 2000);
-            setTimeout(() => {
-              if (generator.running) completeTask('generator_test');
-            }, 5000);
-          } else {
-            notify('Generator RPM too low', 2000);
-          }
+            notify('[OK] Motor running at rated speed — task complete!', 2500);
+            setTimeout(() => { if (generator.running) completeTask('motor_control'); }, 3000);
+          } else notify('Motor RPM too low — check connections', 2000);
         }, 4000);
       }
-    } else {
-      notify('Generator already running', 1500);
-    }
+    } else notify('Motor already running', 1500);
     return;
   }
 
   // ── Generator Stop ────────────────────────────────────────────────────────
   if (ud.type === 'generator-stop') {
     if (generator.running) {
-      generator.running = false;
-      generator.targetRpm = 0;
+      generator.running = false; generator.targetRpm = 0;
       if (Audio.ctx) Audio.hum(false);
-      notify('Generator shutting down...', 2500);
-    } else {
-      notify('Generator not running', 1500);
-    }
-    return;
-  }
-
-  // ── SCADA Terminal ────────────────────────────────────────────────────────
-  if (ud.type === 'scada-terminal') {
-    const term = scadaTerminals[ud.idx];
-    if (!term) return;
-    if (Audio.ctx) Audio.chirp();
-    term.active = !term.active;
-    notify(`${term.active ? '[OK]' : '[ ]'} SCADA Terminal ${ud.idx + 1} ${term.active ? 'Online' : 'Offline'}`);
-    if (activeTask?.id === 'scada_monitoring') {
-      const allActive = scadaTerminals.every(t => t.active);
-      if (allActive) completeTask('scada_monitoring');
-      else {
-        const cnt = scadaTerminals.filter(t => t.active).length;
-        notify(`SCADA ${cnt}/3 active`, 1800);
-      }
-    }
+      notify('Motor stopped — DOL circuit opened.', 2500);
+    } else notify('Motor not running', 1500);
     return;
   }
 
@@ -596,33 +505,31 @@ function doInteract() {
     if (!station) return;
     if (!station.completed) {
       station.completed = true;
-      // Change terminal color to green
       station.terminals.forEach(t => {
         t.conn.material = new THREE.MeshLambertMaterial({ color: 0x33dd66, emissive: new THREE.Color(0x33dd66), emissiveIntensity: .4 });
       });
+      showComponentInfo(ud);
       notify(`[OK] Wire Terminal ${ud.idx + 1} verified & secured`, 2500);
       if (activeTask?.id === 'cable_check') {
         const allDone = cableStations.every(s => s.completed);
         if (allDone) completeTask('cable_check');
         else notify(`Terminals ${cableStations.filter(s => s.completed).length}/3 verified`, 1800);
       }
-    } else {
-      notify(`Wire Terminal ${ud.idx + 1} — Already verified [OK]`, 2000);
-    }
-    return;
-  }
-
-  // ── Multimeter ────────────────────────────────────────────────────────────
-  if (ud.type === 'multimeter') {
-    const v = (230 + (Math.random() - .5) * 8).toFixed(1);
-    const f = (50 + (Math.random() - .5) * .4).toFixed(2);
-    notify(`METER: ${v}V AC  ${f}Hz`, 3000);
+    } else notify(`Wire Terminal ${ud.idx + 1} — Already verified [OK]`, 2000);
     return;
   }
 
   // ── Oscilloscope ──────────────────────────────────────────────────────────
   if (ud.type === 'oscilloscope') {
     notify('SCOPE: Waveform analysis active — 50Hz nominal', 3000);
+    showComponentInfo(ud);
+    return;
+  }
+
+  // ── Whiteboard — orientation card ─────────────────────────────────────────
+  if (ud.type === 'whiteboard') {
+    showOrientationCard();
+    showComponentInfo(ud);
     return;
   }
 }
@@ -654,18 +561,19 @@ const MM_ZONES = {
 };
 
 const MM_ROOMS = [
-  { abbr: 'ENT',   cx: 1,  cz: -24, w: 6,  d: 8,  zone: 'general' },
-  { abbr: 'HALL',  cx: 1,  cz:   3, w: 6,  d: 46, zone: 'general' },
-  { abbr: 'WKSP',  cx: 15, cz: -10, w: 22, d: 20, zone: 'power'   },
-  { abbr: 'GEN',   cx: 12, cz:   7, w: 16, d: 14, zone: 'power'   },
-  { abbr: 'CTRL',  cx: 27, cz:   1, w: 14, d: 18, zone: 'control' },
-  { abbr: 'DST-A', cx: -8, cz:  -5, w: 12, d: 14, zone: 'dist'    },
-  { abbr: 'DST-B', cx: -8, cz:   9, w: 12, d: 14, zone: 'dist'    },
-  { abbr: 'LAB',   cx: 27, cz:  16, w: 14, d: 12, zone: 'lab'     },
-  { abbr: 'STOR',  cx: -8, cz:  22, w: 12, d: 12, zone: 'general' },
-  { abbr: 'UTIL',  cx: 10, cz:  21, w: 12, d: 14, zone: 'control' },
-  { abbr: 'STWR',  cx:  7, cz:  30, w:  6, d:  8, zone: 'general' },
+  { abbr: 'LOBBY',  cx: 1,  cz: -24, w: 6,  d: 8,  zone: 'general' },
+  { abbr: 'HALL',   cx: 1,  cz:   3, w: 6,  d: 46, zone: 'general' },
+  { abbr: 'WIRING', cx: 15, cz: -10, w: 22, d: 20, zone: 'power'   },
+  { abbr: 'MOTOR',  cx: 12, cz:   7, w: 16, d: 14, zone: 'power'   },
+  { abbr: 'FACULTY',cx: 27, cz:   1, w: 14, d: 18, zone: 'control' },
+  { abbr: 'PANEL',  cx: -8, cz:  -5, w: 12, d: 14, zone: 'dist'    },
+  { abbr: 'TOOLS',  cx: -8, cz:   9, w: 12, d: 14, zone: 'dist'    },
+  { abbr: 'EXAM',   cx: 27, cz:  16, w: 14, d: 12, zone: 'lab'     },
+  { abbr: 'STORE',  cx: -8, cz:  22, w: 12, d: 12, zone: 'general' },
+  { abbr: 'CLASS',  cx: 10, cz:  21, w: 12, d: 14, zone: 'control' },
+  { abbr: 'STAIR',  cx:  7, cz:  30, w:  6, d:  8, zone: 'general' },
 ];
+
 
 let _mmLastX = 0, _mmLastZ = 0, _mmLastYaw = 0;
 
@@ -724,7 +632,7 @@ function drawMinimap() {
     // Label — only if room is wide enough
     if (rw > 14 && rh > 10) {
       mmCtx.fillStyle = zc.label;
-      mmCtx.font = `bold ${Math.min(7, rw / r.abbr.length * 0.9)}px monospace`;
+      mmCtx.font = `bold ${Math.min(10, rw / r.abbr.length * 1.3)}px monospace`;
       mmCtx.textAlign = 'center';
       mmCtx.textBaseline = 'middle';
       mmCtx.fillText(r.abbr, mpx(r.cx), mpz(r.cz));
@@ -738,6 +646,34 @@ function drawMinimap() {
     mmCtx.fillStyle = 'rgba(240,190,60,0.75)';
     mmCtx.fillRect(px - 2, pz - 1, 4, 2);
   });
+
+  // ── Switch Station Markers (Level 2) ─────────────────────────────────────
+  if (window.currentLevelId === 2) {
+    drawSwitchMinimap(mmCtx, mpx, mpz, W, H);
+  }
+
+  // ── Outlet Markers (Level 1 only) ────────────────────────────────────────
+  if (window.currentLevelId === 1 && typeof outletSockets !== 'undefined') {
+    outletSockets.forEach(s => {
+      const px = mpx(s.group.position.x);
+      const pz = mpz(s.group.position.z);
+      
+      mmCtx.beginPath();
+      mmCtx.arc(px, pz, 2.5, 0, Math.PI * 2);
+      mmCtx.fillStyle = s.fixed ? '#22c55e' : '#ff3300';
+      mmCtx.fill();
+
+      // Pulsing ring for broken outlets to attract attention
+      if (!s.fixed) {
+        const pulse = 4 + Math.sin(Date.now() / 200) * 1.5;
+        mmCtx.beginPath();
+        mmCtx.arc(px, pz, pulse, 0, Math.PI * 2);
+        mmCtx.strokeStyle = 'rgba(255, 51, 0, 0.45)';
+        mmCtx.lineWidth = 1;
+        mmCtx.stroke();
+      }
+    });
+  }
 
   // ── Player triangle ───────────────────────────────────────────────────────
   const ppx = mpx(Player.pos.x);
@@ -762,7 +698,7 @@ function drawMinimap() {
   // ── Corner label ─────────────────────────────────────────────────────────
   mmCtx.shadowBlur = 0;
   mmCtx.fillStyle = 'rgba(68,255,136,0.28)';
-  mmCtx.font = 'bold 7px monospace';
+  mmCtx.font = 'bold 11px Courier New';
   mmCtx.textAlign = 'left';
   mmCtx.textBaseline = 'top';
   mmCtx.fillText('F1', 4, 3);
@@ -779,6 +715,11 @@ const rnEl = document.getElementById('roomname');
 const fpsEl = document.getElementById('fpsCounter');
 let fpsSamples = [], lastFpsFlush = 0;
 
+let _hudCache = { room: null, genRunning: null, rpmPct: null, temp: null, prompt: null };
+let _lastRayT = 0;
+let _cachedTargets = null;
+const _objWP = new THREE.Vector3(); // reusable world-position buffer for proximity checks
+
 function updateHUD(dt, animT) {
   // FPS
   fpsSamples.push(1 / dt);
@@ -791,66 +732,130 @@ function updateHUD(dt, animT) {
 
   const onFloor2 = false;
 
-  // Room name
+  // Room name (cached update)
   if (rnEl) {
     const room = getRoom(Player.pos);
-    rnEl.textContent = onFloor2 ? `[F2] ${room}` : room;
+    const text = onFloor2 ? `[F2] ${room}` : room;
+    if (_hudCache.room !== text) {
+      rnEl.textContent = text;
+      _hudCache.room = text;
+    }
   }
 
-  drawMinimap();
+  // Throttle minimap redraws to max ~15 FPS to avoid heavy canvas ops during movement
+  if (typeof window._lastMmT === 'undefined') window._lastMmT = 0;
+  if (animT - window._lastMmT > 0.06) {
+    window._lastMmT = animT;
+    drawMinimap();
+  }
 
-  // Generator status
+  // Generator status (cached update to stop layout thrashing)
   const genStatus = document.getElementById('genStatus');
   if (genStatus) {
-    const statusColor = generator.running ? '#44ff88' : '#888888';
     const rpmPct = Math.round((generator.rpm / 1500) * 100);
-    genStatus.innerHTML = `
-      <div style="font-size:9px;color:#667788;letter-spacing:1px;">GENERATOR</div>
-      <div style="color:${statusColor};font-weight:bold;">
-        ${generator.running ? '▶ RUNNING' : '■ OFFLINE'}
-      </div>
-      <div style="display:flex;gap:8px;margin-top:2px;font-size:9px;color:#aaaaaa;">
-        <span>RPM <span style="color:${generator.rpm > 1400 ? '#44ff88' : '#ff9944'}">${Math.round(generator.rpm)}</span></span>
-        <span>°C <span style="color:${generator.temp > 75 ? '#ff4422' : '#ffcc44'}">${Math.round(generator.temp)}</span></span>
-        <span>⛽ <span style="color:${generator.fuel > 25 ? '#44ff88' : '#ff4422'}">${Math.round(generator.fuel)}%</span></span>
-      </div>
-      <div style="margin-top:3px;height:3px;background:#1a2233;border-radius:2px;">
-        <div style="height:100%;width:${rpmPct}%;background:${generator.running ? '#44ff88' : '#334455'};border-radius:2px;transition:width .3s;"></div>
-      </div>
-    `;
+    const temp = Math.round(generator.temp);
+    if (_hudCache.genRunning !== generator.running || _hudCache.rpmPct !== rpmPct || _hudCache.temp !== temp) {
+      const statusColor = generator.running ? '#44ff88' : '#888888';
+      genStatus.innerHTML = `
+        <div style="font-size:9px;color:#667788;letter-spacing:1px;">MOTOR CONTROL</div>
+        <div style="color:${statusColor};font-weight:bold;">
+          ${generator.running ? '▶ RUNNING' : '■ STOPPED'}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:2px;font-size:9px;color:#aaaaaa;">
+          <span>RPM <span style="color:${generator.rpm > 1400 ? '#44ff88' : '#ff9944'}">${Math.round(generator.rpm)}</span></span>
+          <span>°C <span style="color:${generator.temp > 75 ? '#ff4422' : '#ffcc44'}">${temp}</span></span>
+        </div>
+        <div style="margin-top:3px;height:3px;background:#1a2233;border-radius:2px;">
+          <div style="height:100%;width:${rpmPct}%;background:${generator.running ? '#44ff88' : '#334455'};border-radius:2px;transition:width .3s;"></div>
+        </div>
+      `;
+      _hudCache.genRunning = generator.running;
+      _hudCache.rpmPct = rpmPct;
+      _hudCache.temp = temp;
+    }
   }
 
   // Interaction prompt
   if (Player.state === 'sitting') {
-    if (promptEl) {
+    if (promptEl && _hudCache.prompt !== 'STAND UP') {
       promptEl.textContent = 'STAND UP';
-      promptEl.style.display = 'flex';
+      promptEl.style.setProperty('display', 'flex', 'important');
+      _hudCache.prompt = 'STAND UP';
     }
   } else if (Player.state === 'computer' || Player.state === 'cctv') {
-    if (promptEl) promptEl.style.display = 'none';
-  } else {
-    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-  const targets = [...allInteractables, ...doors.map(d => d.panel)];
-  const hits = raycaster.intersectObjects(targets, true);
-
-  if (hits.length && hits[0].distance < 4.2) {
-    let cur = hits[0].object;
-    while (cur && !cur.userData?.type) cur = cur.parent;
-    if (cur?.userData?.type) {
-      focusedObj = cur;
-      const label = cur.userData.door?.label || cur.userData.label || 'Interact';
-      if (promptEl) {
-        promptEl.textContent = (label).toUpperCase();
-        promptEl.style.display = 'flex';
-      }
-    } else {
-      focusedObj = null;
-      if (promptEl) promptEl.style.display = 'none';
+    if (promptEl && _hudCache.prompt !== 'NONE') {
+      promptEl.style.setProperty('display', 'none', 'important');
+      _hudCache.prompt = 'NONE';
     }
   } else {
-    focusedObj = null;
-    if (promptEl) promptEl.style.display = 'none';
-  }
+    // Throttle raycasting to max ~10fps
+    if (animT - _lastRayT > 0.1) {
+      _lastRayT = animT;
+      raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+      if (!_cachedTargets) {
+        const switchProxArr = typeof switchProxies !== 'undefined' ? switchProxies : [];
+        _cachedTargets = [...allInteractables, ...doors.map(d => d.panel), ...switchProxArr];
+      }
+      
+      const hits = raycaster.intersectObjects(_cachedTargets, true);
+
+      let newPrompt = 'NONE';
+      let foundViaRay = false;
+      if (hits.length && hits[0].distance < 4.2) {
+        let cur = hits[0].object;
+        while (cur && !cur.userData?.type) cur = cur.parent;
+        if (cur?.userData?.type) {
+          if (window.currentLevelId === 2 && cur.userData.type === 'outlet-socket') {
+            focusedObj = null; // suppress outlets in Level 2
+          } else {
+            focusedObj = cur;
+            foundViaRay = true;
+            const rawLabel = cur.userData.door?.label || cur.userData.label || 'Interact';
+            newPrompt = cur.userData.type === 'door'
+              ? 'ENTER'
+              : rawLabel.length > 12 ? rawLabel.slice(0, 10).toUpperCase() + '…' : rawLabel.toUpperCase();
+          }
+        }
+      }
+
+      // ── Proximity fallback — works when not aiming precisely (mobile) ──
+      if (!foundViaRay) {
+        const PROX = 2.2;
+        let nearDist = PROX, nearObj = null;
+        const cp = camera.position;
+        for (const obj of _cachedTargets) {
+          obj.getWorldPosition(_objWP); // use world pos — local pos is wrong for grouped objects
+          const d = cp.distanceTo(_objWP);
+          if (d < nearDist) { nearDist = d; nearObj = obj; }
+        }
+        if (nearObj) {
+          let cur = nearObj;
+          while (cur && !cur.userData?.type) cur = cur.parent;
+          if (cur?.userData?.type) {
+            if (window.currentLevelId === 2 && cur.userData.type === 'outlet-socket') {
+              focusedObj = null; // suppress outlets in Level 2
+            } else {
+              focusedObj = cur;
+              const rawLabel = cur.userData.door?.label || cur.userData.label || 'Interact';
+              newPrompt = cur.userData.type === 'door'
+                ? 'ENTER'
+                : rawLabel.length > 12 ? rawLabel.slice(0, 10).toUpperCase() + '…' : rawLabel.toUpperCase();
+            }
+          } else { focusedObj = null; }
+        } else { focusedObj = null; }
+      }
+
+      if (promptEl && _hudCache.prompt !== newPrompt) {
+        if (newPrompt === 'NONE') {
+          // Use setProperty with important to reliably override any CSS !important rules
+          promptEl.style.setProperty('display', 'none', 'important');
+        } else {
+          promptEl.textContent = newPrompt;
+          promptEl.style.setProperty('display', 'flex', 'important');
+        }
+        _hudCache.prompt = newPrompt;
+      }
+    }
   }
 
   // Warning light strobe
@@ -874,10 +879,13 @@ function updateHUD(dt, animT) {
     }
   }
 
-  // Auto-complete utility check when player enters that area
+  // Auto-complete 'Study Module Lesson' when player enters the Classroom
   if (Player.pos.x > 4 && Player.pos.x < 16 && Player.pos.z > 14 && Player.pos.z < 28) {
-    const utilTask = TASKS.daily.find(t => t.id === 'utility_check');
-    if (utilTask && !utilTask.completed) completeTask('utility_check');
+    const lessonTask = TASKS.daily.find(t => t.id === 'module_lesson');
+    if (lessonTask && !lessonTask.completed) {
+      notify('📖 You entered the Classroom — reading today\'s module!', 3000);
+      setTimeout(() => completeTask('module_lesson'), 2000);
+    }
   }
 }
 
@@ -885,20 +893,31 @@ function updateHUD(dt, animT) {
 const clock = new THREE.Clock();
 let animT = 0;
 
-function loop() {
+const _FPS_CAP = isMobile ? 30 : 60; // 30fps on mobile — halves GPU workload
+const _FPS_INTERVAL = 1000 / _FPS_CAP;
+let _lastFrameMs = 0;
+let _frameCount = 0;
+function loop(timestamp) {
   requestAnimationFrame(loop);
+  const elapsed = timestamp - _lastFrameMs;
+  if (elapsed < _FPS_INTERVAL) return; // skip frame to hold 60fps
+  _lastFrameMs = timestamp - (elapsed % _FPS_INTERVAL);
   const dt = Math.min(clock.getDelta(), 0.05);
   animT += dt;
+  _frameCount++;
 
   updatePlayer(dt);
-  applyPower();
-  updateGenerator(dt);
-  updateSCADA(dt, animT);
-  updateOscilloscopes(animT);
-  doors.forEach(d => d.update(dt));
+
+  // Stagger expensive updates across 2 frames at 60fps
+  const fm = _frameCount % 2;
+  if (fm === 0) { applyPower(); updateGenerator(dt); updateSCADA(dt, animT); updateOscilloscopes(animT); }
+  if (fm === 1) { updateOutlets(animT); doors.forEach(d => d.update(dt)); }
+
   updateHUD(dt, animT);
 
-  renderer.render(scene, camera);
+  // Use bloom composer on desktop if loaded, otherwise standard render
+  if (window._composer) window._composer.render();
+  else renderer.render(scene, camera);
 }
 
 // ── STARTUP ───────────────────────────────────────────────────────────────────
@@ -910,45 +929,113 @@ document.addEventListener('deviceready', () => {
 const startBtn = document.getElementById('startBtn');
 if (startBtn) {
   startBtn.addEventListener('click', () => {
-    Audio.init();
-    if (Audio.ctx) Audio.hum(true);
+    const loadingScreen  = document.getElementById('loadingScreen');
+    const loadingBarFill = document.getElementById('loadingBarFill');
+    const loadingPct     = document.getElementById('loadingPct');
 
-    ['overlay', 'ptrMsg'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
+    if (loadingScreen) loadingScreen.style.display = 'flex';
+    if (loadingBarFill) loadingBarFill.style.width = '0%';
+    if (loadingPct) loadingPct.textContent = '0';
 
-    // Show HUD
-    const hudEl = document.getElementById('hud');
-    if (hudEl) hudEl.style.display = 'block';
+    const overlay = document.getElementById('overlay');
+    if (overlay) overlay.style.display = 'none';
 
-    // Desktop mouse hint
-    if (!isMobile) {
-      const msg = document.getElementById('ptrMsg');
-      if (msg) { msg.style.display = 'block'; msg.textContent = 'Click to lock mouse | WASD to move | E to interact | T toggle tasks'; }
-    }
+    // Start tip rotator
+    if (window._startTips) window._startTips();
 
-    applyPower();
-    Tutorial.start();
-    updateTaskDisplay();
-    notify('Welcome, Trainee. Check your task list.', 4000);
+    // Smooth progress simulation — reaches ~95% by 2.8s, then snaps to 100%
+    let progress = 0;
+    const LOAD_STEPS = [
+      { target: 18,  label: 'Loading world geometry...' },
+      { target: 36,  label: 'Compiling shaders...' },
+      { target: 52,  label: 'Initializing lighting system...' },
+      { target: 68,  label: 'Setting up audio engine...' },
+      { target: 80,  label: 'Spawning interactables...' },
+      { target: 91,  label: 'Verifying circuit boards...' },
+      { target: 97,  label: 'Almost ready...' },
+    ];
+    let stepIdx = 0;
+    const tipEl = document.getElementById('loadingTip');
 
-    // Show game UI elements
-    ['rightActionBar', 'btnPauseTop', 'tutorialBar'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'flex';
-    });
+    const interval = setInterval(() => {
+      if (stepIdx < LOAD_STEPS.length) {
+        const step = LOAD_STEPS[stepIdx];
+        const jump = (step.target - progress) * 0.35 + Math.random() * 3;
+        progress = Math.min(step.target, progress + jump);
+        if (progress >= step.target - 1) {
+          if (tipEl) { tipEl.style.animation = 'none'; void tipEl.offsetWidth; tipEl.style.animation = 'loadTipFade 0.6s ease both'; tipEl.textContent = step.label; }
+          stepIdx++;
+        }
+      }
+      if (loadingBarFill) loadingBarFill.style.width = progress + '%';
+      if (loadingPct) loadingPct.textContent = Math.round(progress);
+    }, 320);
 
-    loop();
+    setTimeout(() => {
+      clearInterval(interval);
+      if (window._stopTips) window._stopTips();
+      if (loadingBarFill) loadingBarFill.style.width = '100%';
+      if (loadingPct) loadingPct.textContent = '100';
+      if (tipEl) { tipEl.style.animation = 'none'; void tipEl.offsetWidth; tipEl.style.animation = 'loadTipFade 0.4s ease both'; tipEl.textContent = 'Ready! Entering training facility...'; }
+
+      setTimeout(() => {
+        if (loadingScreen) {
+          loadingScreen.style.opacity = '0';
+          setTimeout(() => { loadingScreen.style.display = 'none'; }, 900);
+        }
+      }, 500);
+
+      try { Audio.init(); } catch (e) { console.error("Audio.init Error", e); }
+      // Stop main-menu BGM and switch to game ambience
+      try { if (window._stopMenuBGM) window._stopMenuBGM(); } catch (e) {}
+      try { if (Audio.ctx) Audio.hum(true); } catch (e) { console.error("Audio.hum Error", e); }
+      try { if (typeof _initOutlets === 'function') _initOutlets(); } catch (e) { console.error("_initOutlets Error", e); }
+      try { if (typeof _initSwitches === 'function') _initSwitches(); } catch (e) { console.error("_initSwitches Error", e); }
+
+      try {
+        const hudEl = document.getElementById('hud');
+        if (hudEl) hudEl.style.display = 'block';
+        if (!isMobile) {
+          const msg = document.getElementById('ptrMsg');
+          if (msg) { msg.style.display = 'block'; msg.textContent = 'Click to lock mouse | WASD to move | Space to jump | E to interact'; }
+        }
+      } catch (e) { console.error("UI init Error:", e); }
+
+      try { if (typeof applyPower === 'function') applyPower(); } catch (e) {}
+      try { if (typeof updateTaskDisplay === 'function') updateTaskDisplay(); } catch (e) {}
+      try { if (typeof updateToolHUD === 'function') updateToolHUD(); } catch (e) {}
+
+      try {
+        ['btnTopTasks', 'btnPauseTop'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'flex';
+        });
+      } catch (e) {}
+
+      try {
+        if (typeof loop === 'function') loop();
+        if (!isMobile) {
+          const cvs = document.getElementById('c');
+          if (cvs && cvs.requestPointerLock) cvs.requestPointerLock();
+        }
+      } catch (e) { console.error("Loop/Render Error:", e); }
+    }, 3200);
   });
 }
+
+
 
 // ── INPUT ─────────────────────────────────────────────────────────────────────
 window.addEventListener('keydown', e => {
   if (e.code === 'KeyE') doInteract();
   if (e.code === 'KeyT') {
     const panel = document.getElementById('taskPanel');
-    if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    if (panel) {
+      const isOpen = panel.classList.contains('task-open');
+      panel.classList.toggle('task-open', !isOpen);
+      document.getElementById('btnTopTasks')?.classList.toggle('pressed', !isOpen);
+      if (!isOpen) updateTaskDisplay();
+    }
   }
   if (e.code === 'KeyM') {
     const mm = document.getElementById('minimapWrapper');
@@ -956,24 +1043,92 @@ window.addEventListener('keydown', e => {
   }
 });
 
+// Debounce guard — prevents click+touchstart double-fire (300ms window)
+let _interactFireT = 0;
+function _fireInteract() {
+  const now = Date.now();
+  if (now - _interactFireT < 300) return;
+  _interactFireT = now;
+  // Force an immediate raycast so focusedObj is fresh at press time
+  if (_cachedTargets) {
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+    const hits = raycaster.intersectObjects(_cachedTargets, true);
+    let foundViaRay = false;
+    if (hits.length && hits[0].distance < 4.2) {
+      let cur = hits[0].object;
+      while (cur && !cur.userData?.type) cur = cur.parent;
+      if (cur?.userData?.type) { focusedObj = cur; foundViaRay = true; }
+    }
+    // Proximity fallback — if center-aim misses, grab nearest within 2.2m
+    if (!foundViaRay) {
+      const PROX = 2.2;
+      let nearDist = PROX, nearObj = null;
+      const cp = camera.position;
+      for (const obj of _cachedTargets) {
+        obj.getWorldPosition(_objWP);
+        const d = cp.distanceTo(_objWP);
+        if (d < nearDist) { nearDist = d; nearObj = obj; }
+      }
+      if (nearObj) {
+        let cur = nearObj;
+        while (cur && !cur.userData?.type) cur = cur.parent;
+        focusedObj = cur?.userData?.type ? cur : null;
+      } else { focusedObj = null; }
+    }
+  }
+  doInteract();
+}
+
 const interactBtn = document.getElementById('btnInteract');
+
+// Ripple helper for tactile feedback on button press
+function _spawnRipple(btn) {
+  const r = document.createElement('span');
+  r.style.cssText = `
+    position:absolute; border-radius:50%;
+    width:80px; height:80px; margin:-40px 0 0 -40px;
+    background:rgba(255,215,0,0.28);
+    top:50%; left:50%;
+    transform:scale(0); opacity:1;
+    animation:useRipple 0.55s ease-out forwards;
+    pointer-events:none; z-index:10;
+  `;
+  btn.appendChild(r);
+  setTimeout(() => r.remove(), 600);
+}
+
 if (interactBtn) {
-  interactBtn.addEventListener('click', e => {
-    e.preventDefault();
-    doInteract();
-  });
   interactBtn.addEventListener('touchstart', e => {
     e.preventDefault();
-    doInteract();
+    e.stopPropagation();
+    _spawnRipple(interactBtn);
+    _fireInteract();
   }, { passive: false });
+  interactBtn.addEventListener('click', e => {
+    e.preventDefault();
+    _spawnRipple(interactBtn);
+    _fireInteract();
+  });
 }
 
 // Tap-anywhere interaction — brief touch (<200ms, <15px drift) on the look zone triggers USE
+// Also dynamically disable lookZone pointer-events when not freely standing (so overlays work)
 {
   const lz = document.getElementById('lookZone');
   if (lz) {
+    // Poll Player.state and reflect as CSS — runs alongside game loop
+    let _lzLastState = '';
+    setInterval(() => {
+      const st = Player.state;
+      if (st === _lzLastState) return;
+      _lzLastState = st;
+      lz.style.pointerEvents = (st === 'standing') ? 'all' : 'none';
+    }, 80);
+
     let _tapT = 0, _tapX = 0, _tapY = 0, _tapId = -1;
     lz.addEventListener('touchstart', e => {
+      // Only when player can actually interact
+      if (Player.state !== 'standing') return;
       if (e.changedTouches.length !== 1 || _tapId !== -1) return;
       const t = e.changedTouches[0];
       _tapT = Date.now(); _tapX = t.clientX; _tapY = t.clientY; _tapId = t.identifier;
@@ -982,6 +1137,7 @@ if (interactBtn) {
       for (const t of e.changedTouches) {
         if (t.identifier !== _tapId) continue;
         _tapId = -1;
+        if (Player.state !== 'standing') break;
         if (Date.now() - _tapT < 200 && Math.hypot(t.clientX - _tapX, t.clientY - _tapY) < 15) {
           doInteract();
         }
@@ -1006,6 +1162,199 @@ Audio.success = function () {
   gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + .35);
   osc.start();
   osc.stop(ctx.currentTime + .35);
+};
+
+// ── LEVEL 1 MANAGER — star HUD + level complete flow ────────────────────────
+const Level1Manager = {
+  starsEarned: 0,
+  totalOutlets: 5,
+  active: false,
+
+  init() {
+    // Only activate when Stage 1, Level 1 is launched
+    if (window.currentStageId === 1 && window.currentLevelId === 1) {
+      this.active = true;
+      this.starsEarned = 0;
+      const hud = document.getElementById('starHUD');
+      if (hud) hud.style.display = 'flex';
+    }
+  },
+
+  onOutletFixed(socketId) {
+    if (!this.active) return;
+    this.starsEarned = Math.min(this.starsEarned + 1, this.totalOutlets);
+    this._updateHUD();
+    if (this.starsEarned >= this.totalOutlets) {
+      // Short delay so the outlet "FIXED" screen can be seen first
+      setTimeout(() => this._showComplete(), 2400);
+    }
+  },
+
+  _updateHUD() {
+    for (let i = 1; i <= this.totalOutlets; i++) {
+      const star = document.getElementById(`sh-s${i}`);
+      if (!star) continue;
+      if (i <= this.starsEarned) {
+        star.classList.add('lit');
+        if (i === this.starsEarned) {
+          // Pop animation on the newly lit star
+          star.classList.remove('pop');
+          void star.offsetWidth; // reflow to restart animation
+          star.classList.add('pop');
+        }
+      }
+    }
+  },
+
+  _showComplete() {
+    // Save to DB
+    if (window.DB) {
+      DB.saveProgress(1, 1, { completed: true, stars: this.starsEarned });
+    }
+    if (Audio.ctx) Audio.success();
+
+    // Show modal
+    const modal = document.getElementById('levelCompleteModal');
+    if (modal) modal.classList.add('show');
+
+    // Animate stars one by one with stagger
+    for (let i = 1; i <= this.starsEarned; i++) {
+      const star = document.getElementById(`lcm-s${i}`);
+      if (!star) continue;
+      setTimeout(() => {
+        star.classList.add('lit', 'drop');
+      }, i * 220);
+    }
+
+    // Bind back-to-menu button
+    const btn = document.getElementById('lcmBackBtn');
+    if (btn && !btn._bound) {
+      btn._bound = true;
+      btn.addEventListener('click', () => {
+        // A hard reload is the safest way to fully reset the WebGL world 
+        // back to the initial main menu state for the next level/session.
+        window.location.reload();
+      });
+    }
+  },
+};
+
+// ── LEVEL 2 MANAGER — star HUD + level complete flow ────────────────────────
+const Level2Manager = {
+  starsEarned: 0,
+  totalStations: 3,
+  active: false,
+
+  init() {
+    if (window.currentStageId === 1 && window.currentLevelId === 2) {
+      this.active = true;
+      this.starsEarned = 0;
+      const hud = document.getElementById('starHUD2');
+      if (hud) hud.style.display = 'flex';
+    }
+  },
+
+  onSwitchFixed(stationId) {
+    if (!this.active) return;
+    this.starsEarned = Math.min(this.starsEarned + 1, this.totalStations);
+    this._updateHUD();
+    if (this.starsEarned >= this.totalStations) {
+      setTimeout(() => this._showComplete(), 2400);
+    }
+  },
+
+  _updateHUD() {
+    for (let i = 1; i <= this.totalStations; i++) {
+      const star = document.getElementById(`sh2-s${i}`);
+      if (!star) continue;
+      if (i <= this.starsEarned) {
+        star.classList.add('lit');
+        if (i === this.starsEarned) {
+          star.classList.remove('pop');
+          void star.offsetWidth;
+          star.classList.add('pop');
+        }
+      }
+    }
+  },
+
+  _showComplete() {
+    if (window.DB) {
+      DB.saveProgress(1, 2, { completed: true, stars: this.starsEarned });
+    }
+    if (Audio.ctx) Audio.uiSuccess?.() || Audio.click();
+    const modal = document.getElementById('levelCompleteModal2');
+    if (modal) modal.style.display = 'flex';
+    for (let i = 1; i <= this.starsEarned; i++) {
+      const star = document.getElementById(`lcm2-s${i}`);
+      if (!star) continue;
+      setTimeout(() => { star.classList.add('lit', 'drop'); }, i * 220);
+    }
+    const btn = document.getElementById('lcm2BackBtn');
+    if (btn && !btn._bound) {
+      btn._bound = true;
+      btn.addEventListener('click', () => { window.location.reload(); });
+    }
+  },
+};
+
+// ── OUTLET REPAIR SCENARIO ────────────────────────────────────────────────────
+// Called once after DOM is ready (inside startBtn handler)
+function _initOutlets() {
+  Level1Manager.init();
+  initOutletScenario((socketId) => {
+    // socket was fixed — update world
+    markOutletFixed(socketId);
+    const pip = document.getElementById(`opip-${socketId}`);
+    if (pip) pip.classList.add('done');
+
+    // Level1Manager awards a star
+    Level1Manager.onOutletFixed(socketId);
+
+    // Also update the legacy task system
+    const task = TASKS.daily.find(t => t.id === 'outlet_repair');
+    if (task && !task.completed) {
+      task._fixedCount = (task._fixedCount || 0) + 1;
+      feedbackLog(`✓ Outlet #${socketId} repaired — ${task._fixedCount}/5 done`, 'ok');
+      notify(`Outlet #${socketId} repaired! ${task._fixedCount}/5 fixed.`, 3000);
+      if (task._fixedCount >= 5) {
+        completeTask('outlet_repair');
+        notify('ALL 5 OUTLETS REPAIRED — Task complete!', 5000);
+      }
+    }
+    // Auto-close overlay ~2.2s after "FIXED!" screen appears
+    setTimeout(() => {
+      closeOutlet();
+    }, 2200);
+  });
+}
+
+// ── SWITCH INSTALL SCENARIO (Level 2) ────────────────────────────────────────
+function _initSwitches() {
+  Level2Manager.init();
+  initSwitches();   // place 3 switch stations in Workshop
+  initSwitchScenario((stationId) => {
+    // Station was completed
+    markSwitchFixed(stationId);
+    feedbackLog(`✓ Switch Station #${stationId} installed`, 'ok');
+    notify(`Switch #${stationId} installed! ${Level2Manager.starsEarned + 1}/3 done.`, 3000);
+    Level2Manager.onSwitchFixed(stationId);
+    // Auto-close overlay ~2.2s after success screen
+    setTimeout(() => { closeSwitch(); }, 2200);
+  });
+}
+
+// Expose globals for switch overlay buttons (set in switch-scenario.js via window.closeSwitch etc.)
+
+// Expose closeOutlet globally so the HTML button onclick works
+window.closeOutlet = () => { closeOutlet(); }; // closeOutlet() itself restores Player.state
+// Expose play-again (resets scenario without closing overlay)
+window._orPlayAgain = () => { openOutlet(window._orCurrentSocket || 1); };
+// Expose tool select so or-toolbar onclick works
+window._orSelectTool = (t) => {
+  // delegate into the module's internal select — module wires this via the toolbar clicks
+  // since toolbar is in HTML we re-dispatch via a custom event the module can listen to
+  document.dispatchEvent(new CustomEvent('or-tool-select', { detail: t }));
 };
 
 // ── COMPUTER UI OVERLAY MANAGER ─────────────────────────────────────────────
@@ -1077,6 +1426,8 @@ window.addEventListener('mouseup', () => { cctvMouseDown = false; });
 // Touch drag for CCTV rotation
 let cctvTouchId = null, cctvTouchX = 0, cctvTouchY = 0;
 cctvOverlay.addEventListener('touchstart', e => {
+  // Don't capture touches that land on interactive UI elements (exit button etc.)
+  if (e.target.closest('button, a, [role="button"]')) return;
   e.preventDefault();
   if (Player.state !== 'cctv' || e.changedTouches.length === 0) return;
   const t = e.changedTouches[0];
@@ -1131,11 +1482,9 @@ cctvGridBtns.forEach(btn => {
 });
 
 if (btnExitCCTV) {
-  btnExitCCTV.addEventListener('click', () => {
+  function _exitCCTV() {
     cctvOverlay.style.display = 'none';
     if (cctvTimeInterval) { clearInterval(cctvTimeInterval); cctvTimeInterval = null; }
-
-    // Back to computer terminal
     Player.state = 'computer';
     if (Player.lastComputerPos) {
       Player.targetCamPos.copy(Player.lastComputerPos);
@@ -1146,31 +1495,97 @@ if (btnExitCCTV) {
     }
     camera.position.copy(Player.targetCamPos);
     window.openComputerUI();
-  });
+  }
+  btnExitCCTV.addEventListener('click', _exitCCTV);
+  // Touch: stop propagation so cctvOverlay doesn't capture it, then fire exit
+  btnExitCCTV.addEventListener('touchend', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    _exitCCTV();
+  }, { passive: false });
 }
 
 // ── NEW BUTTON SYSTEM ────────────────────────────────────────────────────────
 
-// ── Pause / Resume ─────────────────────────────────────────────────────────
+// ── Sensitivity Settings ────────────────────────────────────────────────────
+// Slider range: 1–20. Formula: sens = value / 10  →  0.1× – 2.0×
+// Default 10 = 1.0× (neutral). Saved/loaded from localStorage as raw slider int.
+
+const _sliderToSens = v => parseInt(v) / 10;
+const _sensLabel    = v => (_sliderToSens(v).toFixed(1)) + '\xd7'; // "1.0×"
+
+const _camDefault = localStorage.getItem('camSens') || '10';
+const _joyDefault = localStorage.getItem('joySens') || '10';
+window.camSensitivity = _sliderToSens(_camDefault);  // 0.1–2.0
+window.joySensitivity = _sliderToSens(_joyDefault);  // 0.1–2.0
+
+function _initPauseSensSliders() {
+  const camSlider = document.getElementById('pauseCamSens');
+  const joySlider = document.getElementById('pauseJoySens');
+  const camVal    = document.getElementById('pauseCamSensVal');
+  const joyVal    = document.getElementById('pauseJoySensVal');
+
+  if (camSlider) camSlider.value = _camDefault;
+  if (camVal)    camVal.textContent = _sensLabel(_camDefault);
+  if (joySlider) joySlider.value = _joyDefault;
+  if (joyVal)    joyVal.textContent = _sensLabel(_joyDefault);
+
+  if (camSlider) {
+    camSlider.addEventListener('input', () => {
+      window.camSensitivity = _sliderToSens(camSlider.value);
+      if (camVal) camVal.textContent = _sensLabel(camSlider.value);
+      localStorage.setItem('camSens', camSlider.value);
+    });
+  }
+  if (joySlider) {
+    joySlider.addEventListener('input', () => {
+      window.joySensitivity = _sliderToSens(joySlider.value);
+      if (joyVal) joyVal.textContent = _sensLabel(joySlider.value);
+      localStorage.setItem('joySens', joySlider.value);
+    });
+  }
+}
+setTimeout(_initPauseSensSliders, 0);
+
+// ── In-Game Hamburger Menu ────────────────────────────────────────────────
 let gamePaused = false;
 
-function setPaused(v) {
-  gamePaused = v;
-  const menu = document.getElementById('pauseMenu');
-  if (menu) menu.style.display = v ? 'flex' : 'none';
+const _igMenu     = document.getElementById('inGameMenu');
+const _igBackdrop = document.getElementById('igmBackdrop');
+
+function setInGameMenu(open) {
+  gamePaused = open;
+  if (_igMenu)     _igMenu.classList.toggle('open', open);
+  if (_igBackdrop) _igBackdrop.classList.toggle('open', open);
+  const hbg = document.getElementById('btnPauseTop');
+  if (hbg) hbg.classList.toggle('menu-open', open);
+  if (Audio.ctx) open ? Audio.uiSelect() : Audio.uiBack();
+  // Update room label inside menu
+  if (open) {
+    const rl = document.getElementById('igmRoomLabel');
+    const rn = document.getElementById('roomname');
+    if (rl && rn) rl.textContent = rn.textContent;
+  }
 }
 
+// Backward-compat alias used elsewhere
+function setPaused(v) { setInGameMenu(v); }
+
 const btnPauseTop = document.getElementById('btnPauseTop');
-if (btnPauseTop) btnPauseTop.addEventListener('click', () => setPaused(true));
+if (btnPauseTop) btnPauseTop.addEventListener('click', () => setInGameMenu(!gamePaused));
+
+if (_igBackdrop) _igBackdrop.addEventListener('click', () => setInGameMenu(false));
+
+const igmClose = document.getElementById('igmClose');
+if (igmClose) igmClose.addEventListener('click', () => setInGameMenu(false));
 
 const btnResume = document.getElementById('btnResume');
-if (btnResume) btnResume.addEventListener('click', () => setPaused(false));
+if (btnResume) btnResume.addEventListener('click', () => setInGameMenu(false));
 
 const btnRestartLevel = document.getElementById('btnRestartLevel');
 if (btnRestartLevel) btnRestartLevel.addEventListener('click', () => {
-  setPaused(false);
+  setInGameMenu(false);
   notify('Restarting level...', 2000);
-  // Level restart hook — extend here
 });
 
 const btnMainMenu = document.getElementById('btnMainMenu');
@@ -1178,61 +1593,50 @@ if (btnMainMenu) btnMainMenu.addEventListener('click', () => {
   location.reload();
 });
 
-// Pause via Escape key
+// Keyboard shortcut: Escape / P
 window.addEventListener('keydown', e => {
-  if (e.code === 'Escape' && gamePaused) setPaused(false);
-  if (e.code === 'KeyP') setPaused(!gamePaused);
+  if (e.code === 'Escape') setInGameMenu(!gamePaused);
+  if (e.code === 'KeyP')   setInGameMenu(!gamePaused);
 });
 
 // ── Tasks Panel ────────────────────────────────────────────────────────────
-const btnRTasks = document.getElementById('btnRTasks');
-if (btnRTasks) {
-  btnRTasks.addEventListener('click', () => {
+const btnTopTasks = document.getElementById('btnTopTasks');
+if (btnTopTasks) {
+  btnTopTasks.addEventListener('click', () => {
     const panel = document.getElementById('taskPanel');
     if (!panel) return;
-    const visible = panel.style.display !== 'none' && panel.style.display !== '';
-    panel.style.display = visible ? 'none' : 'block';
-    btnRTasks.classList.toggle('pressed', !visible);
+    const isOpen = panel.classList.contains('task-open');
+    panel.classList.toggle('task-open', !isOpen);
+    btnTopTasks.classList.toggle('pressed', !isOpen);
+    if (Audio.ctx) (!isOpen ? Audio.uiSelect() : Audio.uiBack());
+    if (!isOpen) updateTaskDisplay(); // refresh when opening
   });
 }
 
-// ── Schematic View ─────────────────────────────────────────────────────────
-const btnRSchematic = document.getElementById('btnRSchematic');
-if (btnRSchematic) {
-  btnRSchematic.addEventListener('click', () => {
-    // Schematic modal will be driven by TutorialManager/LevelLoader in Phase 2
-    notify('No schematic available for current task.', 2500);
-  });
-}
+// Close task modal via its close button
+document.addEventListener('DOMContentLoaded', () => {
+  const btnCloseTask = document.getElementById('btnCloseTask');
+  if (btnCloseTask) {
+    btnCloseTask.addEventListener('click', () => {
+      document.getElementById('taskPanel')?.classList.remove('task-open');
+      document.getElementById('btnTopTasks')?.classList.remove('pressed');
+    });
+  }
+});
 
-// ── Hint ──────────────────────────────────────────────────────────────────
-const btnRHint = document.getElementById('btnRHint');
-if (btnRHint) {
-  btnRHint.addEventListener('click', () => {
-    if (Tutorial.active) {
-      AIDA.speak('Let me repeat the current instruction for you.');
-      setTimeout(() => AIDA.speak(currentStepHint || 'Follow the highlighted path to your next objective.'), 2000);
-    } else {
-      notify('No active tutorial step. Complete current tasks first.', 2500);
-    }
-  });
-}
+// Also close task modal via close button (handles late DOM)
+setTimeout(() => {
+  const btnCloseTask = document.getElementById('btnCloseTask');
+  if (btnCloseTask && !btnCloseTask._bound) {
+    btnCloseTask._bound = true;
+    btnCloseTask.addEventListener('click', () => {
+      document.getElementById('taskPanel')?.classList.remove('task-open');
+      document.getElementById('btnTopTasks')?.classList.remove('pressed');
+    });
+  }
+}, 0);
 
-// Track the current step hint text for the HINT button
-let currentStepHint = '';
 
-// ── Tool Belt ─────────────────────────────────────────────────────────────
-let activeTool = 'wire';
-const toolBelt = document.getElementById('toolBelt');
-
-const btnRTools = document.getElementById('btnRTools');
-if (btnRTools) {
-  btnRTools.addEventListener('click', () => {
-    if (!toolBelt) return;
-    toolBelt.classList.toggle('open');
-    btnRTools.classList.toggle('pressed', toolBelt.classList.contains('open'));
-  });
-}
 
 const btnCloseTools = document.getElementById('btnCloseTools');
 if (btnCloseTools) {
@@ -1245,61 +1649,352 @@ if (btnCloseTools) {
 document.querySelectorAll('.tool-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     if (btn.classList.contains('locked')) {
-      notify('Tool locked — complete earlier levels to unlock.', 2500);
+      notify('Tool locked — pick it up from the tool rack in the workshop.', 2500);
       return;
     }
     document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    activeTool = btn.dataset.tool;
-    notify(`Tool selected: ${btn.textContent.trim().split('\n').pop().trim()}`, 1500);
-    // Close belt after selection
+    // Map belt data-tool to engine tool IDs
+    const beltToEngine = {
+      'wire':     'wire_stripper',
+      'flat':     'screwdriver',
+      'phillips': 'screwdriver',
+      'vtester':  'voltage_tester',
+      'meter':    'multimeter',
+      'stripper': 'wire_stripper',
+    };
+    activeTool = beltToEngine[btn.dataset.tool] || btn.dataset.tool;
+    updateToolHUD();
+    feedbackLog(`Tool selected: ${getToolLabel()}`, 'info');
+    notify(`Tool selected: ${getToolLabel()}`, 1200);
     if (toolBelt) toolBelt.classList.remove('open');
     if (btnRTools) btnRTools.classList.remove('pressed');
   });
 });
 
-// ── Tutorial Bar — REPEAT / NEXT STEP ──────────────────────────────────────
-const btnRepeat = document.getElementById('btnRepeat');
-if (btnRepeat) {
-  btnRepeat.addEventListener('click', () => {
-    if (currentStepHint) AIDA.speak(currentStepHint);
-  });
-}
 
-const btnNextStep = document.getElementById('btnNextStep');
-if (btnNextStep) {
-  btnNextStep.addEventListener('click', () => {
-    // NEXT STEP is shown only when a step is manually advanceable
-    // TutorialManager will call enableNextStep()/disableNextStep() to control visibility
-  });
-}
 
-// Helper: show/hide the NEXT STEP button from tutorial steps
-window.enableNextStep = (cb) => {
-  if (btnNextStep) {
-    btnNextStep.style.display = 'block';
-    btnNextStep.onclick = () => {
-      btnNextStep.style.display = 'none';
-      if (cb) cb();
-    };
+// ── WiringGame — canvas-based drag-and-drop wire connection mini-game ─────────
+class WiringGame {
+  constructor(canvas) {
+    this.c = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.conns = {};   // wireId → terminalId
+    this.drag = null;  // { id, color, sx, sy, cx, cy }
+    this.completed = false;
+    this._wires = [
+      { id: 'L',  name: 'BROWN',    hex: '#9a4a18', bright: '#c06020' },
+      { id: 'N',  name: 'BLUE',     hex: '#1a50cc', bright: '#4488ff' },
+      { id: 'PE', name: 'GRN/YLW', hex: '#4a9900', bright: '#77cc00' },
+    ];
+    this._terminals = this._shuffle([
+      { id: 'L',  label: 'L',  desc: 'LINE' },
+      { id: 'N',  label: 'N',  desc: 'NEUTRAL' },
+      { id: 'PE', label: 'PE', desc: 'EARTH' },
+    ]);
+    this._onMouseDown = this._onMouseDown.bind(this);
+    this._onMouseMove = this._onMouseMove.bind(this);
+    this._onMouseUp   = this._onMouseUp.bind(this);
+    this._onTouchStart = this._onTouchStart.bind(this);
+    this._onTouchMove  = this._onTouchMove.bind(this);
+    this._onTouchEnd   = this._onTouchEnd.bind(this);
+    this._attachEvents();
+    this._resize();
+    this._draw();
   }
-};
-window.disableNextStep = () => {
-  if (btnNextStep) btnNextStep.style.display = 'none';
-};
 
-// Helper: update tutorial step badge
-window.setTutorialStep = (current, total, hintText) => {
-  const badge = document.getElementById('tutorialStepBadge');
-  if (badge) badge.textContent = `STEP ${current} / ${total}`;
-  if (hintText !== undefined) currentStepHint = hintText;
-};
+  _shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  _resize() {
+    const vp = this.c.parentElement;
+    if (!vp) return;
+    this.c.width  = vp.clientWidth  || 600;
+    this.c.height = vp.clientHeight || 380;
+    this._layout();
+  }
+
+  _layout() {
+    const W = this.c.width, H = this.c.height;
+    const lx = Math.round(W * 0.22);
+    const rx = Math.round(W * 0.78);
+    const sy = Math.round(H * 0.26);
+    const gap = Math.round(H * 0.25);
+    this._wires.forEach((w, i)     => { w.px = lx; w.py = sy + i * gap; });
+    this._terminals.forEach((t, i) => { t.px = rx; t.py = sy + i * gap; });
+  }
+
+  _attachEvents() {
+    this.c.addEventListener('mousedown',  this._onMouseDown);
+    this.c.addEventListener('mousemove',  this._onMouseMove);
+    this.c.addEventListener('mouseup',    this._onMouseUp);
+    this.c.addEventListener('touchstart', this._onTouchStart, { passive: false });
+    this.c.addEventListener('touchmove',  this._onTouchMove,  { passive: false });
+    this.c.addEventListener('touchend',   this._onTouchEnd,   { passive: false });
+  }
+
+  destroy() {
+    this.c.removeEventListener('mousedown',  this._onMouseDown);
+    this.c.removeEventListener('mousemove',  this._onMouseMove);
+    this.c.removeEventListener('mouseup',    this._onMouseUp);
+    this.c.removeEventListener('touchstart', this._onTouchStart);
+    this.c.removeEventListener('touchmove',  this._onTouchMove);
+    this.c.removeEventListener('touchend',   this._onTouchEnd);
+  }
+
+  _pt(e) {
+    const r = this.c.getBoundingClientRect();
+    const sx = this.c.width  / r.width;
+    const sy = this.c.height / r.height;
+    return { x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy };
+  }
+
+  _ptTouch(e) {
+    const r = this.c.getBoundingClientRect();
+    const sx = this.c.width  / r.width;
+    const sy = this.c.height / r.height;
+    const t = e.changedTouches[0];
+    return { x: (t.clientX - r.left) * sx, y: (t.clientY - r.top) * sy };
+  }
+
+  _onMouseDown(e)  { this._startDrag(this._pt(e)); }
+  _onMouseMove(e)  { this._moveDrag(this._pt(e)); }
+  _onMouseUp(e)    { this._endDrag(this._pt(e)); }
+  _onTouchStart(e) { e.preventDefault(); this._startDrag(this._ptTouch(e)); }
+  _onTouchMove(e)  { e.preventDefault(); this._moveDrag(this._ptTouch(e)); }
+  _onTouchEnd(e)   { e.preventDefault(); this._endDrag(this._ptTouch(e)); }
+
+  _startDrag({ x, y }) {
+    for (const w of this._wires) {
+      if (Math.hypot(x - w.px, y - w.py) < 30) {
+        delete this.conns[w.id];
+        this.drag = { id: w.id, hex: w.hex, sx: w.px, sy: w.py, cx: x, cy: y };
+        this._draw();
+        return;
+      }
+    }
+  }
+
+  _moveDrag({ x, y }) {
+    if (!this.drag) return;
+    this.drag.cx = x;
+    this.drag.cy = y;
+    this._draw();
+  }
+
+  _endDrag({ x, y }) {
+    if (!this.drag) return;
+    for (const t of this._terminals) {
+      if (Math.hypot(x - t.px, y - t.py) < 34) {
+        this.conns[this.drag.id] = t.id;
+        break;
+      }
+    }
+    this.drag = null;
+    this._draw();
+  }
+
+  _drawBezier(x1, y1, x2, y2, color, alpha, width = 5) {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    const mx = (x1 + x2) / 2;
+    ctx.moveTo(x1, y1);
+    ctx.bezierCurveTo(mx, y1, mx, y2, x2, y2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  _draw() {
+    const ctx = this.ctx;
+    const W = this.c.width, H = this.c.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    ctx.fillStyle = '#030c14';
+    ctx.fillRect(0, 0, W, H);
+
+    // Column headers
+    ctx.font = `bold ${Math.max(12, Math.round(W * 0.024))}px Courier New`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#2a5a3a';
+    ctx.fillText('WIRE SOURCES', this._wires[0]?.px || W * 0.22, H * 0.12);
+    ctx.fillStyle = '#2a3a5a';
+    ctx.fillText('TERMINAL BLOCK', this._terminals[0]?.px || W * 0.78, H * 0.12);
+
+    // Center dashed divider
+    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = 'rgba(68,255,136,0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(W / 2, H * 0.08);
+    ctx.lineTo(W / 2, H * 0.92);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw existing connections
+    for (const [wId, tId] of Object.entries(this.conns)) {
+      const w = this._wires.find(v => v.id === wId);
+      const t = this._terminals.find(v => v.id === tId);
+      if (!w || !t) continue;
+      this._drawBezier(w.px, w.py, t.px, t.py, w.hex, 0.9);
+    }
+
+    // Draw dragging wire
+    if (this.drag) {
+      this._drawBezier(this.drag.sx, this.drag.sy, this.drag.cx, this.drag.cy, this.drag.hex, 0.75);
+    }
+
+    const R = Math.max(14, Math.round(W * 0.024));
+    const fontSize = Math.max(12, Math.round(W * 0.024));
+
+    // Draw wire sources (left side)
+    for (const w of this._wires) {
+      const connected = w.id in this.conns;
+      // Short wire tail extending left
+      ctx.beginPath();
+      ctx.strokeStyle = w.hex;
+      ctx.lineWidth = Math.max(4, Math.round(W * 0.008));
+      ctx.lineCap = 'round';
+      ctx.moveTo(w.px - R * 3, w.py);
+      ctx.lineTo(w.px - R, w.py);
+      ctx.stroke();
+
+      // End circle (drag handle)
+      ctx.beginPath();
+      ctx.arc(w.px, w.py, R, 0, Math.PI * 2);
+      ctx.fillStyle = connected ? w.hex : '#0f1f14';
+      ctx.fill();
+      ctx.strokeStyle = w.hex;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Wire ID in circle
+      ctx.font = `bold ${fontSize}px Courier New`;
+      ctx.fillStyle = connected ? '#fff' : w.bright;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(w.id, w.px, w.py);
+      ctx.textBaseline = 'alphabetic';
+
+      // Color label to left
+      ctx.font = `${fontSize}px Courier New`;
+      ctx.fillStyle = w.bright;
+      ctx.textAlign = 'right';
+      ctx.fillText(w.name, w.px - R * 3.8, w.py + 4);
+    }
+
+    // Draw terminals (right side)
+    for (const t of this._terminals) {
+      const connEntry = Object.entries(this.conns).find(([, tId]) => tId === t.id);
+      const isCorrect = connEntry && connEntry[0] === t.id;
+      const isWrong   = connEntry && connEntry[0] !== t.id;
+
+      // Terminal block body
+      const bw = R * 2.4, bh = R * 2.8;
+      ctx.fillStyle = '#0e1d28';
+      ctx.strokeStyle = isCorrect ? '#44ff88' : isWrong ? '#ff4433' : '#2a4a5a';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(t.px - bw / 2, t.py - bh / 2, bw, bh, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      // Terminal label
+      ctx.font = `bold ${Math.round(fontSize * 1.15)}px Courier New`;
+      ctx.fillStyle = isCorrect ? '#44ff88' : isWrong ? '#ff5544' : '#aaccdd';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(t.label, t.px, t.py - 4);
+      ctx.textBaseline = 'alphabetic';
+
+      ctx.font = `${Math.round(fontSize * 0.8)}px Courier New`;
+      ctx.fillStyle = isCorrect ? '#33aa66' : '#3a6a7a';
+      ctx.textAlign = 'center';
+      ctx.fillText(t.desc, t.px, t.py + R * 0.9);
+
+      // Wire tail extending right
+      ctx.beginPath();
+      ctx.strokeStyle = isCorrect ? '#44ff88' : '#2a4a5a';
+      ctx.lineWidth = Math.max(3, Math.round(W * 0.006));
+      ctx.moveTo(t.px + bw / 2, t.py);
+      ctx.lineTo(t.px + R * 3, t.py);
+      ctx.stroke();
+
+      // Correct/wrong indicator dot
+      if (connEntry) {
+        ctx.beginPath();
+        ctx.arc(t.px + bw / 2 - 5, t.py - bh / 2 + 5, 5, 0, Math.PI * 2);
+        ctx.fillStyle = isCorrect ? '#44ff88' : '#ff4433';
+        ctx.fill();
+      }
+    }
+
+    // Bottom instruction hint
+    ctx.font = `${Math.max(11, Math.round(W * 0.018))}px Courier New`;
+    ctx.fillStyle = 'rgba(68,255,136,0.2)';
+    ctx.textAlign = 'center';
+    ctx.fillText('DRAG WIRE  →  TERMINAL  |  CHECK TO VERIFY', W / 2, H - 14);
+
+    // Completion banner
+    if (this.completed) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,20,10,0.82)';
+      ctx.fillRect(0, H / 2 - 38, W, 76);
+      ctx.font = `bold ${Math.max(22, Math.round(W * 0.05))}px Courier New`;
+      ctx.fillStyle = '#44ff88';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('CIRCUIT COMPLETE', W / 2, H / 2 - 10);
+      ctx.font = `${Math.max(13, Math.round(W * 0.025))}px Courier New`;
+      ctx.fillStyle = '#33aa66';
+      ctx.fillText('All wires correctly terminated', W / 2, H / 2 + 18);
+      ctx.restore();
+    }
+  }
+
+  check() {
+    for (const w of this._wires) {
+      if (!this.conns[w.id]) return { ok: false, msg: `${w.name} wire not connected` };
+      if (this.conns[w.id] !== w.id) {
+        const t = this._terminals.find(t => t.id === this.conns[w.id]);
+        return { ok: false, msg: `${w.name} → ${t?.label || '?'} is wrong` };
+      }
+    }
+    this.completed = true;
+    this._draw();
+    return { ok: true };
+  }
+
+  reset() {
+    this.conns = {};
+    this.drag = null;
+    this.completed = false;
+    this._terminals = this._shuffle(this._terminals);
+    this._layout();
+    this._draw();
+  }
+}
+
+let _wiringGame = null;
+let _activeBenchId = null;
 
 // ── Circuit Modal ──────────────────────────────────────────────────────────
 const circuitModal = document.getElementById('circuitModal');
 let circuitPowered = false;
+const _completedBenches = new Set();
 
-window.openCircuitModal = (title) => {
+window.openCircuitModal = (title, benchId) => {
   if (!circuitModal) return;
   const titleEl = document.getElementById('circuitTitle');
   if (titleEl && title) titleEl.textContent = title;
@@ -1310,10 +2005,20 @@ window.openCircuitModal = (title) => {
   const statusEl = document.getElementById('circuitStatus');
   if (statusEl) statusEl.textContent = 'CIRCUIT: OPEN';
   document.exitPointerLock?.();
+  _activeBenchId = benchId || null;
+
+  // Init wiring game
+  const canvas = document.getElementById('circuitCanvas');
+  if (canvas) {
+    if (_wiringGame) _wiringGame.destroy();
+    _wiringGame = new WiringGame(canvas);
+  }
 };
 
 window.closeCircuitModal = () => {
   if (circuitModal) circuitModal.style.display = 'none';
+  if (_wiringGame) { _wiringGame.destroy(); _wiringGame = null; }
+  Player.state = 'standing';
 };
 
 const btnPowerOn = document.getElementById('btnPowerOn');
@@ -1332,17 +2037,35 @@ if (btnPowerOn) {
 const btnCheckCircuit = document.getElementById('btnCheckCircuit');
 if (btnCheckCircuit) {
   btnCheckCircuit.addEventListener('click', () => {
-    // CircuitSolver.check() will be called here in Phase 3
-    notify('Circuit check: No wiring data yet. Connect wires first.', 2500);
+    if (!_wiringGame) { notify('No circuit loaded.', 1500); return; }
+    const result = _wiringGame.check();
+    if (result.ok) {
+      const statusEl = document.getElementById('circuitStatus');
+      if (statusEl) statusEl.textContent = 'CIRCUIT: OK';
+      notify('[OK] Wiring correct — all terminals secured!', 3000);
+      if (Audio.ctx) Audio.chirp?.() || Audio.click();
+      if (activeTask?.id === 'cable_check' && _activeBenchId) {
+        _completedBenches.add(_activeBenchId);
+        if (['bench-1','bench-2','bench-3'].every(id => _completedBenches.has(id)))
+          completeTask('cable_check');
+      }
+    } else {
+      notify(`[FAIL] ${result.msg}`, 2500);
+      if (Audio.ctx) Audio.click();
+    }
   });
 }
 
 const btnResetWires = document.getElementById('btnResetWires');
 if (btnResetWires) {
   btnResetWires.addEventListener('click', () => {
-    notify('Wires reset.', 1500);
+    if (_wiringGame) {
+      _wiringGame.reset();
+      const statusEl = document.getElementById('circuitStatus');
+      if (statusEl) statusEl.textContent = 'CIRCUIT: OPEN';
+    }
+    notify('Wires reset.', 1200);
     if (Audio.ctx) Audio.click();
-    // WiringSystem.reset() will be called here in Phase 3
   });
 }
 

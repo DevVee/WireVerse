@@ -1,20 +1,20 @@
-/*
-       Licensed to the Apache Software Foundation (ASF) under one
-       or more contributor license agreements.  See the NOTICE file
-       distributed with this work for additional information
-       regarding copyright ownership.  The ASF licenses this file
-       to you under the Apache License, Version 2.0 (the
-       "License"); you may not use this file except in compliance
-       with the License.  You may obtain a copy of the License at
+/**
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
 
-         http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
-       Unless required by applicable law or agreed to in writing,
-       software distributed under the License is distributed on an
-       "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-       KIND, either express or implied.  See the License for the
-       specific language governing permissions and limitations
-       under the License.
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
 */
 package org.apache.cordova;
 
@@ -29,9 +29,10 @@ import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.graphics.Color;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -42,14 +43,18 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
 import androidx.core.splashscreen.SplashScreen;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 /**
  * This class is the main Android activity that represents the Cordova
  * application. It should be extended by the user to load the specific
  * html file that contains the application.
  *
- * As an example:
+ * <p>As an example:</p>
  *
  * <pre>
  *     package org.apache.cordova.examples;
@@ -68,17 +73,16 @@ import androidx.core.splashscreen.SplashScreen;
  *     }
  * </pre>
  *
- * Cordova xml configuration: Cordova uses a configuration file at
- * res/xml/config.xml to specify its settings. See "The config.xml File"
- * guide in cordova-docs at http://cordova.apache.org/docs for the documentation
- * for the configuration. The use of the set*Property() methods is
- * deprecated in favor of the config.xml file.
+ * <p>Cordova xml configuration: Cordova uses a configuration file at
+ * res/xml/config.xml to specify its settings. See the "Config.xml API" documentation for
+ * configuration details at <a href="https://cordova.apache.org/docs">Apache Cordova Docs</a>.</p>
  *
+ * <p>The use of the set*Property() methods is deprecated in favor of the config.xml file.</p>
  */
 public class CordovaActivity extends AppCompatActivity {
     public static String TAG = "CordovaActivity";
 
-    // The webview for our app
+    // The WebView for our app
     protected CordovaWebView appView;
 
     private static int ACTIVITY_STARTING = 0;
@@ -101,16 +105,24 @@ public class CordovaActivity extends AppCompatActivity {
 
     private SplashScreen splashScreen;
 
+    private boolean canEdgeToEdge = false;
+    private boolean isFullScreen = false;
+
     /**
      * Called when the activity is first created.
      */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         // Handle the splash screen transition.
-        splashScreen = SplashScreen.installSplashScreen(this);
+        if (showInitialSplashScreen()) {
+            splashScreen = SplashScreen.installSplashScreen(this);
+        }
 
         // need to activate preferences before super.onCreate to avoid "requestFeature() must be called before adding content" exception
         loadConfig();
+
+        canEdgeToEdge = preferences.getBoolean("AndroidEdgeToEdge", false)
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM;
 
         String logLevel = preferences.getString("loglevel", "ERROR");
         LOG.setLogLevel(logLevel);
@@ -126,7 +138,10 @@ public class CordovaActivity extends AppCompatActivity {
             LOG.d(TAG, "The SetFullscreen configuration is deprecated in favor of Fullscreen, and will be removed in a future version.");
             preferences.set("Fullscreen", true);
         }
-        if (preferences.getBoolean("Fullscreen", false)) {
+
+        isFullScreen = preferences.getBoolean("Fullscreen", false);
+
+        if (isFullScreen) {
             // NOTE: use the FullscreenNotImmersive configuration key to set the activity in a REAL full screen
             // (as was the case in previous cordova versions)
             if (!preferences.getBoolean("FullscreenNotImmersive", false)) {
@@ -158,7 +173,9 @@ public class CordovaActivity extends AppCompatActivity {
         cordovaInterface.onCordovaInit(appView.getPluginManager());
 
         // Setup the splash screen based on preference settings
-        cordovaInterface.pluginManager.postMessage("setupSplashScreen", splashScreen);
+        if (showInitialSplashScreen()) {
+            cordovaInterface.pluginManager.postMessage("setupSplashScreen", splashScreen);
+        }
 
         // Wire the hardware volume controls to control media if desired.
         String volumePref = preferences.getString("DefaultVolumeStream", "");
@@ -181,32 +198,64 @@ public class CordovaActivity extends AppCompatActivity {
     //Suppressing warnings in AndroidStudio
     @SuppressWarnings({"deprecation", "ResourceType"})
     protected void createViews() {
-        //Why are we setting a constant as the ID? This should be investigated
-        appView.getView().setId(100);
-        appView.getView().setLayoutParams(new FrameLayout.LayoutParams(
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+
+        // Root FrameLayout
+        FrameLayout rootLayout = new FrameLayout(this);
+        rootLayout.setLayoutParams(new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT));
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
 
-        setContentView(appView.getView());
+        // WebView
+        View webView = appView.getView();
+        webView.setLayoutParams(new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
 
-        if (preferences.contains("BackgroundColor")) {
-            try {
-                int backgroundColor = preferences.getInteger("BackgroundColor", Color.BLACK);
-                // Background of activity:
-                appView.getView().setBackgroundColor(backgroundColor);
-            }
-            catch (NumberFormatException e){
-                e.printStackTrace();
-            }
-        }
+        // Create StatusBar view that will overlay the top inset
+        View statusBarView = new View(this);
+        statusBarView.setTag("statusBarView");
 
-        appView.getView().requestFocusFromTouch();
+        // Handle Window Insets
+        ViewCompat.setOnApplyWindowInsetsListener(rootLayout, (v, insets) -> {
+            Insets bars = insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout()
+            );
+
+            boolean isStatusBarVisible = statusBarView.getVisibility() != View.GONE;
+            int top = isStatusBarVisible && !canEdgeToEdge && !isFullScreen ? bars.top : 0;
+            int bottom = !canEdgeToEdge && !isFullScreen ? bars.bottom : 0;
+            int left = !canEdgeToEdge && !isFullScreen ? bars.left : 0;
+            int right = !canEdgeToEdge && !isFullScreen ? bars.right : 0;
+
+            FrameLayout.LayoutParams webViewParams = (FrameLayout.LayoutParams) webView.getLayoutParams();
+            webViewParams.setMargins(left, top, right, bottom);
+            webView.setLayoutParams(webViewParams);
+
+            FrameLayout.LayoutParams statusBarParams = new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    top,
+                    Gravity.TOP
+            );
+            statusBarView.setLayoutParams(statusBarParams);
+
+            return insets;
+        });
+
+        rootLayout.addView(webView);
+        rootLayout.addView(statusBarView);
+
+        setContentView(rootLayout);
+        rootLayout.post(() -> ViewCompat.requestApplyInsets(rootLayout));
+        webView.requestFocusFromTouch();
     }
 
     /**
      * Construct the default web view object.
      * <p/>
-     * Override this to customize the webview that is used.
+     * Override this to customize the WebView that is used.
      */
     protected CordovaWebView makeWebView() {
         return new CordovaWebViewImpl(makeWebViewEngine());
@@ -227,7 +276,7 @@ public class CordovaActivity extends AppCompatActivity {
     }
 
     /**
-     * Load the url into the webview.
+     * Load the url into the WebView.
      */
     public void loadUrl(String url) {
         if (appView == null) {
@@ -250,7 +299,7 @@ public class CordovaActivity extends AppCompatActivity {
 
         if (this.appView != null) {
             // CB-9382 If there is an activity that started for result and main activity is waiting for callback
-            // result, we shoudn't stop WebView Javascript timers, as activity for result might be using them
+            // result, we shouldn't stop WebView Javascript timers, as activity for result might be using them
             boolean keepRunning = this.keepRunning || this.cordovaInterface.activityResultCallback != null;
             this.appView.handlePause(keepRunning);
         }
@@ -537,5 +586,21 @@ public class CordovaActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
+    }
+
+    /**
+     * Indicates whether to show the splash screen while the WebView is initially loading.
+     * <p>
+     * This method is available for native apps that embed a Cordova WebView.
+     * Native apps most likely already have their own splash screen setup.
+     * This option is not configurable for Cordova CLI–created apps.
+     *
+     * @return {@code true}
+     * <p>
+     * To disable the initial splash screen, override this method and return {@code false}
+     * in your activity that extends {@link CordovaActivity}.
+     */
+    protected boolean showInitialSplashScreen() {
+        return true;
     }
 }

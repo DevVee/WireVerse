@@ -10,17 +10,17 @@
           "/manifest": [
             {
               "xml": "<uses-permission android:name=\"android.permission.VIBRATE\" />",
-              "count": 6
+              "count": 12
             },
             {
               "xml": "<uses-permission android:name=\"android.permission.WAKE_LOCK\" />",
-              "count": 6
+              "count": 12
             }
           ],
           "/manifest/application/activity": [
             {
               "xml": "<intent-filter><action android:name=\"android.intent.action.MAIN\" /><category android:name=\"android.intent.category.LAUNCHER\" /></intent-filter>",
-              "count": 6
+              "count": 12
             }
           ]
         }
@@ -46,10 +46,10 @@
     }
   },
   "installed_plugins": {
-    "cordova-plugin-statusbar": {
+    "es6-promise-plugin": {
       "PACKAGE_NAME": "com.electrain.game"
     },
-    "es6-promise-plugin": {
+    "cordova-plugin-statusbar": {
       "PACKAGE_NAME": "com.electrain.game"
     },
     "cordova-plugin-screen-orientation": {
@@ -59,18 +59,18 @@
   "dependent_plugins": {},
   "modules": [
     {
+      "id": "es6-promise-plugin.Promise",
+      "file": "plugins/es6-promise-plugin/www/promise.js",
+      "pluginId": "es6-promise-plugin",
+      "runs": true
+    },
+    {
       "id": "cordova-plugin-statusbar.statusbar",
       "file": "plugins/cordova-plugin-statusbar/www/statusbar.js",
       "pluginId": "cordova-plugin-statusbar",
       "clobbers": [
         "window.StatusBar"
       ]
-    },
-    {
-      "id": "es6-promise-plugin.Promise",
-      "file": "plugins/es6-promise-plugin/www/promise.js",
-      "pluginId": "es6-promise-plugin",
-      "runs": true
     },
     {
       "id": "cordova-plugin-screen-orientation.screenorientation",
@@ -83,8 +83,8 @@
     }
   ],
   "plugin_metadata": {
-    "cordova-plugin-statusbar": "4.0.0",
     "es6-promise-plugin": "4.2.2",
+    "cordova-plugin-statusbar": "4.0.0",
     "cordova-plugin-screen-orientation": "3.0.4"
   }
 }
