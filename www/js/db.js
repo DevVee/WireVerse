@@ -72,7 +72,8 @@
     isLevelUnlocked(stageId, levelId) {
       if (stageId === 1 && levelId === 1) return true;
       if (levelId === 1) {
-        return DB.getLevelProgress(stageId - 1, 4)?.completed === true;
+        // First level of a new stage: require previous stage's 3rd level
+        return DB.getLevelProgress(stageId - 1, 3)?.completed === true;
       }
       return DB.getLevelProgress(stageId, levelId - 1)?.completed === true;
     },
@@ -157,9 +158,57 @@
       _set('workshop', ws);
     },
 
+    // ── EXPLORE MODE PROGRESS ────────────────────────────────────────────────────
+    // Two levels: "Outlet Repair" (3 outlets = 3 stars) + "Switch Installation" (3 switches = 3 stars)
+    getExploreOutlets() { return _get('explore_outlets') || {}; },
+    getExploreSwitches() { return _get('explore_switches') || {}; },
+
+    saveExploreOutlet(outletId) {
+      const o = DB.getExploreOutlets();
+      o[outletId] = { completed: true, savedAt: Date.now() };
+      _set('explore_outlets', o);
+    },
+
+    saveExploreSwitch(stationId) {
+      const s = DB.getExploreSwitches();
+      s[stationId] = { completed: true, savedAt: Date.now() };
+      _set('explore_switches', s);
+    },
+
+    getOutletStars() {
+      const o = DB.getExploreOutlets();
+      return [1, 2, 3].filter(id => o[id]?.completed).length;
+    },
+
+    getSwitchStars() {
+      const s = DB.getExploreSwitches();
+      return [1, 2, 3].filter(id => s[id]?.completed).length;
+    },
+
+    isExploreComplete() {
+      return DB.getOutletStars() === 3 && DB.getSwitchStars() === 3;
+    },
+
+    getExploreStarCount() {
+      return DB.getOutletStars() + DB.getSwitchStars(); // 0–6
+    },
+
+    // ── ASSESSMENT ───────────────────────────────────────────────────────────────
+    saveAssessment(score, total) {
+      _set('assessment', { score, total, pct: Math.round(score / total * 100), date: Date.now() });
+    },
+
+    getAssessment() {
+      return _get('assessment');
+    },
+
     // ── RESET ───────────────────────────────────────────────────────────────────
     resetProgress() {
       localStorage.removeItem(PREFIX + 'progress');
+      localStorage.removeItem(PREFIX + 'explore');
+      localStorage.removeItem(PREFIX + 'explore_outlets');
+      localStorage.removeItem(PREFIX + 'explore_switches');
+      localStorage.removeItem(PREFIX + 'assessment');
     },
 
     resetAll() {

@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import { camera, checkCol, FLOOR1_Y } from './world.js';
+import { camera, checkCol, FLOOR1_Y, SPAWN, SPAWN_YAW } from './world.js';
 import { Audio } from './audio.js';
 
 // ── PLAYER STATE ─────────────────────────────────────────────────────────────
 export const Player = {
-  pos: new THREE.Vector3(1, 1.72, -24), // NEW: Entrance Spawn
-  yaw: 0, pitch: 0,
+  pos: SPAWN.clone(),              // Spawn at Entrance
+  yaw: SPAWN_YAW, pitch: 0,       // facing north toward Workshop 1 door
   yawVel: 0, pitchVel: 0,
   vel: new THREE.Vector3(),
   vy: 0, // Vertical velocity
@@ -203,17 +203,9 @@ if (btnJump) {
 
 // ── ROOM DETECTION ────────────────────────────────────────────────────────────
 export function getRoom(p) {
-  if (p.z < -18) return 'ENTRANCE';
-  if (p.x > 4 && p.z < -2) return 'WORKSHOP';
-  if (p.x > 20 && p.z > -8 && p.z < 14) return 'CONTROL CENTER';
-  if (p.x > 4 && p.z > 0 && p.z < 14) return 'GENERATOR ROOM';
-  if (p.x < -1 && p.z > -14 && p.z < 4) return 'DIST-A PANEL';
-  if (p.x < -1 && p.z > 4 && p.z < 18) return 'DIST-B PANEL';
-  if (p.x > 4 && p.z > 14 && p.z < 28) return 'UTILITY ROOM';
-  if (p.x < -1 && p.z > 18) return 'STORAGE';
-  if (p.x > 20 && p.z > 10) return 'TESTING LAB';
-  if (p.z > 26) return 'STAIRWELL';
-  return 'CORRIDOR';
+  if (p.z >= -2)  return 'ENTRANCE';
+  if (p.z >= -18) return 'WORKSHOP 1';
+  return 'WORKSHOP 2';
 }
 
 // ── PHYSICS ──────────────────────────────────────────────────────────────────
@@ -292,7 +284,7 @@ export function updatePlayer(dt) {
   // Collision sliding
   _np.copy(Player.pos).addScaledVector(Player.vel, dt);
   _np.x = Math.max(-14.5, Math.min(34.5, _np.x));
-  _np.z = Math.max(-29.0, Math.min(34.5, _np.z));
+  _np.z = Math.max(-31.5, Math.min(34.5, _np.z));
   if (!checkCol(_np)) {
     Player.pos.copy(_np);
   } else {
@@ -350,7 +342,7 @@ export function updatePlayer(dt) {
     // Add bobbing on top of physical Y
     const finalY = physicalY + curSin * 0.03 * Player.bobAmt;
     camera.position.set(Player.pos.x, finalY, Player.pos.z);
-  } else if (Player.state === 'sitting' || Player.state === 'computer') {
+  } else if (Player.state === 'sitting' || Player.state === 'computer' || Player.state === 'wall-panel') {
     // Smoothly interpolate camera to target pos/rot
     const tPos = Player.targetCamPos;
     const tRot = Player.targetCamRot;

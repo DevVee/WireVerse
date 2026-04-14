@@ -17,12 +17,14 @@ import {
 import { updateOutlets, markOutletFixed, outletSockets } from './outlets.js';
 import { initOutletScenario, openOutlet, closeOutlet } from './outlet-scenario.js';
 import { initSwitchScenario, openSwitch, closeSwitch } from './switch-scenario.js';
-import { initSwitches, switchStations, switchProxies, markSwitchFixed, drawSwitchMinimap } from './switches.js';
+import { initSwitches, switchStations, switchProxies, markSwitchFixed, drawSwitchMinimap, updateSwitches } from './switches.js';
 import { Player, updatePlayer, getRoom, isMobile } from './player.js';
 
 
 // Global Audio for menu.js
 window.GameAudio = Audio;
+// Expose Player for outlet-scenario.js (used in both world and standalone learn mode)
+window.Player = Player;
 
 
 
@@ -59,26 +61,12 @@ const ES = {
   mains: true,
   generator: false,
   workshop: true,
-  control: true,
-  distA: true,
-  distB: true,
-  lab: true,
-  storage: true,
-  utility: true,
-  corridor: true,
   entrance: true,
-  stairwell: true,
 };
 
 const lightTargets = {
-  entrance: 4.0,
-  corridor: 4.5,
-  workshop: 4.2,
-  generator: 4.0,
-  control: 4.0,
-  distA: 3.5,
-  distB: 3.5,
-  lab: 4.0,
+  entrance: 2.2,
+  workshop: 2.8,
   storage: 3.2,
   utility: 3.5,
   stairwell: 3.0,
@@ -87,7 +75,7 @@ const lightTargets = {
 // ── ASSISTANT/TUTORIAL SYSTEM REMOVED ──────────────────────────────────────
 
 // Memoised HUD state — only write to DOM when values change
-const _hudPrev = { mains: null, gen: null, work: null, ctrl: null };
+const _hudPrev = { mains: null, gen: null, work: null };
 
 function applyPower() {
   const hasPower = ES.mains || ES.generator;
@@ -96,15 +84,12 @@ function applyPower() {
     const tgt = powered ? (lightTargets[room] || 3.5) : 0;
     lights.forEach(l => { l.intensity += (tgt - l.intensity) * 0.1; });
   });
-  ambLight.intensity = hasPower ? 0.65 : 0.1;
+  ambLight.intensity = hasPower ? 0.52 : 0.18; // slightly dimmed for realism
 
-  // Only touch the DOM when a value actually changes
   const work = ES.workshop && hasPower;
-  const ctrl = ES.control  && hasPower;
   if (ES.mains     !== _hudPrev.mains) { setHUD('pMains', ES.mains);     _hudPrev.mains = ES.mains; }
   if (ES.generator !== _hudPrev.gen)   { setHUD('pGen',   ES.generator); _hudPrev.gen   = ES.generator; }
   if (work         !== _hudPrev.work)  { setHUD('pWork',  work);         _hudPrev.work  = work; }
-  if (ctrl         !== _hudPrev.ctrl)  { setHUD('pCtrl',  ctrl);         _hudPrev.ctrl  = ctrl; }
 }
 
 function setHUD(id, on) {
@@ -311,6 +296,11 @@ function doInteract() {
     if (Audio.ctx) Audio.click();
     return;
   }
+  if (Player.state === 'wall-panel') {
+    // already in panel-view — clicking again exits
+    _exitWallPanel();
+    return;
+  }
   if (Player.state === 'computer' || Player.state === 'cctv' || Player.state === 'circuit' || Player.state === 'outlet' || Player.state === 'repair') return;
   if (!focusedObj) return;
 
@@ -348,7 +338,7 @@ function doInteract() {
 
   // ── Outlet Socket (repair scenario) ───────────────────────────────────────
   if (ud.type === 'outlet-socket') {
-    if (window.currentLevelId === 2) return; // Level 2 = switch install only
+    if (window.currentStageId === 2) return; // Stage 2 = switch wiring only (via scenario2.html)
     if (ud.fixed) { notify('This outlet is already repaired.', 1800); return; }
     Player.state = 'repair';
     window._orCurrentSocket = ud.socketId;
@@ -363,6 +353,20 @@ function doInteract() {
     if (rec?.fixed) { notify('This switch is already installed.', 1800); return; }
     document.exitPointerLock?.();
     openSwitch(ud.stationId);
+    return;
+  }
+
+  // ── Wall Switch Panel (camera zoom, in-world) ────────────────────────────
+  if (ud.type === 'wall-panel') {
+    Player.state = 'wall-panel';
+    Player.targetCamPos.copy(ud.camPos);
+    Player.targetCamRot.copy(ud.camLook);
+    document.exitPointerLock?.();
+    notify(`${ud.label} — click switch to test / ESC to step back`, 2500);
+    window._activePanel = ud;
+    // Show ESC hint
+    const escHint = document.getElementById('escHint');
+    if (escHint) { escHint.style.display = 'flex'; }
     return;
   }
 
@@ -532,6 +536,17 @@ function doInteract() {
     showComponentInfo(ud);
     return;
   }
+
+}
+
+// ── WALL PANEL EXIT ───────────────────────────────────────────────────────────
+function _exitWallPanel() {
+  if (Player.state !== 'wall-panel') return;
+  Player.state = 'standing';
+  window._activePanel = null;
+  const escHint = document.getElementById('escHint');
+  if (escHint) escHint.style.display = 'none';
+  if (Audio.ctx) Audio.click();
 }
 
 // ── MINIMAP ───────────────────────────────────────────────────────────────────
@@ -548,30 +563,17 @@ resizeMinimap();
 window.addEventListener('resize', resizeMinimap);
 const MM_W = 148, MM_H = 148; // kept for any legacy refs
 
-const MAP = { minX: -16, maxX: 36, minZ: -30, maxZ: 36 };
+const MAP = { minX: -10, maxX: 10, minZ: -34, maxZ: 10 };
 
-
-// Room zone definitions for minimap rendering
 const MM_ZONES = {
-  power:   { fill: 'rgba(60,28,8,0.75)',   wall: 'rgba(220,130,50,0.7)',  label: 'rgba(255,160,70,0.9)'  },
-  control: { fill: 'rgba(6,22,50,0.75)',   wall: 'rgba(50,130,220,0.7)',  label: 'rgba(80,160,255,0.9)'  },
-  dist:    { fill: 'rgba(50,8,8,0.75)',    wall: 'rgba(210,60,50,0.7)',   label: 'rgba(255,90,80,0.9)'   },
-  lab:     { fill: 'rgba(6,30,40,0.75)',   wall: 'rgba(40,180,190,0.7)',  label: 'rgba(60,220,230,0.9)'  },
-  general: { fill: 'rgba(10,20,28,0.75)',  wall: 'rgba(60,100,80,0.65)', label: 'rgba(90,150,110,0.85)' },
+  lobby:    { fill: 'rgba(16,24,12,0.85)',  wall: 'rgba(120,180,80,0.75)', label: 'rgba(160,220,100,0.95)' },
+  workshop: { fill: 'rgba(8,22,44,0.85)',   wall: 'rgba(40,120,220,0.75)', label: 'rgba(80,170,255,0.95)'  },
 };
 
 const MM_ROOMS = [
-  { abbr: 'LOBBY',  cx: 1,  cz: -24, w: 6,  d: 8,  zone: 'general' },
-  { abbr: 'HALL',   cx: 1,  cz:   3, w: 6,  d: 46, zone: 'general' },
-  { abbr: 'WIRING', cx: 15, cz: -10, w: 22, d: 20, zone: 'power'   },
-  { abbr: 'MOTOR',  cx: 12, cz:   7, w: 16, d: 14, zone: 'power'   },
-  { abbr: 'FACULTY',cx: 27, cz:   1, w: 14, d: 18, zone: 'control' },
-  { abbr: 'PANEL',  cx: -8, cz:  -5, w: 12, d: 14, zone: 'dist'    },
-  { abbr: 'TOOLS',  cx: -8, cz:   9, w: 12, d: 14, zone: 'dist'    },
-  { abbr: 'EXAM',   cx: 27, cz:  16, w: 14, d: 12, zone: 'lab'     },
-  { abbr: 'STORE',  cx: -8, cz:  22, w: 12, d: 12, zone: 'general' },
-  { abbr: 'CLASS',  cx: 10, cz:  21, w: 12, d: 14, zone: 'control' },
-  { abbr: 'STAIR',  cx:  7, cz:  30, w:  6, d:  8, zone: 'general' },
+  { abbr: 'LOBBY',  cx: 0, cz:  3,   w: 16, d: 10, zone: 'lobby'    },
+  { abbr: 'WS-1',   cx: 0, cz: -10,  w: 16, d: 16, zone: 'workshop' },
+  { abbr: 'WS-2',   cx: 0, cz: -25,  w: 16, d: 14, zone: 'workshop' },
 ];
 
 
@@ -647,29 +649,32 @@ function drawMinimap() {
     mmCtx.fillRect(px - 2, pz - 1, 4, 2);
   });
 
-  // ── Switch Station Markers (Level 2) ─────────────────────────────────────
-  if (window.currentLevelId === 2) {
+  // ── Switch/Outlet Markers — show only what's relevant to the current task ──
+  const _exType = window.exploreType || '';
+  const _isExplore = !!window.exploreMode;
+
+  // Switch markers: only in switch-all explore or non-explore workshop mode
+  if (!_isExplore || _exType === 'switch-all') {
     drawSwitchMinimap(mmCtx, mpx, mpz, W, H);
   }
 
-  // ── Outlet Markers (Level 1 only) ────────────────────────────────────────
-  if (window.currentLevelId === 1 && typeof outletSockets !== 'undefined') {
+  // Outlet markers: only in outlet-all explore or non-explore workshop mode
+  if (typeof outletSockets !== 'undefined' && (!_isExplore || _exType === 'outlet-all')) {
     outletSockets.forEach(s => {
       const px = mpx(s.group.position.x);
       const pz = mpz(s.group.position.z);
-      
+
       mmCtx.beginPath();
-      mmCtx.arc(px, pz, 2.5, 0, Math.PI * 2);
+      mmCtx.arc(px, pz, 3, 0, Math.PI * 2);
       mmCtx.fillStyle = s.fixed ? '#22c55e' : '#ff3300';
       mmCtx.fill();
 
-      // Pulsing ring for broken outlets to attract attention
       if (!s.fixed) {
-        const pulse = 4 + Math.sin(Date.now() / 200) * 1.5;
+        const pulse = 4.5 + Math.sin(Date.now() / 200) * 1.8;
         mmCtx.beginPath();
         mmCtx.arc(px, pz, pulse, 0, Math.PI * 2);
-        mmCtx.strokeStyle = 'rgba(255, 51, 0, 0.45)';
-        mmCtx.lineWidth = 1;
+        mmCtx.strokeStyle = 'rgba(255,51,0,0.45)';
+        mmCtx.lineWidth = 1.5;
         mmCtx.stroke();
       }
     });
@@ -805,8 +810,8 @@ function updateHUD(dt, animT) {
         let cur = hits[0].object;
         while (cur && !cur.userData?.type) cur = cur.parent;
         if (cur?.userData?.type) {
-          if (window.currentLevelId === 2 && cur.userData.type === 'outlet-socket') {
-            focusedObj = null; // suppress outlets in Level 2
+          if (window.currentStageId === 2 && cur.userData.type === 'outlet-socket') {
+            focusedObj = null; // suppress outlets in Stage 2
           } else {
             focusedObj = cur;
             foundViaRay = true;
@@ -911,7 +916,7 @@ function loop(timestamp) {
   // Stagger expensive updates across 2 frames at 60fps
   const fm = _frameCount % 2;
   if (fm === 0) { applyPower(); updateGenerator(dt); updateSCADA(dt, animT); updateOscilloscopes(animT); }
-  if (fm === 1) { updateOutlets(animT); doors.forEach(d => d.update(dt)); }
+  if (fm === 1) { updateOutlets(animT); updateSwitches(animT); doors.forEach(d => d.update(dt)); }
 
   updateHUD(dt, animT);
 
@@ -1164,184 +1169,235 @@ Audio.success = function () {
   osc.stop(ctx.currentTime + .35);
 };
 
-// ── LEVEL 1 MANAGER — star HUD + level complete flow ────────────────────────
-const Level1Manager = {
-  starsEarned: 0,
-  totalOutlets: 5,
+// ── LEVEL MANAGER — unified for all stages/levels ───────────────────────────
+// Stage 1: one outlet per level (levelId = outletId)
+// Stage 2: switch wiring done entirely in scenario2.html — not used here
+const LevelManager = {
   active: false,
+  starsEarned: 0,
+  targetOutletId: 1,
 
   init() {
-    // Only activate when Stage 1, Level 1 is launched
-    if (window.currentStageId === 1 && window.currentLevelId === 1) {
-      this.active = true;
-      this.starsEarned = 0;
-      const hud = document.getElementById('starHUD');
-      if (hud) hud.style.display = 'flex';
+    const stageId  = window.currentStageId  || 1;
+    const levelId  = window.currentLevelId  || 1;
+    const outletId = window.currentOutletId || levelId;
+    this.active        = (stageId === 1);
+    this.starsEarned   = 0;
+    this.targetOutletId = outletId;
+
+    const hud   = document.getElementById('starHUD');
+    const label = document.getElementById('sh-label');
+    if (hud)   { hud.style.display = 'flex'; }
+    if (label) { label.textContent = `S${stageId}-L${levelId}`; }
+    // Reset star glows
+    for (let i = 1; i <= 3; i++) {
+      const s = document.getElementById(`sh-s${i}`);
+      if (s) s.classList.remove('lit', 'pop');
     }
   },
 
   onOutletFixed(socketId) {
-    if (!this.active) return;
-    this.starsEarned = Math.min(this.starsEarned + 1, this.totalOutlets);
-    this._updateHUD();
-    if (this.starsEarned >= this.totalOutlets) {
-      // Short delay so the outlet "FIXED" screen can be seen first
-      setTimeout(() => this._showComplete(), 2400);
-    }
+    if (!this.active || socketId !== this.targetOutletId) return;
+    this.starsEarned = 3; // perfect — one task, done right
+    this._lightHUD(3);
+    setTimeout(() => this._showComplete(), 2000);
   },
 
-  _updateHUD() {
-    for (let i = 1; i <= this.totalOutlets; i++) {
+  _lightHUD(count) {
+    for (let i = 1; i <= count; i++) {
       const star = document.getElementById(`sh-s${i}`);
       if (!star) continue;
-      if (i <= this.starsEarned) {
+      setTimeout(() => {
         star.classList.add('lit');
-        if (i === this.starsEarned) {
-          // Pop animation on the newly lit star
-          star.classList.remove('pop');
-          void star.offsetWidth; // reflow to restart animation
-          star.classList.add('pop');
-        }
-      }
+        star.classList.remove('pop');
+        void star.offsetWidth;
+        star.classList.add('pop');
+      }, i * 180);
     }
   },
 
   _showComplete() {
-    // Save to DB
-    if (window.DB) {
-      DB.saveProgress(1, 1, { completed: true, stars: this.starsEarned });
-    }
-    if (Audio.ctx) Audio.success();
+    const stageId = window.currentStageId || 1;
+    const levelId = window.currentLevelId || 1;
 
-    // Show modal
-    const modal = document.getElementById('levelCompleteModal');
-    if (modal) modal.classList.add('show');
+    // Save progress
+    if (window.DB) DB.saveProgress(stageId, levelId, { completed: true, stars: 3 });
+    if (Audio.ctx) Audio.success?.();
 
-    // Animate stars one by one with stagger
-    for (let i = 1; i <= this.starsEarned; i++) {
+    // Populate modal
+    const STAGE_NAMES = { 1: 'Outlet Repair', 2: 'Learn Electrician' };
+    const LEVEL_SUBS  = {
+      '1-1': 'Entrance outlet repaired & tested.',
+      '1-2': 'Workshop 1 outlet repaired & tested.',
+      '1-3': 'Workshop 2 outlet repaired & tested — Stage complete!',
+    };
+    const key = `${stageId}-${levelId}`;
+    document.getElementById('lcm-badge').textContent  = '🏆';
+    document.getElementById('lcm-title').textContent  = `Stage ${stageId} · Level ${levelId} Complete!`;
+    document.getElementById('lcm-sub').textContent    = LEVEL_SUBS[key] || 'Task complete.';
+
+    // Stars
+    ['lcm-s1','lcm-s2','lcm-s3'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('lit','drop');
+    });
+    for (let i = 1; i <= 3; i++) {
       const star = document.getElementById(`lcm-s${i}`);
-      if (!star) continue;
-      setTimeout(() => {
-        star.classList.add('lit', 'drop');
-      }, i * 220);
+      if (star) setTimeout(() => star.classList.add('lit','drop'), i * 220);
     }
 
-    // Bind back-to-menu button
-    const btn = document.getElementById('lcmBackBtn');
-    if (btn && !btn._bound) {
-      btn._bound = true;
-      btn.addEventListener('click', () => {
-        // A hard reload is the safest way to fully reset the WebGL world 
-        // back to the initial main menu state for the next level/session.
+    // Next-level message + button
+    const hasNext    = DB.isLevelUnlocked ? false : false; // computed below
+    const nextLevelId = levelId + 1;
+    const nextExists  = nextLevelId <= 3; // 3 levels per stage
+    const nextMsg     = document.getElementById('lcm-next-msg');
+    const nextBtn     = document.getElementById('lcmNextBtn');
+    const backBtn     = document.getElementById('lcmBackBtn');
+
+    if (nextExists) {
+      const NEXT_NAMES = {
+        '1-2': 'Workshop 1 Outlet',
+        '1-3': 'Workshop 2 Outlet',
+      };
+      const nextName = NEXT_NAMES[`${stageId}-${nextLevelId}`] || `Level ${nextLevelId}`;
+      if (nextMsg) { nextMsg.style.display = 'block'; nextMsg.innerHTML = `<strong>Next:</strong> ${nextName}`; }
+      if (nextBtn) {
+        nextBtn.style.display = 'block';
+        nextBtn._bound = false;
+      }
+    } else {
+      if (nextMsg) { nextMsg.style.display = 'block'; nextMsg.innerHTML = `<strong>Stage ${stageId} Complete!</strong> All levels done.`; }
+      if (nextBtn) nextBtn.style.display = 'none';
+    }
+
+    // Bind buttons (clear old listeners by replacing)
+    if (nextBtn) {
+      const newNext = nextBtn.cloneNode(true);
+      nextBtn.parentNode.replaceChild(newNext, nextBtn);
+      newNext.addEventListener('click', () => {
+        // Launch next level in same stage
+        window.currentLevelId  = nextLevelId;
+        window.currentOutletId = nextLevelId; // outletId == levelId for stage 1
         window.location.reload();
       });
     }
+    if (backBtn) {
+      const newBack = backBtn.cloneNode(true);
+      backBtn.parentNode.replaceChild(newBack, backBtn);
+      newBack.addEventListener('click', () => { window.location.reload(); });
+    }
+
+    const modal = document.getElementById('levelCompleteModal');
+    if (modal) modal.classList.add('show');
   },
 };
 
-// ── LEVEL 2 MANAGER — star HUD + level complete flow ────────────────────────
-const Level2Manager = {
-  starsEarned: 0,
-  totalStations: 3,
-  active: false,
-
-  init() {
-    if (window.currentStageId === 1 && window.currentLevelId === 2) {
-      this.active = true;
-      this.starsEarned = 0;
-      const hud = document.getElementById('starHUD2');
-      if (hud) hud.style.display = 'flex';
-    }
-  },
-
-  onSwitchFixed(stationId) {
-    if (!this.active) return;
-    this.starsEarned = Math.min(this.starsEarned + 1, this.totalStations);
-    this._updateHUD();
-    if (this.starsEarned >= this.totalStations) {
-      setTimeout(() => this._showComplete(), 2400);
-    }
-  },
-
-  _updateHUD() {
-    for (let i = 1; i <= this.totalStations; i++) {
-      const star = document.getElementById(`sh2-s${i}`);
-      if (!star) continue;
-      if (i <= this.starsEarned) {
-        star.classList.add('lit');
-        if (i === this.starsEarned) {
-          star.classList.remove('pop');
-          void star.offsetWidth;
-          star.classList.add('pop');
-        }
-      }
-    }
-  },
-
-  _showComplete() {
-    if (window.DB) {
-      DB.saveProgress(1, 2, { completed: true, stars: this.starsEarned });
-    }
-    if (Audio.ctx) Audio.uiSuccess?.() || Audio.click();
-    const modal = document.getElementById('levelCompleteModal2');
-    if (modal) modal.style.display = 'flex';
-    for (let i = 1; i <= this.starsEarned; i++) {
-      const star = document.getElementById(`lcm2-s${i}`);
-      if (!star) continue;
-      setTimeout(() => { star.classList.add('lit', 'drop'); }, i * 220);
-    }
-    const btn = document.getElementById('lcm2BackBtn');
-    if (btn && !btn._bound) {
-      btn._bound = true;
-      btn.addEventListener('click', () => { window.location.reload(); });
-    }
-  },
-};
+// Legacy stub — Level2Manager no longer used (Stage 2 runs in scenario2.html)
+const Level2Manager = { init: () => {}, onSwitchFixed: () => {} };
 
 // ── OUTLET REPAIR SCENARIO ────────────────────────────────────────────────────
 // Called once after DOM is ready (inside startBtn handler)
 function _initOutlets() {
-  Level1Manager.init();
-  initOutletScenario((socketId) => {
-    // socket was fixed — update world
-    markOutletFixed(socketId);
-    const pip = document.getElementById(`opip-${socketId}`);
-    if (pip) pip.classList.add('done');
+  LevelManager.init();
+  const exploreMode = !!window.exploreMode;
+  const exploreType = window.exploreType || '';
 
-    // Level1Manager awards a star
-    Level1Manager.onOutletFixed(socketId);
-
-    // Also update the legacy task system
-    const task = TASKS.daily.find(t => t.id === 'outlet_repair');
-    if (task && !task.completed) {
-      task._fixedCount = (task._fixedCount || 0) + 1;
-      feedbackLog(`✓ Outlet #${socketId} repaired — ${task._fixedCount}/5 done`, 'ok');
-      notify(`Outlet #${socketId} repaired! ${task._fixedCount}/5 fixed.`, 3000);
-      if (task._fixedCount >= 5) {
-        completeTask('outlet_repair');
-        notify('ALL 5 OUTLETS REPAIRED — Task complete!', 5000);
+  if (exploreMode && exploreType === 'outlet-all') {
+    // Show ALL 3 outlets — restore any previously completed ones
+    const done = window.DB?.getExploreOutlets?.() || {};
+    outletSockets.forEach(s => {
+      if (done[s.id]?.completed) markOutletFixed(s.id);
+    });
+    notify('EXPLORE — Find and repair all 3 faulty outlets!', 5000);
+  } else {
+    // Non-explore (workshop / legacy): hide all outlets not matching target
+    const targetId = window.currentOutletId || 1;
+    outletSockets.forEach(s => {
+      if (s.id !== targetId) {
+        s.group.visible = false;
+        if (s.footprintGroup) s.footprintGroup.visible = false;
+        const idx = allInteractables.indexOf(s.proxy);
+        if (idx !== -1) allInteractables.splice(idx, 1);
+        s.proxy.visible = false;
       }
+    });
+  }
+
+  initOutletScenario((socketId) => {
+    markOutletFixed(socketId);
+    feedbackLog(`✓ Outlet #${socketId} repaired`, 'ok');
+
+    if (exploreMode && exploreType === 'outlet-all' && window.DB?.saveExploreOutlet) {
+      window.DB.saveExploreOutlet(socketId);
+      const stars = window.DB.getOutletStars?.() || 0;
+      notify(`★ Outlet fixed! (${stars}/3 outlet stars)`, 3000);
+      if (stars >= 3) {
+        setTimeout(() => {
+          notify('ALL 3 OUTLETS REPAIRED! Return to menu for Switch Installation.', 5500);
+        }, 3200);
+      }
+      _checkExploreComplete();
     }
-    // Auto-close overlay ~2.2s after "FIXED!" screen appears
-    setTimeout(() => {
-      closeOutlet();
-    }, 2200);
+
+    setTimeout(() => { closeOutlet(); }, 2200);
   });
 }
 
-// ── SWITCH INSTALL SCENARIO (Level 2) ────────────────────────────────────────
+// Check if all 6 explore scenarios done — show completion banner
+function _checkExploreComplete() {
+  if (!window.DB?.isExploreComplete?.()) return;
+  setTimeout(() => {
+    notify('ALL 6 SCENARIOS COMPLETE! Return to menu to take the Assessment.', 6000);
+  }, 3000);
+}
+
+// ── SWITCH INSTALL SCENARIO ───────────────────────────────────────────────────
 function _initSwitches() {
   Level2Manager.init();
-  initSwitches();   // place 3 switch stations in Workshop
-  initSwitchScenario((stationId) => {
-    // Station was completed
-    markSwitchFixed(stationId);
-    feedbackLog(`✓ Switch Station #${stationId} installed`, 'ok');
-    notify(`Switch #${stationId} installed! ${Level2Manager.starsEarned + 1}/3 done.`, 3000);
-    Level2Manager.onSwitchFixed(stationId);
-    // Auto-close overlay ~2.2s after success screen
-    setTimeout(() => { closeSwitch(); }, 2200);
-  });
+  initSwitches();   // place all 3 switch stations in the world
+
+  const exploreMode = !!window.exploreMode;
+  const exploreType = window.exploreType || '';
+
+  if (exploreMode && exploreType === 'switch-all') {
+    // Show all 3 switch stations — restore prior progress
+    const done = window.DB?.getExploreSwitches?.() || {};
+    switchStations.forEach(st => {
+      if (done[st.id]?.completed) markSwitchFixed(st.id);
+    });
+    notify('EXPLORE — Approach each switch station to wire it!', 5000);
+    initSwitchScenario((stationId) => {
+      markSwitchFixed(stationId);
+      feedbackLog(`✓ Switch #${stationId} wired`, 'ok');
+      if (window.DB?.saveExploreSwitch) {
+        window.DB.saveExploreSwitch(stationId);
+        const stars = window.DB.getSwitchStars?.() || 0;
+        notify(`★ Switch wired! (${stars}/3 switch stars)`, 3000);
+        if (stars >= 3) {
+          setTimeout(() => notify('ALL 3 SWITCHES WIRED! Return to menu for Assessment.', 5500), 3200);
+        }
+        _checkExploreComplete();
+      }
+      setTimeout(() => { closeSwitch(); }, 2200);
+    });
+
+  } else if (exploreMode && exploreType === 'outlet-all') {
+    // Outlet explore: hide switch stations entirely
+    switchStations.forEach(st => {
+      st.group.visible = false;
+      if (st.fpGroup) st.fpGroup.visible = false;
+    });
+    switchProxies.forEach(p => { p.visible = false; });
+
+  } else {
+    // Workshop / non-explore mode
+    initSwitchScenario((stationId) => {
+      markSwitchFixed(stationId);
+      feedbackLog(`✓ Switch Station #${stationId} installed`, 'ok');
+      Level2Manager.onSwitchFixed(stationId);
+      setTimeout(() => { closeSwitch(); }, 2200);
+    });
+  }
 }
 
 // Expose globals for switch overlay buttons (set in switch-scenario.js via window.closeSwitch etc.)
@@ -1595,8 +1651,11 @@ if (btnMainMenu) btnMainMenu.addEventListener('click', () => {
 
 // Keyboard shortcut: Escape / P
 window.addEventListener('keydown', e => {
-  if (e.code === 'Escape') setInGameMenu(!gamePaused);
-  if (e.code === 'KeyP')   setInGameMenu(!gamePaused);
+  if (e.code === 'Escape') {
+    if (Player.state === 'wall-panel') { _exitWallPanel(); return; }
+    setInGameMenu(!gamePaused);
+  }
+  if (e.code === 'KeyP') setInGameMenu(!gamePaused);
 });
 
 // ── Tasks Panel ────────────────────────────────────────────────────────────

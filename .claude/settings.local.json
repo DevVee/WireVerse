@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(node --input-type=module --eval ':*)",
-      "Bash(ls a:/Electric/*.html)"
+      "Bash(ls a:/Electric/*.html)",
+      "Bash(node -e ':*)"
     ]
   }
 }

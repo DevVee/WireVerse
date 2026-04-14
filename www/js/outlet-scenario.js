@@ -11,7 +11,10 @@
  */
 
 import * as THREE from 'three';
-import { Player } from './player.js';
+
+// Player is provided by the main 3D world via window.Player.
+// In standalone mode (Learn Technician page) window.Player is a no-op stub.
+const _getPlayer = () => window.Player || null;
 
 // ─── Private state ───────────────────────────────────────────────────────────
 let _renderer = null, _scene, _camera, _clock;
@@ -99,8 +102,8 @@ export function openOutlet(socketId) {
   const lbl = document.getElementById('or-socket-label');
   if (lbl) lbl.textContent = `Socket #${socketId} — ${LABELS[socketId] || 'Room'}`;
 
-  // Freeze player
-  Player.state = 'repair';
+  // Freeze player (no-op in standalone learn mode)
+  const _p = _getPlayer(); if (_p) _p.state = 'repair';
 
   _resetAll();
 
@@ -115,8 +118,8 @@ export function closeOutlet() {
   const overlay = document.getElementById('outletRepairOverlay');
   if (overlay) overlay.style.display = 'none';
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-  // Restore player
-  Player.state = 'standing';
+  // Restore player (no-op in standalone learn mode)
+  const _pr = _getPlayer(); if (_pr) _pr.state = 'standing';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -432,10 +432,10 @@ canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0}
     <div class="so-stats">
       <div class="so-stat"><div class="so-stat-val" id="so-errors">--</div><div class="so-stat-lbl">Mistakes</div></div>
       <div class="so-stat"><div class="so-stat-val" id="so-hints">--</div><div class="so-stat-lbl">Hints Used</div></div>
-      <div class="so-stat"><div class="so-stat-val" id="so-rating">--</div><div class="so-stat-lbl">Rating</div></div>
+      <div class="so-stat"><div class="so-stat-val" id="so-rating" style="font-size:28px;letter-spacing:2px;">--</div><div class="so-stat-lbl">Stars</div></div>
     </div>
     <div class="so-btns">
-      <button class="so-btn sec" onclick="goSelection()">CHANGE TYPE</button>
+      <button class="so-btn sec" id="btn-change-type" onclick="goSelection()">CHANGE TYPE</button>
       <button class="so-btn" onclick="playAgain()">PLAY AGAIN</button>
     </div>
   </div>
@@ -1394,10 +1394,10 @@ function circuitSuccess() {
     'Three-switch circuit complete. All three switches control the light.';
   document.getElementById('so-errors').textContent = APP.errors;
   document.getElementById('so-hints').textContent = APP.hintsUsed;
-  document.getElementById('so-rating').textContent = rating;
+  const stars = rating === 'S' ? 3 : rating === 'A' ? 2 : rating === 'B' ? 1 : 0;
+  document.getElementById('so-rating').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
 
   // Save to DB
-  const stars = rating === 'S' ? 3 : rating === 'A' ? 2 : rating === 'B' ? 1 : 0;
   _saveCompletion(APP.type, stars, APP.errors, APP.hintsUsed);
 
   animCam(new THREE.Vector3(0, 1.2, 9.5), new THREE.Vector3(0, 1.0, 0), 1000, () => {
@@ -1541,10 +1541,19 @@ window.addEventListener('keydown', e => {
   const params = new URLSearchParams(location.search);
   const urlType = params.get('type');
   const urlFrom = params.get('from') || 'standalone';
-  window._simContext = urlFrom; // 'learn' | 'workshop' | 'standalone'
+  window._simContext = urlFrom; // 'learn' | 'workshop' | 'explore' | 'standalone'
+  window._exploreLevel = parseInt(params.get('level') || '0'); // level id for explore stars
 
   if (urlType && TYPES[urlType]) {
-    // Auto-start the selected type, skip selection screen
+    // Hide selection screen immediately — no flash
+    const sel = document.getElementById('sel-screen');
+    if (sel) { sel.style.display = 'none'; sel.style.opacity = '0'; }
+    // Hide CHANGE TYPE when launched from workshop, explore, or learn
+    if (urlFrom === 'workshop' || urlFrom === 'explore' || urlFrom === 'learn') {
+      const btn = document.getElementById('btn-change-type');
+      if (btn) btn.style.display = 'none';
+    }
+    // Auto-start the selected type
     setTimeout(() => startType(urlType), 80);
   }
 })();
@@ -1571,6 +1580,42 @@ function _saveCompletion(type, stars, errors, hints) {
       lastAt: Date.now(),
     };
     localStorage.setItem(PREFIX + key, JSON.stringify(store));
+
+    // ── EXPLORE mode: save star into wireverse_explore ──────────────────────
+    if (context === 'explore') {
+      const levelId = window._exploreLevel;
+      if (levelId) {
+        const expRaw = localStorage.getItem(PREFIX + 'explore');
+        const exp = expRaw ? JSON.parse(expRaw) : {};
+        exp[levelId] = { completed: true, stars: 1, type, savedAt: Date.now() };
+        localStorage.setItem(PREFIX + 'explore', JSON.stringify(exp));
+        // Check if all 6 are done
+        const totalDone = [1,2,3,4,5,6].filter(id => exp[id]?.completed).length;
+        if (totalDone >= 6) {
+          setTimeout(() => {
+            alert('ALL 6 SCENARIOS COMPLETE!\nReturn to the main menu and take your ASSESSMENT to finish the game.');
+          }, 2200);
+        }
+      }
+    }
+
+    // ── workshop: save into stage progress (Stage 2 learn levels) ──────────
+    if (context === 'workshop') {
+      const lvlMap = { '1way': 1, '2way': 2, '3way': 3 };
+      const lvlId = lvlMap[type];
+      if (lvlId) {
+        const progRaw = localStorage.getItem(PREFIX + 'progress');
+        const prog = progRaw ? JSON.parse(progRaw) : {};
+        if (!prog[2]) prog[2] = {};
+        const prevLvl = prog[2][lvlId] || {};
+        prog[2][lvlId] = {
+          completed: true,
+          stars: Math.max(prevLvl.stars || 0, stars),
+          savedAt: Date.now(),
+        };
+        localStorage.setItem(PREFIX + 'progress', JSON.stringify(prog));
+      }
+    }
 
     // Achievements
     const achRaw = localStorage.getItem(PREFIX + 'achievements');

@@ -10,95 +10,162 @@
   'use strict';
 
   // ── STAGES & LEVELS DATA ───────────────────────────────────────────────────
+  // Stage 1 = EXPLORE: 2 levels, each with 3 sub-tasks = 3 stars each (6 total)
+  // Stage 2 = LEARN TECHNICIAN: direct scenario access, no world needed
 
   const STAGES = [
     {
       id: 1,
-      title: 'TRAINING SCENARIOS',
-      subtitle: 'Complete electrical repair scenarios',
-      color: '#FFB800',
+      title: 'EXPLORE',
+      subtitle: 'Roam the facility — 2 stages, 3 stars each, 6 total',
+      color: '#FFD700',
       iconSym: '⚡',
       levels: [
         {
           id: 1,
-          title: 'Fix Faulty Outlet',
-          desc: '1. Turn OFF breaker<br>2. Select screwdriver &rarr; remove screws<br>3. Open outlet<br>4. Inspect wires<br>5. Reconnect wires to correct terminals<br>6. Close outlet<br>7. Turn ON breaker<br>8. Test using multimeter',
-          duration: '10 min',
-          objective: 'Three electrical outlets in the facility have been reported faulty. Locate each one, safely de-energize the circuit, repair the wiring, and restore power.',
-          tools: ['Screwdriver', 'Multimeter', 'Insulated Gloves'],
-          taskFlow: [
-            { icon: '⚡', label: 'De-energize' },
-            { icon: '🔧', label: 'Open Outlet' },
-            { icon: '🔌', label: 'Rewire' },
-            { icon: '✓',  label: 'Test & Close' },
+          title: 'Outlet Repair',
+          subtitle: 'Find & fix 3 faulty outlets across the facility',
+          type: 'outlet-all',
+          totalStars: 3,
+          icon: '🔌',
+          desc: 'Three outlets have faults. Walk the facility, find each one, and complete the repair scenario. Earn 1 star per outlet — 3 stars total.',
+          duration: '15 min',
+          tasks: [
+            { label: 'Entrance Outlet', location: 'Entrance Hall', outletId: 1 },
+            { label: 'Workshop 1 Outlet', location: 'Workshop 1', outletId: 2 },
+            { label: 'Workshop 2 Outlet', location: 'Workshop 2', outletId: 3 },
           ],
-          locations: ['Entrance Hall', 'Workshop', 'Corridor'],
         },
         {
           id: 2,
-          title: 'Install Light Switches',
-          desc: '1. Turn OFF breaker<br>2. Mount switch to wall box<br>3. Connect live wire to switch input<br>4. Connect output wire to bulb<br>5. Secure connections<br>6. Turn ON breaker<br>7. Flip switch',
-          duration: '15 min',
-          objective: 'Three light switch stations across the facility need to be wired and installed. Each station requires proper wire routing and connection to the correct terminals.',
-          tools: ['Screwdriver', 'Wire Stripper', 'Insulated Gloves'],
-          taskFlow: [
-            { icon: '⚡', label: 'De-energize' },
-            { icon: '📍', label: 'Locate Station' },
-            { icon: '🔌', label: 'Wire Switch' },
-            { icon: '💡', label: 'Test & Verify' },
+          title: 'Switch Installation',
+          subtitle: 'Wire 3 switch stations across the facility',
+          type: 'switch-all',
+          totalStars: 3,
+          icon: '💡',
+          desc: 'Three switch stations need wiring. Approach each station and complete the wiring scenario. Earn 1 star per switch — 3 stars total.',
+          duration: '20 min',
+          tasks: [
+            { label: '1-Way Switch', location: 'Workshop 1 — south', stationId: 1 },
+            { label: '2-Way Switch', location: 'Workshop 1 — east', stationId: 2 },
+            { label: '3-Way Switch', location: 'Workshop 2 — west', stationId: 3 },
           ],
-          locations: ['Workshop', 'Generator Room', 'Utility Room'],
+        },
+      ],
+    },
+    {
+      id: 2,
+      title: 'LEARN TECHNICIAN',
+      subtitle: 'Guided scenarios — practice wiring step by step',
+      color: '#22c55e',
+      iconSym: '📚',
+      levels: [
+        {
+          id: 1,
+          title: '1-Way Switch',
+          subtitle: 'Single-pole switch circuit — guided',
+          type: 'switch-learn',
+          switchType: '1way',
+          icon: '💡',
+          desc: 'Learn to wire a single-pole (1-way) switch. Follow on-screen instructions to complete the circuit safely.',
+          duration: '8 min',
+        },
+        {
+          id: 2,
+          title: '2-Way Switch',
+          subtitle: 'Two-location switch circuit — guided',
+          type: 'switch-learn',
+          switchType: '2way',
+          icon: '💡',
+          desc: 'Learn to wire a 2-way switch circuit — control one light from two locations. Each connection is explained step by step.',
+          duration: '10 min',
         },
         {
           id: 3,
-          title: 'Replace Damaged Wire',
-          desc: '1. Turn OFF breaker<br>2. Identify damaged wire<br>3. Use wire stripper to remove insulation<br>4. Cut damaged section using pliers<br>5. Insert new wire<br>6. Connect to correct terminals<br>7. Secure with electrical tape<br>8. Turn ON breaker<br>9. Test continuity',
-          duration: '20 min',
-        },
-        {
-          id: 4,
-          title: 'Test Live Circuit',
-          desc: '1. Equip multimeter<br>2. Set multimeter to AC Voltage (V~)<br>3. Place black probe on Neutral<br>4. Place red probe on Live<br>5. Read voltage (Should be 220V/120V)<br>6. Remove probes<br>7. Confirm circuit is live',
-          duration: '5 min',
-        },
-        {
-          id: 5,
-          title: 'Fix Loose Connection',
-          desc: '1. Turn OFF breaker<br>2. Open device cover<br>3. Check loose screw terminal<br>4. Insert wire properly<br>5. Use screwdriver to tighten screw<br>6. Pull wire gently to check grip<br>7. Close cover<br>8. Turn ON breaker<br>9. Test device',
-          duration: '10 min',
-        },
-        {
-          id: 6,
-          title: 'Reset Tripped Breaker',
-          desc: '1. Open breaker panel<br>2. Identify the tripped breaker (middle position)<br>3. Turn breaker fully OFF<br>4. Turn breaker fully ON<br>5. Check if breaker holds<br>6. Test power in room = success',
-          duration: '5 min',
-        },
-        {
-          id: 7,
-          title: 'Fix Short Circuit',
-          desc: '1. Identify blown fuse/tripped breaker<br>2. Turn OFF main power<br>3. Inspect wiring for exposed copper touching<br>4. Separate touching wires<br>5. Wrap with electrical tape or use wire nut<br>6. Replace fuse or Reset breaker<br>7. Turn ON main power<br>8. Test circuit',
-          duration: '25 min',
-        },
-        {
-          id: 8,
-          title: 'Install New Outlet',
-          desc: '1. Turn OFF breaker<br>2. Run wire from source to outlet box<br>3. Strip wire ends<br>4. Connect Ground (Green/Bare) to green screw<br>5. Connect Neutral (White/Blue) to silver screw<br>6. Connect Live (Black/Brown) to brass screw<br>7. Install outlet in box<br>8. Turn ON breaker and Test',
-          duration: '20 min',
-        },
-        {
-          id: 9,
-          title: 'Bulb Not Lighting',
-          desc: '1. Turn ON switch (nothing happens)<br>2. Equip multimeter<br>3. Test voltage at bulb socket (if 0V, proceed)<br>4. Turn OFF breaker<br>5. Open switch<br>6. Fix loose wire inside switch<br>7. Close switch<br>8. Turn ON breaker<br>9. Turn ON switch',
+          title: '3-Way Switch',
+          subtitle: 'Three-location switch system — guided',
+          type: 'switch-learn',
+          switchType: '3way',
+          icon: '💡',
+          desc: 'Learn the advanced 3-way switch circuit. Each wire and connection is explained step by step with visual guidance.',
           duration: '15 min',
         },
-        {
-          id: 10,
-          title: 'Simple Circuit Setup',
-          desc: '1. Place power source<br>2. Place switch<br>3. Place light bulb<br>4. Connect wire: Source \u2192 Switch<br>5. Connect wire: Switch \u2192 Bulb<br>6. Connect wire: Bulb \u2192 Neutral<br>7. Flip switch to test',
-          duration: '10 min',
-        }
       ],
-    }
+    },
+  ];
+
+  // ── ASSESSMENT QUESTIONS ───────────────────────────────────────────────────
+  const ASSESSMENT_QUESTIONS = [
+    {
+      q: 'What is the IEC color code for the LIVE (Line) wire?',
+      options: ['Brown', 'Blue', 'Green/Yellow', 'Black'],
+      correct: 0,
+    },
+    {
+      q: 'What does LOTO stand for in electrical safety?',
+      options: ['Lockout/Tagout', 'Live Output Testing Only', 'Line Overlap Turn Off', 'Low Output Tag Override'],
+      correct: 0,
+    },
+    {
+      q: 'What is the purpose of a circuit breaker?',
+      options: [
+        'Protects against overload and short circuits',
+        'Measures current flow in a circuit',
+        'Converts AC power to DC power',
+        'Amplifies voltage for heavy loads',
+      ],
+      correct: 0,
+    },
+    {
+      q: 'What tool is used to measure voltage in a circuit?',
+      options: ['Multimeter', 'Wire Stripper', 'Insulated Screwdriver', 'Crimping Tool'],
+      correct: 0,
+    },
+    {
+      q: 'In a 2-way switch circuit, what connects the two switches?',
+      options: ['Traveler wires', 'Neutral wires', 'Earth/Ground wires', 'Phase conductors'],
+      correct: 0,
+    },
+    {
+      q: 'What is the IEC color code for the NEUTRAL wire?',
+      options: ['Blue', 'Brown', 'Green/Yellow', 'Red'],
+      correct: 0,
+    },
+    {
+      q: 'Before working on an electrical outlet, what must you do FIRST?',
+      options: [
+        'De-energize the circuit (turn off the breaker)',
+        'Test the outlet with a multimeter while live',
+        'Connect the earth wire to the casing',
+        'Loosen all terminal screws',
+      ],
+      correct: 0,
+    },
+    {
+      q: 'How many terminals does a standard single-pole (1-way) switch have?',
+      options: ['2 terminals', '3 terminals', '4 terminals', '1 terminal'],
+      correct: 0,
+    },
+    {
+      q: 'What is the purpose of the Earth/Ground (PE) wire in an outlet?',
+      options: [
+        'Safety — diverts fault current to ground to prevent electrocution',
+        'Carries the main supply current to the load',
+        'Connects the neutral bar to the switch',
+        'Completes the live circuit loop',
+      ],
+      correct: 0,
+    },
+    {
+      q: 'In a 3-way switch system, what does the intermediate (4-way) switch do?',
+      options: [
+        'Reverses the traveler wire connections to allow control from a third location',
+        'Disconnects the live wire as a safety measure',
+        'Acts as a neutral connection point between switches',
+        'Provides extra circuit breaker protection',
+      ],
+      correct: 0,
+    },
   ];
 
   // ── STATE ────────────────────────────────────────────────────────────────────
@@ -157,75 +224,159 @@
     const container = document.getElementById('stagesList');
     if (!container) return;
     container.innerHTML = '';
-    STAGES.forEach(stage => {
-      const prog = DB.getProgress()[stage.id] || {};
-      const completed = Object.values(prog).filter(l => l.completed).length;
-      const unlocked = DB.isLevelUnlocked(stage.id, 1);
 
+    STAGES.forEach(stage => {
+      // EXPLORE: 6 total stars (3 per level × 2 levels)
+      let completed = 0, total = 0;
+      if (stage.id === 1) {
+        completed = DB.getExploreStarCount?.() || 0;
+        total = 6;
+      } else {
+        const prog = DB.getProgress()[stage.id] || {};
+        completed = Object.values(prog).filter(l => l.completed).length;
+        total = stage.levels.length;
+      }
+
+      const allDone = completed >= total;
       const card = document.createElement('div');
-      card.className = 'stage-card' + (unlocked ? '' : ' stage-locked');
+      card.className = 'stage-card' + (allDone ? ' stage-complete' : '');
+
+      // Star row for EXPLORE stage
+      const starRow = stage.id === 1 ? (() => {
+        const os = DB.getOutletStars?.() || 0;
+        const ss = DB.getSwitchStars?.() || 0;
+        const outletStars = [0,1,2].map(i => `<span style="font-size:15px;color:${i<os?'#FFD700':'rgba(255,215,0,.15)'};margin:0 1px;">★</span>`).join('');
+        const switchStars = [0,1,2].map(i => `<span style="font-size:15px;color:${i<ss?'#FFD700':'rgba(255,215,0,.15)'};margin:0 1px;">★</span>`).join('');
+        return `<div style="display:flex;gap:10px;align-items:center;margin-top:4px;">
+          <span style="font-size:9px;color:rgba(255,255,255,.4);font-family:'Barlow Condensed',sans-serif;letter-spacing:.1em;">OUTLET</span>${outletStars}
+          <span style="font-size:9px;color:rgba(255,255,255,.4);font-family:'Barlow Condensed',sans-serif;letter-spacing:.1em;">SWITCH</span>${switchStars}
+        </div>`;
+      })() : '';
+
       card.innerHTML = `
         <div class="stage-icon" style="color:${stage.color};">${stage.iconSym}</div>
         <div class="stage-info">
-          <div class="stage-title" style="color:${stage.color};">${stage.title}</div>
+          <div class="stage-title" style="color:${stage.color};">${stage.title}${allDone ? ' <span style="font-size:11px;color:#22c55e;letter-spacing:1px;">COMPLETE</span>' : ''}</div>
           <div class="stage-sub">${stage.subtitle}</div>
-          <div class="stage-prog">
+          ${starRow}
+          <div class="stage-prog" style="margin-top:6px;">
             <div class="stage-prog-bar">
-              <div class="stage-prog-fill" style="width:${completed / 4 * 100}%;background:${stage.color};"></div>
+              <div class="stage-prog-fill" style="width:${completed / total * 100}%;background:${stage.color};"></div>
             </div>
-            <span class="stage-prog-label">${completed}/4 LEVELS</span>
+            <span class="stage-prog-label">${completed}/${total} ${stage.id === 1 ? 'STARS' : 'LEVELS'}</span>
           </div>
         </div>
-        <div class="stage-arrow">${unlocked ? '▶' : '🔒'}</div>
+        <div class="stage-arrow">▶</div>
       `;
-      if (unlocked) {
-        card.addEventListener('click', () => {
-          renderLevels(stage);
-          showScreen('screenLevels');
-        });
-      }
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', () => {
+        if (window.GameAudio) { window.GameAudio.init?.(); window.GameAudio.click?.(); }
+        renderLevels(stage);
+        showScreen('screenLevels');
+      });
       container.appendChild(card);
+
+      // For EXPLORE — show assessment card when all 6 done
+      if (stage.id === 1 && allDone) {
+        const assessCard = document.createElement('div');
+        assessCard.className = 'stage-card stage-complete';
+        assessCard.style.cssText = 'cursor:pointer;border-color:rgba(255,184,0,0.55);background:rgba(30,50,20,0.3);';
+        const prevAssess = DB.getAssessment();
+        assessCard.innerHTML = `
+          <div class="stage-icon" style="color:#22c55e;font-size:20px;">📋</div>
+          <div class="stage-info">
+            <div class="stage-title" style="color:#22c55e;">ASSESSMENT${prevAssess ? ' <span style="font-size:10px;color:#aaa;">RETAKE</span>' : ''}</div>
+            <div class="stage-sub">Test your knowledge — 10 questions</div>
+            ${prevAssess ? `<div class="stage-prog"><span class="stage-prog-label" style="color:#22c55e;">Last score: ${prevAssess.score}/${prevAssess.total} (${prevAssess.pct}%)</span></div>` : '<div class="stage-prog"><span class="stage-prog-label" style="color:#FFD700;">UNLOCKED — All scenarios complete!</span></div>'}
+          </div>
+          <div class="stage-arrow">▶</div>
+        `;
+        assessCard.addEventListener('click', () => {
+          if (window.GameAudio) { window.GameAudio.init?.(); window.GameAudio.click?.(); }
+          renderAssessment();
+          showScreen('screenAssessment');
+        });
+        container.appendChild(assessCard);
+      }
     });
   }
 
   // ── LEVEL SELECTION ─────────────────────────────────────────────────────────
 
   function renderLevels(stage) {
-    const title = document.getElementById('levelScreenTitle');
-    if (title) title.textContent = stage.title;
+    const titleEl = document.getElementById('levelScreenTitle');
+    if (titleEl) titleEl.textContent = stage.title;
+
+    const subEl = document.getElementById('levelScreenSub');
+    if (subEl) subEl.textContent = stage.id === 1
+      ? 'COMPLETE ALL 6 STARS TO UNLOCK THE ASSESSMENT'
+      : 'GUIDED SCENARIOS — PRACTICE WIRING STEP BY STEP';
 
     const container = document.getElementById('levelsList');
     if (!container) return;
     container.innerHTML = '';
 
-    stage.levels.forEach(level => {
-      const unlocked = DB.isLevelUnlocked(stage.id, level.id);
-      const prog = DB.getLevelProgress(stage.id, level.id);
-      const completed = prog?.completed === true;
-      const stars = prog?.stars || 0;
+    const isExplore = stage.id === 1;
+    const outletsDone = isExplore ? (DB.getExploreOutlets?.() || {}) : {};
+    const switchesDone = isExplore ? (DB.getExploreSwitches?.() || {}) : {};
 
-      const starHTML = '★★★'.split('').map((_, i) =>
-        `<span style="color:${i < stars ? '#FFB800' : 'rgba(255,184,0,0.2)'};">★</span>`
-      ).join('');
+    stage.levels.forEach(level => {
+      const isOutletAll = level.type === 'outlet-all';
+      const isSwitchAll = level.type === 'switch-all';
+
+      // Per-task completion for explore levels
+      let tasksDone = 0;
+      if (isOutletAll) tasksDone = [1,2,3].filter(id => outletsDone[id]?.completed).length;
+      if (isSwitchAll) tasksDone = [1,2,3].filter(id => switchesDone[id]?.completed).length;
+
+      const levelComplete = isExplore ? tasksDone >= 3 : (DB.getLevelProgress(stage.id, level.id)?.completed === true);
+
+      // 3-star row for explore levels, plain for learn
+      const starsHTML = isExplore
+        ? [0,1,2].map(i => `<span style="font-size:20px;color:${i<tasksDone?'#FFD700':'rgba(255,215,0,0.15)'};margin:0 2px;text-shadow:${i<tasksDone?'0 0 8px rgba(255,215,0,0.6)':'none'};">★</span>`).join('')
+        : '';
+
+      // Task checklist for explore levels
+      const taskListHTML = isExplore ? `
+        <div style="margin:8px 0 4px;display:flex;flex-direction:column;gap:4px;">
+          ${(level.tasks || []).map(t => {
+            const done = isOutletAll ? !!outletsDone[t.outletId]?.completed : !!switchesDone[t.stationId]?.completed;
+            return `<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:${done?'#22c55e':'rgba(255,255,255,0.45)'};">
+              <span style="font-size:13px;">${done?'✓':'○'}</span>
+              <span>${t.label}</span>
+              <span style="font-size:10px;color:rgba(255,255,255,0.25);margin-left:auto;">${t.location}</span>
+            </div>`;
+          }).join('')}
+        </div>` : '';
+
+      // Type badge
+      const typeMap = {
+        'outlet-all':   `<span class="lv-badge" style="background:rgba(255,200,0,.1);border-color:rgba(255,200,0,.35);color:#FFD700;">3 OUTLETS</span>`,
+        'switch-all':   `<span class="lv-badge" style="background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.35);color:#60a5fa;">3 SWITCHES</span>`,
+        'outlet-learn': `<span class="lv-badge" style="background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.35);color:#22c55e;">GUIDED</span>`,
+        'switch-learn': `<span class="lv-badge" style="background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.35);color:#22c55e;">GUIDED</span>`,
+      };
+      const typeTag = typeMap[level.type] || '';
 
       const card = document.createElement('div');
-      card.className = 'level-card' +
-        (completed ? ' level-completed' : '') +
-        (unlocked && !completed ? ' level-unlocked' : '') +
-        (!unlocked ? ' level-locked' : '');
-
+      card.className = 'level-card' + (levelComplete ? ' level-completed' : ' level-unlocked');
       card.innerHTML = `
-        <div class="level-num" style="color:${stage.color};">LVL ${level.id}</div>
+        <div class="level-num" style="color:${stage.color};font-size:28px;">${level.icon || (isExplore ? '⚡' : '📚')}</div>
         <div class="level-info">
-          <div class="level-title">${level.title}${completed ? ' <span class="level-done-badge">✓ DONE</span>' : ''}</div>
-          <div class="level-desc">${level.desc}</div>
-          <div class="level-meta">
-            <span class="level-dur">⏱ ${level.duration}</span>
-            <span class="level-stars">${starHTML}</span>
+          <div class="level-title">${level.title}${levelComplete ? ' <span class="level-done-badge">✓ DONE</span>' : ''}</div>
+          ${level.subtitle ? `<div style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:4px;">${level.subtitle}</div>` : ''}
+          <div class="level-desc">${level.desc || ''}</div>
+          ${taskListHTML}
+          <div class="level-meta" style="margin-top:6px;">
+            <span class="level-dur">⏱ ${level.duration || ''}</span>
+            ${starsHTML ? `<span class="level-stars" style="margin-left:auto;">${starsHTML}</span>` : ''}
+            ${typeTag}
           </div>
         </div>
         <div class="level-action">
-          ${!unlocked ? '<span class="level-lock">🔒</span>' : `<button class="btn-play" data-stage="${stage.id}" data-level="${level.id}">${completed ? 'REPLAY' : 'PLAY'}</button>`}
+          <button class="btn-play" data-stage="${stage.id}" data-level="${level.id}" style="background:${stage.color};color:#060e14;">
+            ${levelComplete ? 'REPLAY' : 'PLAY'}
+          </button>
         </div>
       `;
       container.appendChild(card);
@@ -256,8 +407,8 @@
     const el = document.getElementById('missionBriefingContent');
     if (!el) return;
 
-    // Parse step list from desc (split on <br>)
-    const steps = level.desc
+    // Parse step list from desc (handles both plain text and legacy HTML)
+    const steps = (level.desc || '')
       .replace(/&rarr;/g, '→')
       .split(/<br\s*\/?>/i)
       .map(s => s.replace(/<[^>]+>/g, '').trim())
@@ -328,103 +479,7 @@
     `;
   }
 
-  // ── LEARN SELECT — choose switch type ─────────────────────────────────────
-
-  const SWITCH_TYPES = [
-    {
-      id: '1way',
-      badge: '1-SWITCH',
-      name: 'Single-Pole Control',
-      desc: 'One switch controls one light. Learn LIVE, SWITCH→LIGHT, and NEUTRAL wiring.',
-      difficulty: 1,
-      color: '#22c55e',
-      borderColor: 'rgba(34,197,94,.6)',
-    },
-    {
-      id: '2way',
-      badge: '2-SWITCH',
-      name: 'Two-Location Control',
-      desc: 'Two switches control one light from different locations — traveler wires between them.',
-      difficulty: 2,
-      color: '#3b82f6',
-      borderColor: 'rgba(59,130,246,.6)',
-    },
-    {
-      id: '3way',
-      badge: '3-SWITCH',
-      name: 'Three-Location Control',
-      desc: 'Three switches share control — uses an intermediate switch with four traveler terminals.',
-      difficulty: 3,
-      color: '#f59e0b',
-      borderColor: 'rgba(245,158,11,.6)',
-    },
-  ];
-
-  function renderLearnSelect() {
-    const container = document.getElementById('learnSelectCards');
-    if (!container) return;
-    container.innerHTML = '';
-
-    SWITCH_TYPES.forEach(t => {
-      const prog = DB.getLearnTypeProgress ? DB.getLearnTypeProgress(t.id) : null;
-      const done = prog?.completed === true;
-      const stars = prog?.bestStars || 0;
-      const starHTML = [0,1,2].map(i =>
-        `<span style="color:${i < stars ? '#F5C518' : 'rgba(245,197,24,.15)'};font-size:14px;">★</span>`
-      ).join('');
-      const diffDots = [1,2,3].map(i =>
-        `<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${i <= t.difficulty ? t.color : 'rgba(255,255,255,.1)'};margin-right:3px;"></span>`
-      ).join('');
-
-      const card = document.createElement('div');
-      card.className = 'ls-card';
-      card.style.cssText = `
-        background:var(--panel);border:1px solid ${done ? t.borderColor : 'rgba(255,255,255,.08)'};
-        border-radius:14px;padding:22px 18px;cursor:pointer;
-        transition:all .22s;display:flex;flex-direction:column;gap:10px;
-        position:relative;overflow:hidden;min-width:200px;
-      `;
-      card.innerHTML = `
-        ${done ? `<div style="position:absolute;top:10px;right:12px;background:rgba(34,197,94,.15);
-          border:1px solid rgba(34,197,94,.4);border-radius:5px;padding:3px 9px;
-          font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
-          letter-spacing:.18em;color:#4ade80;">DONE</div>` : ''}
-        <div style="background:rgba(255,255,255,.05);border:1px solid ${t.borderColor};
-          border-radius:6px;padding:3px 10px;font-family:'Barlow Condensed',sans-serif;
-          font-size:10px;font-weight:700;letter-spacing:.16em;color:${t.color};
-          text-transform:uppercase;align-self:flex-start;">${t.badge}</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;
-          color:#fff;line-height:1.1;">${t.name}</div>
-        <div style="display:flex;gap:3px;">${diffDots}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);line-height:1.6;flex:1;">${t.desc}</div>
-        <div style="display:flex;gap:2px;margin-top:2px;">${starHTML}</div>
-        <button class="ls-start-btn" style="
-          margin-top:4px;padding:10px 0;text-align:center;border-radius:8px;
-          font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
-          letter-spacing:.12em;text-transform:uppercase;border:none;cursor:pointer;
-          background:${t.color};color:#000;transition:all .15s;
-        ">${done ? 'PRACTICE AGAIN' : 'START LEARNING'}</button>
-      `;
-
-      card.addEventListener('mouseover', () => {
-        card.style.transform = 'translateY(-4px)';
-        card.style.borderColor = t.borderColor;
-        card.style.boxShadow = `0 12px 40px rgba(0,0,0,.5)`;
-      });
-      card.addEventListener('mouseout', () => {
-        card.style.transform = '';
-        card.style.boxShadow = '';
-        card.style.borderColor = done ? t.borderColor : 'rgba(255,255,255,.08)';
-      });
-
-      card.querySelector('.ls-start-btn').addEventListener('click', () => {
-        if (window.GameAudio) { window.GameAudio.init?.(); window.GameAudio.click?.(); }
-        window.location.href = `scenario2.html?type=${t.id}&from=learn`;
-      });
-
-      container.appendChild(card);
-    });
-  }
+  // renderLearnSelect() and SWITCH_TYPES removed — Learn Technician now routes directly via launchLevel()
 
   // ── LEARN (Book-style) ─────────────────────────────────────────────────────
 
@@ -626,11 +681,64 @@
 
     let anyProgress = false;
 
+    // ── EXPLORE Stars ───────────────────────────────────────────────────────
+    const exploreHeader = document.createElement('div');
+    exploreHeader.className = 'ach-stage-header';
+    exploreHeader.innerHTML = `<span style="color:#FFD700;">⚡</span> EXPLORE — SCENARIO STARS`;
+    container.appendChild(exploreHeader);
+
+    const exploreStage = STAGES.find(s => s.id === 1);
+    const exploreProg = DB.getExploreProgress ? DB.getExploreProgress() : {};
+    (exploreStage?.levels || []).forEach(level => {
+      const done = exploreProg[level.id]?.completed === true;
+      if (done) anyProgress = true;
+      const card = document.createElement('div');
+      card.className = 'ach-card' + (done ? ' ach-card-done' : '');
+      card.style.opacity = done ? '1' : '0.45';
+      card.innerHTML = `
+        <div class="ach-lvl-badge" style="color:#FFD700;font-size:16px;">${level.icon || '⚡'}</div>
+        <div class="ach-info">
+          <div class="ach-title">${level.title}</div>
+          <div class="ach-stars" style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;">${level.subtitle || ''}</div>
+        </div>
+        <div class="ach-status">
+          ${done
+            ? '<span class="ach-done-badge">★ EARNED</span>'
+            : '<span class="ach-inprog-badge">NOT DONE</span>'}
+        </div>
+      `;
+      container.appendChild(card);
+    });
+
+    // ── Assessment Score ────────────────────────────────────────────────────
+    const assessData = DB.getAssessment ? DB.getAssessment() : null;
+    if (assessData) {
+      const assessHeader = document.createElement('div');
+      assessHeader.className = 'ach-stage-header';
+      assessHeader.style.marginTop = '16px';
+      assessHeader.innerHTML = `<span style="color:#22c55e;">📋</span> ASSESSMENT RESULT`;
+      container.appendChild(assessHeader);
+      const gradeColor = assessData.pct >= 90 ? '#22c55e' : assessData.pct >= 75 ? '#FFD700' : assessData.pct >= 60 ? '#f59e0b' : '#ef4444';
+      const aCard = document.createElement('div');
+      aCard.className = 'ach-card ach-card-done';
+      aCard.innerHTML = `
+        <div class="ach-lvl-badge" style="color:${gradeColor};font-size:20px;">📋</div>
+        <div class="ach-info">
+          <div class="ach-title" style="color:${gradeColor};">${assessData.score}/${assessData.total} — ${assessData.pct}%</div>
+          <div class="ach-stars" style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;">Final assessment score</div>
+        </div>
+        <div class="ach-status"><span class="ach-done-badge" style="background:${gradeColor}22;border-color:${gradeColor}55;color:${gradeColor};">DONE</span></div>
+      `;
+      container.appendChild(aCard);
+      anyProgress = true;
+    }
+
     // ── Switch Wiring Achievements ──────────────────────────────────────────
     const unlockedAch = DB.getAchievements ? DB.getAchievements() : {};
     const switchHeader = document.createElement('div');
     switchHeader.className = 'ach-stage-header';
-    switchHeader.innerHTML = `<span style="color:#F5C518;">⚡</span> SWITCH WIRING`;
+    switchHeader.style.marginTop = '16px';
+    switchHeader.innerHTML = `<span style="color:#60a5fa;">💡</span> WIRING ACHIEVEMENTS`;
     container.appendChild(switchHeader);
 
     SWITCH_ACHIEVEMENTS.forEach(a => {
@@ -654,44 +762,12 @@
       container.appendChild(card);
     });
 
-    // ── Learn Progress ──────────────────────────────────────────────────────
-    const learnProg = DB.getLearnProgress ? DB.getLearnProgress() : {};
-    const learnHeader = document.createElement('div');
-    learnHeader.className = 'ach-stage-header';
-    learnHeader.style.marginTop = '16px';
-    learnHeader.innerHTML = `<span style="color:#3b82f6;">📚</span> LEARN PROGRESS`;
-    container.appendChild(learnHeader);
-
-    SWITCH_TYPES.forEach(t => {
-      const prog = learnProg[t.id];
-      const done = prog?.completed === true;
-      const stars = prog?.bestStars || 0;
-      const starHTML = [0,1,2].map(i =>
-        `<span class="ach-star ${i < stars ? 'ach-star-on' : ''}">★</span>`
-      ).join('');
-      const card = document.createElement('div');
-      card.className = 'ach-card' + (done ? ' ach-card-done' : '');
-      card.innerHTML = `
-        <div class="ach-lvl-badge" style="color:${t.color};">${t.badge}</div>
-        <div class="ach-info">
-          <div class="ach-title">${t.name}</div>
-          <div class="ach-stars">${starHTML}</div>
-        </div>
-        <div class="ach-status">
-          ${done
-            ? `<span class="ach-done-badge">×${prog.attempts}</span>`
-            : '<span class="ach-inprog-badge">NOT STARTED</span>'}
-        </div>
-      `;
-      container.appendChild(card);
-    });
-
-    if (!anyProgress && Object.keys(learnProg).length === 0) {
+    if (!anyProgress) {
       container.innerHTML = `
         <div class="ach-empty">
           <div class="ach-empty-icon">🔒</div>
           <div class="ach-empty-title">NO ACHIEVEMENTS YET</div>
-          <div class="ach-empty-sub">Complete switch wiring scenarios in Learn mode to earn achievements.</div>
+          <div class="ach-empty-sub">Complete scenarios in Explore mode to earn stars and achievements.</div>
         </div>
       `;
     }
@@ -794,9 +870,114 @@
   function launchLevel(stageId, levelId) {
     window.currentStageId = stageId;
     window.currentLevelId = levelId;
-    // Trigger the existing game init via the hidden #startBtn
-    const btn = document.getElementById('startBtn');
-    if (btn) btn.click();
+
+    const stage = STAGES.find(s => s.id === stageId);
+    const level = stage?.levels.find(l => l.id === levelId);
+
+    if (!level) return;
+
+    // ── EXPLORE (Stage 1) ───────────────────────────────────────────────────
+    if (stageId === 1) {
+      window.exploreMode  = true;
+      window.exploreType  = level.type;  // 'outlet-all' | 'switch-all'
+      window.learnMode    = false;
+      const btn = document.getElementById('startBtn');
+      if (btn) btn.click();
+      return;
+    }
+
+    // ── LEARN TECHNICIAN (Stage 2) ──────────────────────────────────────────
+    if (stageId === 2) {
+      if (level.type === 'switch-learn') {
+        window.location.href = `scenario2.html?type=${level.switchType}&from=learn`;
+      }
+      return;
+    }
+  }
+
+  // ── ASSESSMENT ──────────────────────────────────────────────────────────────
+
+  let _assessAnswers = [];
+
+  function renderAssessment() {
+    const container = document.getElementById('assessmentQuestions');
+    if (!container) return;
+    _assessAnswers = new Array(ASSESSMENT_QUESTIONS.length).fill(null);
+
+    container.innerHTML = ASSESSMENT_QUESTIONS.map((q, qi) => `
+      <div class="assess-q" id="aq-${qi}">
+        <div class="assess-q-text"><span class="assess-q-num">${qi + 1}</span>${q.q}</div>
+        <div class="assess-options">
+          ${q.options.map((opt, oi) =>
+            `<button class="assess-opt" data-q="${qi}" data-o="${oi}">${opt}</button>`
+          ).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    // Bind option clicks
+    container.querySelectorAll('.assess-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const qi = parseInt(btn.dataset.q);
+        const oi = parseInt(btn.dataset.o);
+        _assessAnswers[qi] = oi;
+        // Highlight selected
+        container.querySelectorAll(`.assess-opt[data-q="${qi}"]`).forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        // Update submit button
+        const allAnswered = _assessAnswers.every(a => a !== null);
+        const submitBtn = document.getElementById('btnSubmitAssessment');
+        if (submitBtn) {
+          submitBtn.disabled = !allAnswered;
+          submitBtn.style.opacity = allAnswered ? '1' : '0.4';
+        }
+      });
+    });
+
+    // Reset submit button
+    const submitBtn = document.getElementById('btnSubmitAssessment');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.4'; }
+  }
+
+  function submitAssessment() {
+    const score = _assessAnswers.reduce((acc, ans, i) =>
+      acc + (ans === ASSESSMENT_QUESTIONS[i].correct ? 1 : 0), 0);
+    const total = ASSESSMENT_QUESTIONS.length;
+    DB.saveAssessment(score, total);
+
+    // Show results
+    const el = document.getElementById('assessResultContent');
+    if (el) {
+      const pct = Math.round(score / total * 100);
+      const grade = pct >= 90 ? 'EXCELLENT' : pct >= 75 ? 'PASSED' : pct >= 60 ? 'SATISFACTORY' : 'NEEDS REVIEW';
+      const gradeColor = pct >= 90 ? '#22c55e' : pct >= 75 ? '#FFD700' : pct >= 60 ? '#f59e0b' : '#ef4444';
+
+      el.innerHTML = `
+        <div class="ar-score" style="color:${gradeColor};">${score}/${total}</div>
+        <div class="ar-pct" style="color:${gradeColor};">${pct}%</div>
+        <div class="ar-grade" style="color:${gradeColor};">${grade}</div>
+        <div class="ar-bar-wrap">
+          <div class="ar-bar" style="width:${pct}%;background:${gradeColor};"></div>
+        </div>
+        <div class="ar-review">
+          ${ASSESSMENT_QUESTIONS.map((q, i) => {
+            const userAns = _assessAnswers[i];
+            const correct = q.correct;
+            const ok = userAns === correct;
+            return `
+              <div class="ar-item ${ok ? 'ar-ok' : 'ar-wrong'}">
+                <span class="ar-item-icon">${ok ? '✓' : '✗'}</span>
+                <div>
+                  <div class="ar-item-q">${q.q}</div>
+                  ${!ok ? `<div class="ar-item-ans">Correct: <strong>${q.options[correct]}</strong></div>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+    showScreen('screenAssessmentResult');
   }
 
   // ── QUIT ─────────────────────────────────────────────────────────────────────
@@ -845,31 +1026,17 @@
   function bindAll() {
     // Main Menu
     bind('btnMenuStart', 'click', () => {
-      showScreen('screenModeSelect');
+      renderStages();
+      showScreen('screenStages');
     });
 
-    // Mode Selection
-    bind('btnModeScenario', 'click', () => {
-      renderLevels(STAGES[0]);
-      showScreen('screenLevels');
-    });
-
-    bind('btnModeLearnMode', 'click', () => {
-      alert("Learn Electrician mode is coming soon!");
-    });
-
-    bind('btnModeSelectBack', 'click', () => {
-      showScreen('screenMain');
-    });
-    
     bind('btnMenuLearn', 'click', () => {
-      renderLearnSelect();
-      showScreen('screenLearnSelect');
+      renderLearn();
+      showScreen('screenLearn');
     });
     bind('btnLearnSelectBack', 'click', () => showScreen('screenMain'));
     bind('btnLearnSelectTheory', 'click', () => {
-      renderLearn();
-      showScreen('screenLearn');
+      renderLearn(); showScreen('screenLearn');
     });
     bind('btnMenuSettings', 'click', () => {
       renderSettings();
@@ -906,7 +1073,7 @@
     });
     bind('btnMissionBack', 'click', () => showScreen('screenLevels'));
 
-    // Learn — back
+    // Learn (Study Guide) — back
     bind('btnLearnBack', 'click', () => { _learnPage = 0; showScreen('screenMain'); });
 
     // Achievements — back
@@ -922,13 +1089,18 @@
     });
     bind('btnSettingsBack', 'click', () => showScreen('screenMain'));
     bind('btnResetProgress', 'click', () => {
-      if (confirm('Reset all level progress? Your name and settings will be kept.')) {
+      if (confirm('Reset all progress? Your name and settings will be kept.')) {
         DB.resetProgress();
         renderStages();
         const msg = document.getElementById('resetDone');
         if (msg) { msg.style.display = 'block'; setTimeout(() => { msg.style.display = 'none'; }, 2000); }
       }
     });
+
+    // Assessment
+    bind('btnAssessmentBack', 'click', () => showScreen('screenStages'));
+    bind('btnSubmitAssessment', 'click', submitAssessment);
+    bind('btnAssessResultBack', 'click', () => { renderStages(); showScreen('screenStages'); });
 
     // Quit overlay
     bind('btnQuitCancel', 'click', () => {
