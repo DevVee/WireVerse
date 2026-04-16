@@ -496,8 +496,7 @@
     @media (max-width: 1024px) {
 
       #wasdPad,
-      #lookZone,
-      #btnSprint {
+      #lookZone {
         display: block;
       }
     }
@@ -1701,28 +1700,7 @@
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 22px rgba(255, 130, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
     }
 
-    #btnDpadSprint {
-      width: 154px;
-      height: 38px;
-      background: rgba(5, 14, 20, 0.78);
-      border: 1px solid rgba(244, 166, 35, 0.4);
-      border-radius: 10px;
-      color: rgba(244, 166, 35, 0.85);
-      font-family: 'Bebas Neue', cursive;
-      font-size: 16px;
-      letter-spacing: 3px;
-      cursor: pointer;
-      touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-      transition: background 0.06s;
-    }
-
-    #btnDpadSprint:active {
-      background: rgba(244, 166, 35, 0.18);
-      box-shadow: 0 0 12px rgba(244, 166, 35, 0.3);
-    }
+    /* Sprint button removed */
 
     /* ── Circular Primary Action Button — bottom right ──────────────────── */
     #btnInteract {
@@ -1836,6 +1814,8 @@
         display: flex !important;
       }
     }
+
+    /* #btnMobileTasks removed — tasks accessed via top-right TASKS button only */
 
 
 
@@ -2088,8 +2068,7 @@
       }
     }
 
-    #btnPauseTop,
-    #btnTopTasks {
+    #btnPauseTop {
       font-family: var(--font) !important;
       border: 3px solid rgba(255, 215, 0, 0.6) !important;
       border-radius: 50px !important;
@@ -2111,8 +2090,7 @@
     }
 
     /* Shimmer sweep on hover/idle */
-    #btnPauseTop::before,
-    #btnTopTasks::before {
+    #btnPauseTop::before {
       content: '' !important;
       position: absolute !important;
       top: 0 !important;
@@ -2123,38 +2101,29 @@
       transition: left 0.55s ease !important;
     }
 
-    #btnPauseTop:hover::before,
-    #btnTopTasks:hover::before {
+    #btnPauseTop:hover::before {
       left: 150% !important;
     }
 
-    #btnPauseTop:active,
-    #btnTopTasks:active {
+    #btnPauseTop:active {
       transform: translateY(3px) scale(0.97) !important;
       box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4) !important;
     }
 
-    #btnPauseTop.pressed,
-    #btnTopTasks.pressed {
+    #btnPauseTop.pressed {
       border-color: #ffd700 !important;
       background: linear-gradient(135deg, #2a4060 0%, #152030 100%) !important;
       box-shadow: 0 0 22px rgba(255, 215, 0, 0.4), 0 4px 0 rgba(0, 0, 0, 0.4) !important;
     }
 
-    /* Position: top-right stacked pair */
+    /* Position: top-right — hamburger rightmost, tasks to its left */
     #btnPauseTop {
       top: 15px !important;
       right: 15px !important;
-    }
-
-    #btnTopTasks {
-      top: 15px !important;
-      right: 105px !important;
+      left: auto !important;
     }
 
 
-
-    /* ── USE / Interact button ─────────────────────────────────────────── */
     @keyframes pulseAction {
 
       0%,
@@ -2529,13 +2498,13 @@
        HAMBURGER BUTTON + IN-GAME SLIDE-DOWN MENU
     ══════════════════════════════════════════════════════════════════ */
 
-    /* ── Hamburger trigger button — center top ──────────────────── */
+    /* ── Hamburger trigger button — top RIGHT (moved from center) ── */
     #btnPauseTop {
       position: fixed !important;
       top: 14px !important;
-      left: 50% !important;
-      transform: translateX(-50%) !important;
-      right: auto !important;
+      right: 14px !important;
+      left: auto !important;
+      transform: none !important;
       width: 52px !important;
       height: 44px !important;
       border-radius: 12px !important;
@@ -2567,7 +2536,7 @@
     }
 
     #btnPauseTop:active {
-      transform: translateX(-50%) scale(0.93) !important;
+      transform: scale(0.93) !important;
       background: rgba(8, 15, 28, 0.95) !important;
       animation: none !important;
     }
@@ -2592,18 +2561,7 @@
       transform: translateY(-7px) rotate(-45deg) !important;
     }
 
-    /* ── TASKS button — top right, now a compact icon-pill ───────── */
-    #btnTopTasks {
-      top: 14px !important;
-      right: 14px !important;
-      width: auto !important;
-      height: 44px !important;
-      border-radius: 12px !important;
-      padding: 0 16px !important;
-      font-size: clamp(12px, 2vw, 15px) !important;
-    }
 
-    /* ── Slide-down in-game menu overlay ─────────────────────────── */
     #inGameMenu {
       position: fixed;
       top: 0;
@@ -2888,7 +2846,7 @@
       justify-content: center !important;
       z-index: 800 !important;
       pointer-events: all !important;
-      padding: 20px !important;
+      padding: 12px !important;
       transform: none !important;
       left: 0 !important;
       top: 0 !important;
@@ -2906,15 +2864,37 @@
 
     #taskModalInner {
       background: linear-gradient(160deg, #0d1826 0%, #070f1a 100%);
-      border: 3px solid rgba(255, 215, 0, 0.55);
-      border-radius: 20px;
+      border: 2px solid rgba(255, 215, 0, 0.55);
+      border-radius: 16px;
       width: 100%;
-      max-width: 560px;
-      max-height: 80vh;
+      max-width: 520px;
+      max-height: 85vh;
       display: flex;
       flex-direction: column;
       box-shadow: 0 16px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(255, 215, 0, 0.08);
       overflow: hidden;
+    }
+
+    @media (max-width: 1024px) {
+      #taskModalInner {
+        max-width: 100% !important;
+        max-height: 78vh !important;
+        border-radius: 14px !important;
+      }
+      #taskModalHeader {
+        padding: 12px 16px 10px !important;
+      }
+      #taskModalTitle {
+        font-size: clamp(18px, 4vw, 24px) !important;
+      }
+      #btnCloseTask {
+        font-size: 13px !important;
+        padding: 6px 14px !important;
+      }
+      #taskList {
+        padding: 10px 14px !important;
+        gap: 8px !important;
+      }
     }
 
     #taskModalHeader {
@@ -3629,6 +3609,341 @@
     }
 
     /* ── Tutorial Phase Bar ──────────────────────────────────────────────── */
+    /* ══════════════════════════════════════════════════════════════════
+       TUTORIAL INSTRUCTOR PANEL
+    ══════════════════════════════════════════════════════════════════ */
+    #tutInstructor {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-50%);
+      width: min(560px, 96vw);
+      background: linear-gradient(160deg, #091422 0%, #060d18 100%);
+      border: 1.5px solid rgba(244, 166, 35, 0.5);
+      border-radius: 16px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.85), 0 0 24px rgba(244,166,35,0.12);
+      z-index: 8000;
+      pointer-events: all;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: tutSlideIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    #tutInstructor.tut-exit {
+      animation: tutSlideOut 0.5s ease forwards;
+    }
+
+    #tutInstructor.tut-away {
+      animation: tutSlideAway 0.35s ease forwards;
+      pointer-events: none;
+    }
+
+    #tutInstructor.tut-back {
+      animation: tutSlideBack 0.35s cubic-bezier(0.22,1,0.36,1) forwards;
+      pointer-events: all;
+    }
+
+    @keyframes tutSlideIn {
+      from { opacity:0; transform:translateX(-50%) translateY(calc(-50% + 30px)) scale(0.96); }
+      to   { opacity:1; transform:translateX(-50%) translateY(-50%) scale(1); }
+    }
+    @keyframes tutSlideOut {
+      from { opacity:1; transform:translateX(-50%) translateY(-50%) scale(1); }
+      to   { opacity:0; transform:translateX(-50%) translateY(calc(-50% + 40px)) scale(0.95); }
+    }
+    @keyframes tutSlideAway {
+      from { opacity:1; transform:translateX(-50%) translateY(-50%) scale(1); }
+      to   { opacity:0; transform:translateX(-50%) translateY(calc(-50% - 70px)) scale(0.92); }
+    }
+    @keyframes tutSlideBack {
+      from { opacity:0; transform:translateX(-50%) translateY(calc(-50% - 40px)) scale(0.94); }
+      to   { opacity:1; transform:translateX(-50%) translateY(-50%) scale(1); }
+    }
+
+    /* Action hint bar — shown while guide is hidden */
+    #tutActionBar {
+      position: fixed;
+      bottom: 140px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(6,13,24,0.93);
+      border: 1.5px solid rgba(244,166,35,0.55);
+      border-radius: 28px;
+      padding: 9px 22px;
+      color: #F4A623;
+      font-family: 'Bebas Neue', cursive;
+      font-size: 14px;
+      letter-spacing: 2px;
+      z-index: 7999;
+      display: none;
+      pointer-events: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.7), 0 0 12px rgba(244,166,35,0.15);
+      white-space: nowrap;
+      animation: tutBarPulse 1.8s ease-in-out infinite;
+    }
+    @keyframes tutBarPulse {
+      0%,100% { box-shadow: 0 4px 20px rgba(0,0,0,0.7), 0 0 10px rgba(244,166,35,0.15); }
+      50%     { box-shadow: 0 4px 20px rgba(0,0,0,0.7), 0 0 22px rgba(244,166,35,0.45); }
+    }
+
+    /* Header row: avatar + name + skip */
+    #tutInstructorHeader {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid rgba(244,166,35,0.15);
+      background: rgba(30,20,5,0.35);
+    }
+
+    /* Instructor avatar */
+    #tutAvatar {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(160deg,#1a2e48,#0a1828);
+      border-radius: 50%;
+      border: 2px solid rgba(244,166,35,0.5);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 14px rgba(244,166,35,0.2);
+      overflow: hidden;
+    }
+
+    #tutAvatar.tut-avatar-talk {
+      animation: tutAvatarBob 0.5s ease;
+    }
+    @keyframes tutAvatarBob {
+      0%   { transform: scale(1); }
+      30%  { transform: scale(1.06) translateY(-2px); }
+      100% { transform: scale(1); }
+    }
+
+    #tutInstructorMeta { flex: 1; }
+
+    #tutInstructorName {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 18px;
+      color: #F4A623;
+      letter-spacing: 2px;
+      line-height: 1.1;
+    }
+
+    #tutInstructorTitle {
+      font-family: 'Courier New', monospace;
+      font-size: 9px;
+      color: rgba(244,166,35,0.45);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    #tutSkipBtn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.3);
+      font-family: 'Courier New', monospace;
+      font-size: 9px;
+      letter-spacing: 2px;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    #tutSkipBtn:hover { color: rgba(255,80,80,0.7); border-color: rgba(255,80,80,0.3); }
+
+    /* Progress track */
+    #tutProgressTrack {
+      height: 2px;
+      background: rgba(255,255,255,0.06);
+    }
+    #tutProgress {
+      height: 100%;
+      background: linear-gradient(90deg,#F4A623,#ffd700);
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    /* Step dots */
+    #tutDots {
+      display: flex;
+      gap: 5px;
+      padding: 8px 16px 4px;
+    }
+    .tut-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      transition: all 0.3s;
+    }
+    .tut-dot-done   { background: rgba(244,166,35,0.4); }
+    .tut-dot-active { background: #F4A623; box-shadow: 0 0 6px #F4A623; width:16px; border-radius:3px; }
+
+    /* Dialogue text */
+    #tutDialogue {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(13px, 2vw, 15px);
+      color: #d8eaf4;
+      line-height: 1.65;
+      padding: 12px 18px;
+      min-height: 80px;
+      white-space: pre-line;
+    }
+
+    /* Tip strip */
+    #tutTipRow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 18px 8px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    #tutTipIcon {
+      font-family: 'Courier New', monospace;
+      font-size: 8px;
+      color: #22ddff;
+      letter-spacing: 2px;
+      border: 1px solid rgba(34,221,255,0.3);
+      padding: 2px 7px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    #tutTip {
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      color: rgba(34,221,255,0.6);
+      letter-spacing: 0.5px;
+    }
+
+    /* Actions row */
+    #tutActions {
+      display: flex;
+      justify-content: flex-end;
+      padding: 8px 16px 14px;
+      gap: 8px;
+    }
+
+    #tutNextBtn {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 15px;
+      letter-spacing: 3px;
+      background: linear-gradient(135deg,#F4A623,#d08800);
+      color: #0a1020;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 32px;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(244,166,35,0.35);
+      transition: all 0.15s;
+    }
+    #tutNextBtn:hover  { background: linear-gradient(135deg,#ffc433,#F4A623); transform:translateY(-1px); }
+    #tutNextBtn:active { transform:scale(0.96); }
+
+    /* Directional compass arrow */
+    #tutArrow {
+      position: fixed;
+      top: 50%;
+      right: 22px;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      z-index: 7999;
+      pointer-events: none;
+      animation: tutArrowPulse 1.2s ease-in-out infinite;
+    }
+
+    .tut-arrow-icon {
+      font-size: 44px;
+      color: #F4A623;
+      text-shadow: 0 0 18px rgba(244,166,35,0.8), 0 0 6px rgba(244,166,35,0.5);
+      line-height: 1;
+    }
+
+    .tut-arrow-label {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 11px;
+      color: rgba(244,166,35,0.75);
+      letter-spacing: 2px;
+      text-align: center;
+    }
+
+    @keyframes tutArrowPulse {
+      0%,100% { opacity: 0.7; transform: translateY(-50%); }
+      50%      { opacity: 1.0; transform: translateY(calc(-50% - 6px)); }
+    }
+
+    /* Arrow variants per direction */
+    #tutArrow.dir-north { top: 12%; right: auto; left:50%; transform:translateX(-50%); }
+    #tutArrow.dir-south { top: auto; bottom:140px; right:auto; left:50%; transform:translateX(-50%); }
+    #tutArrow.dir-east  { top: 50%; right: 18px; transform:translateY(-50%); }
+    #tutArrow.dir-west  { top: 50%; left: 18px; right:auto; transform:translateY(-50%); }
+
+    @keyframes tutArrowPulseH {
+      0%,100% { opacity:0.7; }
+      50%      { opacity:1.0; }
+    }
+
+    /* Highlight ring on UI elements */
+    .tut-highlight {
+      outline: 3px solid #F4A623 !important;
+      outline-offset: 3px !important;
+      box-shadow: 0 0 0 6px rgba(244,166,35,0.25), 0 0 20px rgba(244,166,35,0.3) !important;
+      animation: tutHighPulse 1s ease-in-out infinite !important;
+    }
+
+    @keyframes tutHighPulse {
+      0%,100% { outline-color: #F4A623; box-shadow: 0 0 0 4px rgba(244,166,35,0.2), 0 0 16px rgba(244,166,35,0.25); }
+      50%      { outline-color: #ffd700; box-shadow: 0 0 0 8px rgba(244,166,35,0.1), 0 0 28px rgba(244,166,35,0.4); }
+    }
+
+    /* ── Tutorial pointer (animated arrow pointing at a UI element) ─────── */
+    #tutPointer {
+      position: fixed;
+      z-index: 8100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      pointer-events: none;
+      transition: left 0.3s ease, top 0.3s ease;
+    }
+    .tut-ptr-bounce {
+      font-size: 28px;
+      color: #F4A623;
+      text-shadow: 0 0 14px rgba(244,166,35,0.9), 0 0 6px rgba(244,166,35,0.6);
+      animation: tutPtrBounce 0.7s ease-in-out infinite;
+      line-height: 1;
+    }
+    .tut-ptr-label {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: rgba(244,166,35,0.85);
+      background: rgba(8,14,26,0.75);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(244,166,35,0.3);
+      white-space: nowrap;
+    }
+    @keyframes tutPtrBounce {
+      0%,100% { transform: translateY(0px); }
+      50%      { transform: translateY(-7px); }
+    }
+
+    /* Mobile adjustments */
+    @media (max-height: 600px) {
+      #tutInstructor { max-height: 85vh; overflow-y: auto; }
+      #tutDialogue   { min-height: 60px; font-size: 12px; padding: 8px 14px; }
+    }
+
+    @media (max-width: 480px) {
+      #tutInstructor { width: 98vw; border-radius: 12px; }
+      #tutInstructorName { font-size: 15px; }
+    }
+
     #tutPhaseBar {
       display: none;
       position: fixed;
@@ -5808,8 +6123,7 @@
 
       /* ── Kill GPU-draining CSS animations on mobile ───────────── */
       /* Button glow pulses */
-      #btnPauseTop,
-      #btnTopTasks {
+      #btnPauseTop {
         animation: none !important;
       }
 
@@ -6033,13 +6347,14 @@
         font-size: 11px !important;
       }
 
-      /* Star HUD — smaller on mobile */
+      /* Star HUD — smaller on mobile, anchor to top-left */
       #starHUD,
       #starHUD2 {
         top: 8px !important;
-        right: 8px !important;
-        transform: scale(0.85) !important;
-        transform-origin: top right !important;
+        left: 156px !important;
+        right: auto !important;
+        transform: scale(0.88) !important;
+        transform-origin: top left !important;
       }
 
       /* Status items in top bar — hide verbose ones on very small screens */
@@ -6047,10 +6362,36 @@
         display: none !important;
       }
 
-      /* Task panel — don't let it cover too much on mobile */
+      /* Task panel — slide up from bottom on mobile */
       #taskPanel {
-        max-height: 55vh !important;
-        width: min(94vw, 340px) !important;
+        padding: 0 !important;
+        align-items: flex-end !important;
+        justify-content: flex-end !important;
+      }
+      #taskModalInner {
+        max-width: 100% !important;
+        width: 100% !important;
+        max-height: 70vh !important;
+        border-radius: 18px 18px 0 0 !important;
+        border-bottom: none !important;
+      }
+      #taskModalHeader {
+        padding: 12px 16px 10px !important;
+      }
+      #taskModalTitle {
+        font-size: 20px !important;
+      }
+      #taskList {
+        padding: 10px 12px !important;
+        gap: 7px !important;
+      }
+      /* Override JS inline styles for task items on mobile */
+      #taskList > div {
+        padding: 10px 12px !important;
+        border-radius: 10px !important;
+      }
+      #taskList > div > div:first-child {
+        font-size: 18px !important;
       }
 
       /* Joystick: GPU-compositing hint */
@@ -7517,10 +7858,9 @@
     <div id="ptrMsg">Click to lock pointer &bull; WASD to move &bull; E to interact &bull; ESC to unlock</div>
   </div>
 
-  <!-- Legacy controls div (hidden) — kept so old JS references don't break -->
+  <!-- Legacy controls div (hidden) -->
   <div id="controls" style="display:none!important;">
     <div id="wasdPad"></div>
-    <button id="btnSprint" style="display:none"></button>
   </div>
 
   <!-- Full-screen look zone (right side drag to look) -->
@@ -7533,8 +7873,9 @@
       <div id="joyRingB"></div>
       <div id="joyInner"></div>
     </div>
-    <button id="btnDpadSprint">RUN</button>
   </div>
+
+  <!-- Sprint button removed -->
 
   <div id="computerUI">
     <div id="compHeader">
@@ -7657,8 +7998,8 @@
     <button id="btnExitCCTV">RETURN TO TERMINAL</button>
   </div>
 
-  <!-- ── HUD TOP BAR: hamburger (center) + tasks (right) ─── -->
-  <button id="btnTopTasks">TASKS</button>
+  <!-- ── HUD TOP BAR: hamburger (right corner only) ─── -->
+  <!-- #btnTopTasks removed — star HUD is center; hamburger is top-right -->
 
   <!-- Hamburger button — center top -->
   <button id="btnPauseTop" aria-label="Menu">
@@ -7691,6 +8032,16 @@
         <button class="igm-btn" id="btnRestartLevel">
           <span class="igm-btn-ico">&#8635;</span> RESTART LEVEL
         </button>
+
+        <!-- Restart confirmation (hidden by default) -->
+        <div id="igmConfirm" style="display:none; flex-direction:column; gap:10px; background:rgba(30,10,10,0.6); border:1px solid rgba(231,76,60,0.4); border-radius:10px; padding:14px 16px;">
+          <div style="font-family:'Bebas Neue',cursive; font-size:16px; color:#ff6655; letter-spacing:2px;">RESTART LEVEL?</div>
+          <div style="font-family:'Courier New',monospace; font-size:11px; color:rgba(255,200,200,0.65); line-height:1.5;">This will reset ALL task progress on this level. Are you sure?</div>
+          <div style="display:flex; gap:8px;">
+            <button class="igm-btn igm-btn-danger" id="btnConfirmRestart" style="flex:1;">YES, RESTART</button>
+            <button class="igm-btn" id="btnCancelRestart" style="flex:1;">CANCEL</button>
+          </div>
+        </div>
 
         <!-- Settings section -->
         <div class="igm-section-title">SETTINGS</div>
@@ -7726,6 +8077,75 @@
 
   <!-- ── PAUSE MENU (kept as empty shell so main.js refs don't break) ── -->
   <div id="pauseMenu" style="display:none!important;"></div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       TUTORIAL — Instructor Panel
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div id="tutInstructor" style="display:none;">
+    <!-- Instructor identity strip -->
+    <div id="tutInstructorHeader">
+      <div id="tutAvatar">
+        <svg viewBox="0 0 48 48" width="48" height="48">
+          <!-- Hard hat -->
+          <ellipse cx="24" cy="17" rx="14" ry="10" fill="#F4A623"/>
+          <rect x="10" y="22" width="28" height="4" rx="2" fill="#e09600"/>
+          <!-- Brim -->
+          <rect x="7" y="24" width="34" height="3" rx="1.5" fill="#d08800"/>
+          <!-- Face -->
+          <ellipse cx="24" cy="32" rx="10" ry="11" fill="#f5c8a0"/>
+          <!-- Eyes -->
+          <circle cx="20" cy="30" r="1.8" fill="#2a1800"/>
+          <circle cx="28" cy="30" r="1.8" fill="#2a1800"/>
+          <!-- Smile -->
+          <path d="M19 35 Q24 40 29 35" stroke="#2a1800" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <!-- Collar -->
+          <rect x="16" y="42" width="16" height="4" rx="2" fill="#1a4a8a"/>
+          <!-- Safety vest stripe -->
+          <rect x="16" y="43" width="16" height="1.5" fill="#F4A623"/>
+        </svg>
+      </div>
+      <div id="tutInstructorMeta">
+        <div id="tutInstructorName">SIR JUAN</div>
+        <div id="tutInstructorTitle">PINOYTEK TRAINER</div>
+      </div>
+      <button id="tutSkipBtn" title="Skip tutorial">SKIP</button>
+    </div>
+
+    <!-- Progress bar + dots -->
+    <div id="tutProgressTrack">
+      <div id="tutProgress"></div>
+    </div>
+    <div id="tutDots"></div>
+
+    <!-- Dialogue text area -->
+    <div id="tutDialogue"></div>
+
+    <!-- Tip strip -->
+    <div id="tutTipRow">
+      <span id="tutTipIcon">TIP</span>
+      <span id="tutTip"></span>
+    </div>
+
+    <!-- Actions -->
+    <div id="tutActions">
+      <button id="tutNextBtn" style="display:none;">NEXT</button>
+    </div>
+  </div>
+
+  <!-- Tutorial direction arrow (screen-space compass) -->
+  <div id="tutArrow" style="display:none;">
+    <div class="tut-arrow-icon">↑</div>
+    <div class="tut-arrow-label">GO NORTH</div>
+  </div>
+
+  <!-- Tutorial pointer — animated arrow pointing at UI elements -->
+  <div id="tutPointer" style="display:none;">
+    <div class="tut-ptr-bounce">▼</div>
+    <div class="tut-ptr-label">TAP HERE</div>
+  </div>
+
+  <!-- Tutorial action hint bar — visible while guide panel is hidden -->
+  <div id="tutActionBar">TRY IT NOW!</div>
 
   <!-- ── FEEDBACK LOG ─────────────────────────────────────────────────────── -->
   <div id="feedbackLog"></div>
@@ -9549,20 +9969,20 @@
       display: none;
       position: fixed;
       top: 14px;
-      right: 20px;
+      left: 50%;
+      transform: translateX(-50%);
       z-index: 200;
       background: rgba(8, 18, 30, 0.93);
       border: 1px solid rgba(255, 210, 0, 0.45);
       border-radius: 6px;
-      padding: 7px 14px 7px 12px;
+      padding: 5px 12px 5px 6px;
       font-family: 'Bebas Neue', cursive;
       font-size: 14px;
       letter-spacing: 1.5px;
       color: rgba(255, 255, 255, 0.75);
-      display: none;
       align-items: center;
-      gap: 8px;
-      pointer-events: none;
+      gap: 6px;
+      pointer-events: auto;
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 10px rgba(255, 210, 0, 0.06) inset;
     }
 
@@ -9747,13 +10167,13 @@
     }
   </style>
 
-  <!-- Unified Star HUD (top-right, shown during any level) -->
-  <div id="starHUD" style="display:none; position:fixed; top:14px; right:20px; z-index:200;
+  <!-- Unified Star HUD (center top, shown during any level) -->
+  <div id="starHUD" style="display:none; position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:200;
     background:rgba(8,18,30,0.93); border:1px solid rgba(255,210,0,0.45); border-radius:6px;
-    padding:7px 14px 7px 12px; font-family:'Bebas Neue',cursive; font-size:14px;
+    padding:5px 16px; font-family:'Bebas Neue',cursive; font-size:14px;
     letter-spacing:1.5px; color:rgba(255,255,255,0.75); align-items:center; gap:8px;
-    pointer-events:none; box-shadow:0 4px 18px rgba(0,0,0,0.6);">
-    <span class="sh-label" id="sh-label">TASK</span>
+    pointer-events:auto; box-shadow:0 4px 18px rgba(0,0,0,0.6); cursor:pointer;">
+    <span class="sh-label" id="sh-label">S1</span>
     <span class="sh-star" id="sh-s1">★</span>
     <span class="sh-star" id="sh-s2">★</span>
     <span class="sh-star" id="sh-s3">★</span>
@@ -9772,8 +10192,9 @@
       </div>
       <div class="lcm-next" id="lcm-next-msg" style="display:none;"></div>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <button class="lcm-btn" id="lcmNextBtn" style="display:none;background:linear-gradient(135deg,#F5C200,#e0a500);color:#000;">NEXT LEVEL ▶</button>
-        <button class="lcm-btn" id="lcmBackBtn" style="background:rgba(255,184,0,0.08);border:1px solid rgba(255,184,0,0.3);color:#FFB800;">BACK TO MENU</button>
+        <button class="lcm-btn" id="lcmPrevBtn" style="display:none;background:rgba(255,184,0,0.08);border:1px solid rgba(255,184,0,0.3);color:#FFB800;">◀ PREV</button>
+        <button class="lcm-btn" id="lcmNextBtn" style="display:none;background:linear-gradient(135deg,#F5C200,#e0a500);color:#000;">NEXT ▶</button>
+        <button class="lcm-btn" id="lcmExitBtn" style="background:rgba(255,184,0,0.08);border:1px solid rgba(255,184,0,0.3);color:#FFB800;">EXIT</button>
       </div>
     </div>
   </div>

@@ -434,12 +434,192 @@ canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0}
       <div class="so-stat"><div class="so-stat-val" id="so-hints">--</div><div class="so-stat-lbl">Hints Used</div></div>
       <div class="so-stat"><div class="so-stat-val" id="so-rating" style="font-size:28px;letter-spacing:2px;">--</div><div class="so-stat-lbl">Stars</div></div>
     </div>
-    <div class="so-btns">
-      <button class="so-btn sec" id="btn-change-type" onclick="goSelection()">CHANGE TYPE</button>
-      <button class="so-btn" onclick="playAgain()">PLAY AGAIN</button>
+    <div class="so-btns" id="so-nav-btns">
+      <button class="so-btn sec" id="so-btn-prev" style="display:none;" onclick="soNavPrev()">&#9664; PREV</button>
+      <button class="so-btn sec" id="so-btn-again" onclick="playAgain()">PLAY AGAIN</button>
+      <button class="so-btn sec" id="so-btn-exit" onclick="soNavExit()">EXIT</button>
+      <button class="so-btn" id="so-btn-next" style="display:none;" onclick="soNavNext()">NEXT &#9654;</button>
     </div>
   </div>
 </div>
+
+<!-- ── INSTRUCTOR INTRO PANEL (Sir Juan) ── -->
+<div id="scnTutPanel" style="
+  display:none; position:fixed; top:50%; left:50%; transform:translateX(-50%) translateY(-50%);
+  width:min(540px,96vw); background:linear-gradient(160deg,#091422,#060d18);
+  border:1.5px solid rgba(244,166,35,0.5); border-radius:16px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.85); z-index:9999; pointer-events:all;
+  flex-direction:column; overflow:hidden; font-family:'Barlow',sans-serif;
+  animation: scnTutIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
+">
+  <style>
+    @keyframes scnTutIn { from{opacity:0;transform:translateX(-50%) translateY(calc(-50% + 30px))} to{opacity:1;transform:translateX(-50%) translateY(-50%)} }
+    @keyframes scnTutOut { from{opacity:1;transform:translateX(-50%) translateY(-50%)} to{opacity:0;transform:translateX(-50%) translateY(calc(-50% + 30px))} }
+    #scnTutPanel.closing { animation:scnTutOut 0.35s ease forwards; }
+    #scnActionBar {
+      position:fixed; bottom:100px; left:50%; transform:translateX(-50%);
+      background:rgba(6,13,24,0.93); border:1.5px solid rgba(255,215,0,0.55);
+      border-radius:28px; padding:9px 22px; color:#ffd700;
+      font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:700; letter-spacing:2px;
+      z-index:9998; pointer-events:none; display:none; white-space:nowrap;
+      animation: scnBarPulse 1.8s ease-in-out infinite;
+    }
+    @keyframes scnBarPulse {
+      0%,100% { box-shadow:0 4px 20px rgba(0,0,0,0.7),0 0 10px rgba(255,215,0,0.1); }
+      50%     { box-shadow:0 4px 20px rgba(0,0,0,0.7),0 0 22px rgba(255,215,0,0.4); }
+    }
+    #scnTutHeader { display:flex; align-items:center; gap:12px; padding:12px 16px 8px; border-bottom:1px solid rgba(244,166,35,0.15); background:rgba(30,20,5,0.35); }
+    #scnTutAva { width:48px; height:48px; border-radius:50%; border:2px solid rgba(244,166,35,0.5); flex-shrink:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,#1a2e48,#0a1828); overflow:hidden; }
+    #scnTutName { font-family:'Barlow Condensed',sans-serif; font-size:17px; font-weight:700; color:#F4A623; letter-spacing:2px; }
+    #scnTutRole { font-size:9px; color:rgba(244,166,35,0.45); letter-spacing:2px; text-transform:uppercase; }
+    #scnTutText { font-size:clamp(12px,2vw,14px); color:#d8eaf4; line-height:1.65; padding:12px 18px; min-height:72px; white-space:pre-line; }
+    #scnTutStep { font-size:9px; color:rgba(34,221,255,0.5); letter-spacing:2px; padding:0 18px 8px; }
+    #scnTutActions { display:flex; justify-content:flex-end; padding:8px 16px 12px; gap:8px; }
+    #scnTutNext { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; letter-spacing:3px; background:linear-gradient(135deg,#F4A623,#d08800); color:#0a1020; border:none; border-radius:8px; padding:10px 28px; cursor:pointer; }
+    #scnTutSkip { background:transparent; border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.3); font-size:10px; letter-spacing:1px; padding:8px 14px; border-radius:6px; cursor:pointer; font-family:'Barlow',sans-serif; }
+  </style>
+  <div id="scnTutHeader">
+    <div id="scnTutAva">
+      <svg viewBox="0 0 48 48" width="40" height="40">
+        <ellipse cx="24" cy="17" rx="14" ry="10" fill="#F4A623"/>
+        <rect x="10" y="22" width="28" height="4" rx="2" fill="#e09600"/>
+        <rect x="7" y="24" width="34" height="3" rx="1.5" fill="#d08800"/>
+        <ellipse cx="24" cy="32" rx="10" ry="11" fill="#f5c8a0"/>
+        <circle cx="20" cy="30" r="1.8" fill="#2a1800"/>
+        <circle cx="28" cy="30" r="1.8" fill="#2a1800"/>
+        <path d="M19 35 Q24 40 29 35" stroke="#2a1800" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <rect x="16" y="42" width="16" height="4" rx="2" fill="#1a4a8a"/>
+        <rect x="16" y="43" width="16" height="1.5" fill="#F4A623"/>
+      </svg>
+    </div>
+    <div>
+      <div id="scnTutName">SIR JUAN</div>
+      <div id="scnTutRole">PINOYTEK TRAINER</div>
+    </div>
+    <button id="scnTutSkip" onclick="scnTutClose(true)">SKIP</button>
+  </div>
+  <div id="scnTutText"></div>
+  <div id="scnTutStep"></div>
+  <div id="scnTutActions">
+    <button id="scnTutNext" onclick="scnTutNext()">NEXT</button>
+  </div>
+</div>
+
+<!-- Tutorial action hint bar — shown while panel is hidden during wiring -->
+<div id="scnActionBar"></div>
+
+<script>
+// ── Scenario Tutorial (Sir Juan) ──────────────────────────────────────────────
+const _scnUrlType = new URLSearchParams(location.search).get('type') || '1way';
+
+// Steps: btn=button label, hideToWire=hide panel after tapping btn and wait for wire
+const SCN_STEPS_MAP = {
+  '1way': [
+    { text: "Welcome to SWITCH WIRING — 1-WAY!\n\nA single-pole switch controls a light from ONE location.\n\nI'll guide you through each wire connection step by step.", label: "1 of 6", btn: 'NEXT' },
+    { text: "WIRE COLORS (IEC 60446):\nBROWN = Live (L) — main supply\nBLUE = Neutral (N) — return path\nGREEN/YELLOW = Earth (PE) — safety ground\n\nNever mix them — wrong colors are dangerous!", label: "2 of 6", btn: 'NEXT' },
+    { text: "First wire — LIVE (brown).\n\nPick the brown wire from the Wire Tray. Connect it to the LINE terminal on the switch.\n\nI'll hide this panel — connect the wire, then I'll come back!", label: "3 of 6", btn: 'GOT IT', hideToWire: true, actionHint: 'PICK LIVE WIRE → CONNECT TO LINE TERMINAL' },
+    { text: "Second wire — SWITCHED LIVE.\n\nConnect the switch LOAD terminal to the lamp's L-IN terminal.\n\nThis wire carries current only when the switch is closed.", label: "4 of 6", btn: 'GOT IT', hideToWire: true, actionHint: 'CONNECT SWITCH LOAD → LAMP L-IN' },
+    { text: "Last wire — NEUTRAL (blue).\n\nConnect the blue wire directly to the lamp N terminal.\n\nNeutral bypasses the switch completely — it's always connected.", label: "5 of 6", btn: 'GOT IT', hideToWire: true, actionHint: 'CONNECT NEUTRAL WIRE → LAMP N TERMINAL' },
+    { text: "All wired!\n\nCheck:\n L → Switch LINE\n LOAD → Lamp L-IN\n N → Lamp N (bypass)\n\nNow tap the SWITCH on the wall to test the circuit!\n\nSafety: always de-energize before servicing any circuit.", label: "6 of 6", btn: 'START TESTING' },
+  ],
+  '2way': [
+    { text: "Welcome to SWITCH WIRING — 2-WAY!\n\nTwo switches, one light — flipping either switch toggles the lamp.\n\nUsed on staircases and long corridors.", label: "1 of 6", btn: 'NEXT' },
+    { text: "KEY CONCEPT — TRAVELLER WIRES:\nBROWN = Live (L)\nBLUE = Neutral (N)\nGREY/other = Travellers (T1, T2)\n\nTravellers carry the switched signal between the two switches.", label: "2 of 6", btn: 'NEXT' },
+    { text: "First — LIVE to Switch A.\n\nPick the LIVE wire. Connect it to Switch A's COM terminal.\n\nI'll step aside while you connect it.", label: "3 of 6", btn: 'GOT IT', hideToWire: true, actionHint: 'LIVE WIRE → SWITCH A COM TERMINAL' },
+    { text: "Now — TRAVELLER wires.\n\nConnect T1 and T2 between Switch A and Switch B.\n\nBoth travellers must be connected — they link the two switches together.", label: "4 of 6", btn: 'GOT IT', hideToWire: true, actionHint: 'CONNECT T1 AND T2 TRAVELLERS BETWEEN SWITCHES' },
+    { text: "Final connections.\n\nConnect Switch B COM to the lamp L-IN.\nThen connect NEUTRAL directly to the lamp N terminal.", label: "5 of 6", btn: 'GOT IT', hideToWire: true, actionHint: 'SW-B COM → LAMP, NEUTRAL → LAMP N' },
+    { text: "Circuit complete!\n\nTest it — tap EITHER switch. Both should toggle the same lamp.\n\nThis is the standard 2-way switch circuit (BS 7671 / PEC).", label: "6 of 6", btn: 'START TESTING' },
+  ],
+  '3way': [
+    { text: "Welcome to SWITCH WIRING — 3-WAY!\n\nThree switches, one light — any switch can toggle the lamp.\n\nThe secret is the INTERMEDIATE switch in the middle that crosses the traveller wires.", label: "1 of 7", btn: 'NEXT' },
+    { text: "COMPONENTS:\nSwitch A (2-way) — at one end\nIntermediate Switch — in the middle\nSwitch C (2-way) — at the other end\n\nThe intermediate switch has 4 terminals and crosses L1↔L3, L2↔L4.", label: "2 of 7", btn: 'NEXT' },
+    { text: "First — LIVE to Switch A.\n\nPick the LIVE wire. Connect it to Switch A's COM terminal.\n\nI'll step aside while you connect it.", label: "3 of 7", btn: 'GOT IT', hideToWire: true, actionHint: 'LIVE WIRE → SWITCH A COM TERMINAL' },
+    { text: "Left traveller wires.\n\nConnect T1 and T2 from Switch A to the LEFT inputs (L1, L2) of the Intermediate Switch.", label: "4 of 7", btn: 'GOT IT', hideToWire: true, actionHint: 'SWITCH A T1,T2 → INTERMEDIATE L1,L2' },
+    { text: "Right traveller wires.\n\nConnect the RIGHT outputs (L3, L4) of the Intermediate Switch to Switch C's T1 and T2.", label: "5 of 7", btn: 'GOT IT', hideToWire: true, actionHint: 'INTERMEDIATE L3,L4 → SWITCH C T1,T2' },
+    { text: "Final connections.\n\nConnect Switch C COM to the lamp L-IN.\nConnect NEUTRAL directly to the lamp N terminal.", label: "6 of 7", btn: 'GOT IT', hideToWire: true, actionHint: 'SWITCH C COM → LAMP, NEUTRAL → LAMP N' },
+    { text: "Three-way circuit complete!\n\nTest it — tap ANY of the three switches to toggle the light.\n\nYou've mastered the most complex domestic wiring type!", label: "7 of 7", btn: 'START TESTING' },
+  ],
+};
+
+const SCN_STEPS = SCN_STEPS_MAP[_scnUrlType] || SCN_STEPS_MAP['1way'];
+let _scnStep = 0;
+let _scnTyping = null;
+let _scnAwaitingWire = false;
+
+function scnTutShow() {
+  if (localStorage.getItem('et_scn_tut_' + _scnUrlType + '_done') === '1') return;
+  _scnStep = 0;
+  _scnAwaitingWire = false;
+  _renderScnStep();
+}
+
+function _renderScnStep() {
+  const s = SCN_STEPS[_scnStep];
+  if (!s) { _scnMarkDone(); return; }
+  const t  = document.getElementById('scnTutText');
+  const st = document.getElementById('scnTutStep');
+  const btn = document.getElementById('scnTutNext');
+  const bar = document.getElementById('scnActionBar');
+  const p   = document.getElementById('scnTutPanel');
+  if (st)  st.textContent  = s.label || '';
+  if (btn) btn.textContent = s.btn   || 'NEXT';
+  if (bar) bar.style.display = 'none';
+  _scnAwaitingWire = false;
+  if (t) {
+    clearTimeout(_scnTyping);
+    t.textContent = '';
+    const chars = s.text.split('');
+    let i = 0;
+    function type() {
+      if (i < chars.length) {
+        t.textContent += chars[i++];
+        _scnTyping = setTimeout(type, chars[i-1] === '\n' ? 100 : 20);
+      }
+    }
+    type();
+  }
+  if (p) { p.classList.remove('closing'); p.style.display = 'flex'; }
+}
+
+function scnTutNext() {
+  const s = SCN_STEPS[_scnStep];
+  if (!s) return;
+  if (s.hideToWire) {
+    // Hide panel, show action bar, wait for wire connection
+    _scnAwaitingWire = true;
+    const p   = document.getElementById('scnTutPanel');
+    const bar = document.getElementById('scnActionBar');
+    if (p) { p.classList.add('closing'); setTimeout(() => { p.style.display = 'none'; }, 380); }
+    if (bar && s.actionHint) { bar.textContent = s.actionHint; bar.style.display = 'block'; }
+    return;
+  }
+  _scnStep++;
+  if (_scnStep >= SCN_STEPS.length) { _scnMarkDone(); return; }
+  _renderScnStep();
+}
+
+// Called from afterWireConnected() each time a wire is connected
+function scnTutOnWireConnected() {
+  if (!_scnAwaitingWire) return;
+  _scnStep++;
+  if (_scnStep >= SCN_STEPS.length) { _scnMarkDone(); return; }
+  setTimeout(() => _renderScnStep(), 400);
+}
+
+function scnTutClose(markDone) {
+  const p   = document.getElementById('scnTutPanel');
+  const bar = document.getElementById('scnActionBar');
+  if (p) { p.classList.add('closing'); setTimeout(() => { p.style.display = 'none'; }, 380); }
+  if (bar) bar.style.display = 'none';
+  if (markDone) _scnMarkDone();
+}
+
+function _scnMarkDone() {
+  const bar = document.getElementById('scnActionBar');
+  if (bar) bar.style.display = 'none';
+  localStorage.setItem('et_scn_tut_' + _scnUrlType + '_done', '1');
+}
+</script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -510,6 +690,90 @@ const floor = new THREE.Mesh(new THREE.PlaneGeometry(18, 10),
 floor.rotation.x = -Math.PI / 2; floor.position.y = -3.8; floor.receiveShadow = true; scene.add(floor);
 const ceiling = box(18, 0.06, 0.1, 0x0e2c42, 0.9, 0);
 ceiling.position.set(0, 4.2, -1.5); scene.add(ceiling);
+
+// ════════════════════════════════════════════════════════
+// MAINS SUPPLY TERMINAL — live power source on the left wall
+// Shows where L, N and PE wires originate from (floating tails)
+// ════════════════════════════════════════════════════════
+(function buildSupplyTerminal() {
+  const root = new THREE.Group();
+  root.position.set(-5.2, 0.15, -1.72);
+  scene.add(root);
+
+  // Main junction box body
+  const body = box(0.72, 1.5, 0.22, 0x2a2a28, 0.85, 0.12);
+  body.castShadow = true; root.add(body);
+
+  // Front face plate (slightly lighter)
+  const face = box(0.66, 1.44, 0.05, 0x3a3a36, 0.75, 0.08);
+  face.position.z = 0.135; root.add(face);
+
+  // "MAINS" label strip (narrow gold bar at top)
+  const labelBar = box(0.58, 0.12, 0.06, 0xb8860b, 0.6, 0.2);
+  labelBar.position.set(0, 0.64, 0.145); root.add(labelBar);
+
+  // AC symbol — two small arcs represented as thin curved cylinders (approximated with boxes)
+  const acLeft  = box(0.04, 0.14, 0.02, 0xffd700, 0.3, 0.5, 1.2);
+  acLeft.position.set(-0.08, 0.64, 0.16); acLeft.rotation.z = 0.5; root.add(acLeft);
+  const acRight = box(0.04, 0.14, 0.02, 0xffd700, 0.3, 0.5, 1.2);
+  acRight.position.set(0.08, 0.64, 0.16); acRight.rotation.z = -0.5; root.add(acRight);
+
+  // Cable entry gland at the top
+  const gland = cyl(0.07, 0.08, 0.18, 12, 0x555550, 0.5, 0.4);
+  gland.rotation.z = Math.PI / 2; gland.position.set(0.0, 0.82, 0.01); root.add(gland);
+
+  // Three terminal screws (Brown=L, Blue=N, GreenYellow=PE)
+  const terminals = [
+    { color: 0x7c2d12, y:  0.38, label: 'L'  },  // brown (dark red-brown)
+    { color: 0x1e3a5f, y:  0.0,  label: 'N'  },   // blue (dark)
+    { color: 0x14532d, y: -0.38, label: 'PE' },   // green
+  ];
+  terminals.forEach(({ color, y }) => {
+    // Terminal block slot
+    const slot = box(0.5, 0.18, 0.07, 0x252522, 0.9, 0.05);
+    slot.position.set(0, y, 0.145); root.add(slot);
+    // Colored wire indicator
+    const indicator = box(0.38, 0.10, 0.04, color, 0.7, 0.05);
+    indicator.position.set(0, y, 0.175); root.add(indicator);
+    // Screw head
+    const screw = cyl(0.04, 0.038, 0.04, 8, 0x888888, 0.25, 0.7);
+    screw.rotation.x = Math.PI / 2;
+    screw.position.set(0.18, y, 0.21); root.add(screw);
+  });
+
+  // Floating wire tails — short stubs extending rightward from the terminal
+  // These represent the unconnected "live tails" of the incoming cable
+  const tailColors = [0xb45309, 0x2563eb, 0x16a34a]; // brown, blue, green
+  const tailY = [0.38, 0.0, -0.38];
+  tailColors.forEach((col, i) => {
+    const pts = [
+      new THREE.Vector3(0.4, tailY[i], 0.05),
+      new THREE.Vector3(0.9, tailY[i] + (i === 0 ? 0.1 : i === 2 ? -0.1 : 0), 0.04),
+      new THREE.Vector3(1.3, tailY[i] + (i === 0 ? 0.05 : i === 2 ? -0.05 : 0.1), 0.02),
+    ];
+    const curve = new THREE.CatmullRomCurve3(pts);
+    const wireMesh = new THREE.Mesh(
+      new THREE.TubeGeometry(curve, 16, 0.025, 6, false),
+      new THREE.MeshStandardMaterial({ color: col, roughness: 0.6, metalness: 0.05 })
+    );
+    root.add(wireMesh);
+    // Bare copper tip (stripped end)
+    const tip = cyl(0.026, 0.024, 0.06, 6, 0xd4a853, 0.3, 0.6);
+    tip.rotation.z = Math.PI / 2;
+    const endPt = pts[pts.length - 1];
+    tip.position.set(endPt.x + 0.36, endPt.y, endPt.z);
+    root.add(tip);
+  });
+
+  // A small warning label strip (red — indicates live supply)
+  const warnStrip = box(0.62, 0.06, 0.04, 0x7f1d1d, 0.7, 0.05, 0.3);
+  warnStrip.position.set(0, -0.65, 0.16); root.add(warnStrip);
+
+  // Subtle point light to draw attention to the terminal
+  const termLight = new THREE.PointLight(0xffa040, 0.4, 3.5);
+  termLight.position.set(1.0, 0.2, 0.5);
+  root.add(termLight);
+})();
 
 // ════════════════════════════════════════════════════════
 // SWITCH FACTORY
@@ -1121,6 +1385,9 @@ function afterWireConnected() {
   const total = cfg.wires.length;
   const done = APP.connected.size;
 
+  // Advance scenario tutorial if it's waiting for a wire connection
+  if (typeof scnTutOnWireConnected === 'function') scnTutOnWireConnected();
+
   if (done === total) {
     // All wires done — enter testing phase
     setTimeout(() => enterTesting(), 700);
@@ -1400,15 +1667,52 @@ function circuitSuccess() {
   // Save to DB
   _saveCompletion(APP.type, stars, APP.errors, APP.hintsUsed);
 
+  // Setup Prev / Next / Exit navigation
+  const TYPE_ORDER = ['1way', '2way', '3way'];
+  const ci = TYPE_ORDER.indexOf(APP.type);
+  const prevType = ci > 0 ? TYPE_ORDER[ci - 1] : null;
+  const nextType = ci < TYPE_ORDER.length - 1 ? TYPE_ORDER[ci + 1] : null;
+  const btnPrev = document.getElementById('so-btn-prev');
+  const btnNext = document.getElementById('so-btn-next');
+  if (btnPrev) btnPrev.style.display = prevType ? 'block' : 'none';
+  if (btnNext) btnNext.style.display = nextType ? 'block' : 'none';
+  if (btnNext && nextType) {
+    const NAMES = { '1way': '1-WAY', '2way': '2-WAY', '3way': '3-WAY' };
+    btnNext.textContent = NAMES[nextType] + ' \u25B6';
+  }
+  if (btnPrev && prevType) {
+    const NAMES = { '1way': '1-WAY', '2way': '2-WAY', '3way': '3-WAY' };
+    btnPrev.textContent = '\u25C4 ' + NAMES[prevType];
+  }
+
   animCam(new THREE.Vector3(0, 1.2, 9.5), new THREE.Vector3(0, 1.0, 0), 1000, () => {
     document.getElementById('success-overlay').classList.add('show');
   });
+}
+
+function soNavExit() {
+  const fromParam = new URLSearchParams(location.search).get('from');
+  if (fromParam === 'workshop') { window.location.href = 'index.html'; }
+  else { window.history.length > 1 ? window.history.back() : window.location.href = 'index.html'; }
+}
+function soNavPrev() {
+  const TYPE_ORDER = ['1way', '2way', '3way'];
+  const ci = TYPE_ORDER.indexOf(APP.type);
+  if (ci > 0) { window.location.href = '?type=' + TYPE_ORDER[ci - 1] + '&from=' + (new URLSearchParams(location.search).get('from') || ''); }
+}
+function soNavNext() {
+  const TYPE_ORDER = ['1way', '2way', '3way'];
+  const ci = TYPE_ORDER.indexOf(APP.type);
+  if (ci < TYPE_ORDER.length - 1) { window.location.href = '?type=' + TYPE_ORDER[ci + 1] + '&from=' + (new URLSearchParams(location.search).get('from') || ''); }
 }
 
 // ════════════════════════════════════════════════════════
 // START / RESET
 // ════════════════════════════════════════════════════════
 function startType(type) {
+  // Show instructor intro the first time
+  setTimeout(scnTutShow, 600);
+
   APP.type = type;
   APP.state = 'explore';
   APP.heldWire = null;

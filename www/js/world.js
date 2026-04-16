@@ -5,27 +5,32 @@ import { makeFloorTex, makeWallTex, makeCeilTex, makeMetalTex, makeConcrTex, mak
 export const isMobile = navigator.maxTouchPoints > 0;
 export const renderer = new THREE.WebGLRenderer({
   canvas: document.getElementById('c'),
-  antialias: true,
+  antialias: !isMobile,          // MSAA is expensive on mobile — skip it
   powerPreference: 'high-performance',
-  precision: 'highp',
+  precision: isMobile ? 'mediump' : 'highp',
 });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 2.0 : 1.5));
+renderer.setPixelRatio(isMobile ? Math.min(window.devicePixelRatio, 1.5) : Math.min(window.devicePixelRatio, 2.0));
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMapping = isMobile ? THREE.LinearToneMapping : THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.35;
-renderer.shadowMap.enabled = !isMobile;
+renderer.shadowMap.enabled = !isMobile;   // shadows OFF on mobile — saves a full render pass
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 export const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9ecff5);
-scene.fog = new THREE.FogExp2(0xc5e4f7, 0.004); // interior — minimal fog
+// Fog: mobile uses linear (cheaper) with short range; desktop uses exp2
+if (isMobile) {
+  scene.fog = new THREE.Fog(0xc5e4f7, 28, 45);
+} else {
+  scene.fog = new THREE.FogExp2(0xc5e4f7, 0.004);
+}
 
+// PMREM env map: desktop only — costs shader samples every fragment on mobile
 if (!isMobile) {
   const pmremGenerator = new THREE.PMREMGenerator(renderer);
   pmremGenerator.compileEquirectangularShader();
   const envScene = new THREE.Scene();
-  envScene.background = new THREE.Color(0x87ceeb);
   const envSky = new THREE.Mesh(new THREE.BoxGeometry(120, 2, 120), new THREE.MeshBasicMaterial({ color: 0x87ceeb }));
   envSky.position.set(0, 20, 0); envScene.add(envSky);
   const envSun = new THREE.Mesh(new THREE.BoxGeometry(2, 60, 2), new THREE.MeshBasicMaterial({ color: 0xfff0c8 }));
@@ -35,15 +40,13 @@ if (!isMobile) {
   scene.environment = pmremGenerator.fromScene(envScene).texture;
   scene.environmentIntensity = 0.9;
   pmremGenerator.dispose();
-} else {
-  scene.environment = null;
 }
 
 // ── PLAYER SPAWN ──────────────────────────────────────────────────────────────
 export const SPAWN     = new THREE.Vector3(0, 1.72, 5);
 export const SPAWN_YAW = Math.PI;
 
-export const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.05, isMobile ? 65 : 120);
+export const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.1, isMobile ? 40 : 120);
 camera.position.copy(SPAWN);
 
 function _handleResize() {
@@ -127,11 +130,13 @@ M.pipe.normalMap      = mN; M.pipe.normalScale      = _nv2(0.7, 0.7);
 M.panel.normalMap     = mN; M.panel.normalScale     = _nv2(0.4, 0.4);
 
 if (isMobile) {
+  // Strip all expensive per-fragment features — huge shader simplification
   Object.values(M).forEach(mat => {
     if (mat.isMeshStandardMaterial) {
-      mat.normalMap       = null;
+      mat.normalMap      = null;
       mat.envMapIntensity = 0;
-      mat.metalness       = Math.min(mat.metalness, 0.3);
+      mat.metalness      = 0;
+      mat.roughness      = Math.max(mat.roughness, 0.7);
     }
   });
 }
@@ -168,49 +173,53 @@ export function checkCol(pos) {
 // ── LIGHTING ──────────────────────────────────────────────────────────────────
 export const roomLightSets = {};
 
-export const ambLight = new THREE.AmbientLight(0xfff5e8, 0.72); // dimmed for realism
+// Mobile: bright ambient + one directional — zero SpotLights, zero shadows
+// Desktop: full setup with SpotLights and shadow map
+export const ambLight = new THREE.AmbientLight(0xfff5e8, isMobile ? 2.2 : 0.72);
 scene.add(ambLight);
-scene.add(new THREE.HemisphereLight(0x9ecff5, 0xd4c4a0, 0.50));
 
-const sunLight = new THREE.DirectionalLight(0xfff8e0, 3.2);
+if (!isMobile) {
+  scene.add(new THREE.HemisphereLight(0x9ecff5, 0xd4c4a0, 0.50));
+}
+
+const sunLight = new THREE.DirectionalLight(0xfff8e0, isMobile ? 1.8 : 3.2);
 sunLight.position.set(12, 18, 8);
 sunLight.target.position.set(0, 0, -12);
 scene.add(sunLight); scene.add(sunLight.target);
 if (!isMobile) {
   sunLight.castShadow = true;
-  sunLight.shadow.mapSize.width  = 1024;
-  sunLight.shadow.mapSize.height = 1024;
+  sunLight.shadow.mapSize.width  = 2048;
+  sunLight.shadow.mapSize.height = 2048;
   sunLight.shadow.camera.near = 1; sunLight.shadow.camera.far  = 60;
   sunLight.shadow.camera.left = -18; sunLight.shadow.camera.right  =  18;
   sunLight.shadow.camera.top  =  18; sunLight.shadow.camera.bottom = -18;
   sunLight.shadow.bias = -0.002; sunLight.shadow.normalBias = 0.04; sunLight.shadow.radius = 2.5;
+  const skyFill = new THREE.DirectionalLight(0xc8e8ff, 0.55);
+  skyFill.position.set(-8, 10, 2); scene.add(skyFill);
 }
-
-const skyFill = new THREE.DirectionalLight(0xc8e8ff, 0.55);
-skyFill.position.set(-8, 10, 2); scene.add(skyFill);
 
 export const warnLight = new THREE.PointLight(0xff2200, 0, 20);
 warnLight.position.set(0, 3.5, -10); scene.add(warnLight);
 
 export function mkLight(x, y, z, color, intensity, key) {
-  const _range = isMobile ? 12 : 18;
-  const spot = new THREE.SpotLight(color || 0x88ccff, intensity * (isMobile ? 1.4 : 1.1), _range, Math.PI / 4.2, 0.32, 2.0);
-  spot.position.set(x, y, z);
-  spot.target.position.set(x, 0, z);
-  scene.add(spot); scene.add(spot.target);
+  // Mobile: fixture mesh only — no SpotLight, no shadow, uses bright ambient instead
+  if (!isMobile) {
+    const spot = new THREE.SpotLight(color || 0x88ccff, intensity * 1.1, 18, Math.PI / 4.2, 0.32, 2.0);
+    spot.position.set(x, y, z);
+    spot.target.position.set(x, 0, z);
+    scene.add(spot); scene.add(spot.target);
+    if (key) { if (!roomLightSets[key]) roomLightSets[key] = []; roomLightSets[key].push(spot); }
+  }
 
+  // Fixture visuals (both platforms, but simplified on mobile)
   const fixtureBase = mkBox(0.18, 0.06, 1.6, M.panelGrey);
   fixtureBase.position.set(x, y + 0.06, z); scene.add(fixtureBase);
-  const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.5, 6), M.eWhite);
-  tube.rotation.z = Math.PI / 2; tube.position.set(x, y, z); scene.add(tube);
-  const disc = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12), M.eWhite);
-  disc.rotation.x = Math.PI / 2; disc.position.set(x, y - 0.04, z); scene.add(disc);
-
-  if (key) {
-    if (!roomLightSets[key]) roomLightSets[key] = [];
-    roomLightSets[key].push(spot);
+  if (!isMobile) {
+    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.5, 6), M.eWhite);
+    tube.rotation.z = Math.PI / 2; tube.position.set(x, y, z); scene.add(tube);
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12), M.eWhite);
+    disc.rotation.x = Math.PI / 2; disc.position.set(x, y - 0.04, z); scene.add(disc);
   }
-  return spot;
 }
 
 // ── FLOOR & CEILING ───────────────────────────────────────────────────────────
@@ -331,16 +340,18 @@ addWindow( 4,    2.2, -32.06, 3.2, 1.8, false);
 addWindow( 8.06, 2.2,  -25, 3.4, 2.0, true);
 addWindow(-8.06, 2.2,  -25, 3.4, 2.0, true);
 
-// Light shafts (WS1 east windows)
-const shaftMat = new THREE.MeshBasicMaterial({ color: 0xfff8e8, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false });
-[[-6, -14]].forEach(([z1, z2]) => {
-  const s = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 2.0), shaftMat);
-  s.position.set(7.4, 2.2, (z1 + z2) / 2); s.rotation.y = Math.PI / 2; scene.add(s);
-  const wPt = new THREE.PointLight(0xfff0cc, isMobile ? 0 : 1.2, 5, 1.8);
-  wPt.position.set(6.5, 2.2, (z1 + z2) / 2); scene.add(wPt);
-  if (!roomLightSets['workshop']) roomLightSets['workshop'] = [];
-  roomLightSets['workshop'].push(wPt);
-});
+// Light shafts + window point lights — desktop only
+if (!isMobile) {
+  const shaftMat = new THREE.MeshBasicMaterial({ color: 0xfff8e8, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false });
+  [[-6, -14]].forEach(([z1, z2]) => {
+    const s = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 2.0), shaftMat);
+    s.position.set(7.4, 2.2, (z1 + z2) / 2); s.rotation.y = Math.PI / 2; scene.add(s);
+    const wPt = new THREE.PointLight(0xfff0cc, 1.2, 5, 1.8);
+    wPt.position.set(6.5, 2.2, (z1 + z2) / 2); scene.add(wPt);
+    if (!roomLightSets['workshop']) roomLightSets['workshop'] = [];
+    roomLightSets['workshop'].push(wPt);
+  });
+}
 
 // Ceiling lights
 mkLight(0,  H - .2,  3, 0xfff4e0, 1.4, 'entrance');
@@ -389,30 +400,84 @@ export function updateOscilloscopes(_animT) {}
 export const cableStations = [];
 
 // ── FURNITURE HELPERS ─────────────────────────────────────────────────────────
+const _pegM    = new THREE.MeshStandardMaterial({ color: 0x6b4c1e, roughness: 0.92 });
+const _mmBodyM = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.55, metalness: 0.25 });
+const _mmScrM  = new THREE.MeshStandardMaterial({ color: 0x00dd55, emissive: new THREE.Color(0x009933), emissiveIntensity: 0.9, roughness: 0.1 });
+const _lampM   = new THREE.MeshStandardMaterial({ color: 0xffffcc, emissive: new THREE.Color(0xffee88), emissiveIntensity: 1.4, roughness: 0.1 });
+const _rubberM = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.95 });
+
 function workbench(cx, cz) {
-  place(mkBox(2.2, .07, .9, M.bench), cx, 0.965, cz);
-  place(mkBox(2.2, .05, .78, M.panelGrey), cx, .5, cz);
-  place(mkBox(2.2, .45, .06, M.panelGrey), cx, 1.22, cz + .44);
-  [[-1.05, -.38], [-1.05, .38], [1.05, -.38], [1.05, .38]].forEach(([dx, dz]) => {
-    place(mkBox(.06, 1.0, .06, M.chrome), cx + dx, .5, cz + dz);
-  });
+  // Core structure — shared by mobile & desktop (6 draw calls)
+  place(mkBox(2.2, .07, .9, M.bench),     cx, 0.965, cz);
+  place(mkBox(2.2, 1.0, .05, M.panelGrey), cx, .50,  cz + .44); // back panel (replaces shelf+pegboard on mobile)
+  [[-1.05, -.38], [-1.05, .38], [1.05, -.38], [1.05, .38]].forEach(([dx, dz]) =>
+    place(mkBox(.06, 1.0, .06, M.chrome), cx + dx, .5, cz + dz));
   addCol(cx, .5, cz, 2.2, 1.0, .9);
+
+  if (isMobile) return; // mobile: just the silhouette — no detail props
+
+  // ── Desktop-only detail ───────────────────────────────────────────────────
+  place(mkBox(2.0, .04, .70, M.bench), cx, .34, cz); // lower shelf
+  // Pegboard colour tint over back panel
+  place(mkBox(2.2, .55, .03, _pegM), cx, 1.27, cz + .44);
+
+  // Hanging screwdrivers (4 × 2 meshes = 8)
+  const _sdHandles = [0xdd2211, 0xee8800, 0x2244cc, 0x22aa44];
+  _sdHandles.forEach((clr, i) => {
+    const hMat = new THREE.MeshStandardMaterial({ color: clr, roughness: 0.75 });
+    const sdGrip = mkCyl(.018, .10, hMat, 8);
+    sdGrip.rotation.x = Math.PI / 2;
+    sdGrip.position.set(cx - 0.78 + i * 0.38, 1.42, cz + 0.47); scene.add(sdGrip);
+    const sdShaft = mkCyl(.006, .13, M.chrome, 6);
+    sdShaft.rotation.x = Math.PI / 2;
+    sdShaft.position.set(cx - 0.78 + i * 0.38, 1.42, cz + 0.52); scene.add(sdShaft);
+  });
+
+  // Multimeter (3 meshes)
+  const mmX = cx - 0.65, mmZ = cz - 0.08;
+  place(mkBox(.15, .04, .22, _mmBodyM), mmX, 1.0, mmZ);
+  place(mkBox(.09, .041, .09, _mmScrM), mmX, 1.0, mmZ - 0.04);
+  place(mkCyl(.025, .018, M.chrome, 10), mmX + 0.02, 1.025, mmZ + 0.06);
+
+  // Wire spool (2 meshes)
+  const spW = new THREE.Mesh(new THREE.TorusGeometry(.062, .022, 6, 14), M.copper);
+  spW.rotation.x = Math.PI / 2; spW.position.set(cx + 0.65, 1.0, cz - 0.05); scene.add(spW);
+
+  // Work lamp (3 meshes + 1 light)
+  const lx = cx + 0.92, lBaseZ = cz + 0.38;
+  place(mkCyl(.04, .03, M.panelGrey, 8), lx, 0.988, lBaseZ);
+  place(mkCyl(.012, .30, M.chrome, 6),   lx, 1.14,  lBaseZ);
+  place(mkBox(.10, .03, .08, _lampM),    lx, 1.30,  lBaseZ - 0.06);
+  const lampPt = new THREE.PointLight(0xffe8b0, 1.2, 1.8, 2.2);
+  lampPt.position.set(lx, 1.26, lBaseZ - 0.08);
+  lampPt.castShadow = false;
+  scene.add(lampPt);
 }
 
 // faceNorth=true  → person faces +Z (toward entrance), backrest on south side (z-0.27)
 // faceNorth=false → person faces -Z (toward WS2),    backrest on north side (z+0.27)
+const _cushM = new THREE.MeshStandardMaterial({ color: 0x1a3a5c, roughness: 0.88 });
 function chair(x, z, faceNorth = false) {
   const bz = faceNorth ? -0.27 : 0.27;
-  place(mkBox(.58, .07, .58, M.panelGrey), x, .55, z);
-  place(mkBox(.58, .62, .07, M.panelGrey), x, .98, z + bz);
+  // Seat, backrest, column — 3 draw calls on mobile
+  place(mkBox(.58, .07, .58, _cushM), x, .55, z);
+  place(mkBox(.58, .64, .07, _cushM), x, .98, z + bz);
+  place(mkCyl(.05, .52, M.chrome, isMobile ? 6 : 10), x, .27, z);
+
+  if (isMobile) return; // mobile: 3 meshes total per chair — done
+
+  // Desktop extra detail
   [-.30, .30].forEach(dx => {
-    place(mkBox(.06, .05, .36, M.panelGrey), x + dx, .74, z + bz * 0.15);
-    place(mkBox(.06, .20, .06, M.panelGrey), x + dx, .63, z + bz);
+    place(mkBox(.06, .05, .38, M.panelGrey), x + dx, .74, z + bz * 0.15);
+    place(mkBox(.06, .22, .06, M.panelGrey), x + dx, .63, z + bz);
+    place(mkBox(.10, .03, .32, _cushM),      x + dx, .775, z + bz * 0.1);
   });
-  place(mkCyl(.05, .52, M.chrome), x, .27, z);
   for (let i = 0; i < 5; i++) {
     const ang = (i / 5) * Math.PI * 2;
-    place(mkBox(.28, .04, .06, M.chrome), x + Math.sin(ang) * .18, .03, z + Math.cos(ang) * .18).rotation.y = ang;
+    const spoke = mkBox(.28, .04, .06, M.chrome);
+    spoke.position.set(x + Math.sin(ang) * .18, .03, z + Math.cos(ang) * .18);
+    spoke.rotation.y = ang; scene.add(spoke);
+    place(mkCyl(.03, .05, _rubberM, 8), x + Math.sin(ang) * .32, .025, z + Math.cos(ang) * .32);
   }
 }
 
@@ -495,111 +560,82 @@ function chair(x, z, faceNorth = false) {
   const stM = new THREE.MeshStandardMaterial({ color: 0xc8aa78, roughness: 0.75 });
   place(mkBox(0.8, 0.04, 0.5, stM), -5.0, 0.46, -0.3);
   addCol(-5.0, 0.23, -0.3, 0.8, 0.46, 0.5);
-  [[-0.35,-0.2],[0.35,-0.2],[-0.35,0.2],[0.35,0.2]].forEach(([dx,dz]) =>
-    place(mkBox(0.04, 0.44, 0.04, M.chrome), -5.0+dx, 0.22, -0.3+dz));
-  // Magazine / tablet on table
-  place(mkBox(0.28, 0.02, 0.20, new THREE.MeshStandardMaterial({ color: 0xeeddcc, roughness: 0.9 })), -5.1, 0.49, -0.3);
+  if (!isMobile) {
+    [[-0.35,-0.2],[0.35,-0.2],[-0.35,0.2],[0.35,0.2]].forEach(([dx,dz]) =>
+      place(mkBox(0.04, 0.44, 0.04, M.chrome), -5.0+dx, 0.22, -0.3+dz));
+    place(mkBox(0.28, 0.02, 0.20, new THREE.MeshStandardMaterial({ color: 0xeeddcc, roughness: 0.9 })), -5.1, 0.49, -0.3);
+  }
 }
 
-// Filing cabinet — NE corner (x=6.6, z=7, away from all windows)
+// Filing cabinet — NE corner
 {
   place(mkBox(0.48, 1.10, 0.52, M.panelGrey), 6.6, 0.55, 7.0);
   addCol(6.6, 0.55, 7.0, 0.48, 1.10, 0.52);
-  [0.09, 0.45, 0.81].forEach(y => place(mkBox(0.36, 0.02, 0.04, M.chrome), 6.84, y, 7.0));
-  // Small handle dots
-  [0.09, 0.45, 0.81].forEach(y => place(mkBox(0.06, 0.02, 0.06, M.chrome), 6.85, y, 7.0));
+  if (!isMobile) [0.09, 0.45, 0.81].forEach(y => place(mkBox(0.36, 0.02, 0.04, M.chrome), 6.84, y, 7.0));
 }
 
 // Tall bookshelf — NW corner
 {
   place(mkBox(0.90, 1.85, 0.32, M.panelGrey), -6.5, 0.925, 6.8);
   addCol(-6.5, 0.925, 6.8, 0.90, 1.85, 0.32);
-  // Shelf boards
-  [0.38, 0.80, 1.22, 1.58].forEach(y =>
-    place(mkBox(0.88, 0.03, 0.30, M.bench), -6.5, y, 6.8));
-  // Books (coloured blocks)
-  const bookC = [0xcc2200, 0x2244cc, 0x228822, 0xff8833, 0x8822cc, 0x228888];
-  [0, 1, 2].forEach(shelf => {
-    let bx = -6.88;
-    bookC.forEach((clr, i) => {
-      if (i < 4) place(mkBox(0.10, 0.22, 0.24, new THREE.MeshStandardMaterial({ color: clr, roughness: 0.9 })), bx + i * 0.12, 0.38 + shelf * 0.42 + 0.12, 6.8);
-    });
-  });
+  if (!isMobile) {
+    [0.38, 0.80, 1.22, 1.58].forEach(y => place(mkBox(0.88, 0.03, 0.30, M.bench), -6.5, y, 6.8));
+    const bookC = [0xcc2200, 0x2244cc, 0x228822, 0xff8833, 0x8822cc, 0x228888];
+    [0, 1, 2].forEach(shelf => bookC.forEach((clr, i) => {
+      if (i < 4) place(mkBox(0.10, 0.22, 0.24, new THREE.MeshStandardMaterial({ color: clr, roughness: 0.9 })), -6.88 + i * 0.12, 0.38 + shelf * 0.42 + 0.12, 6.8);
+    }));
+  }
 }
 
-// Notice board — north wall (z=7.97)
-{
-  place(mkBox(2.2, 1.3, 0.03, new THREE.MeshStandardMaterial({ color: 0x7a5a1a, roughness: 0.9 })), -2.0, 2.2, 7.97);
-  const noteC = [0xfffbe6, 0xe3f4ff, 0xffe8f4, 0xe8ffe8];
-  [[-0.7,0.12],[0.1,-0.08],[0.65,0.18],[-0.2,-0.28]].forEach(([dx,dy],i) =>
-    place(mkBox(0.36, 0.24, 0.02, new THREE.MeshBasicMaterial({ color: noteC[i] })), -2.0+dx, 2.2+dy, 7.96));
-}
+// Notice board
+place(mkBox(2.2, 1.3, 0.03, new THREE.MeshStandardMaterial({ color: 0x7a5a1a, roughness: 0.9 })), -2.0, 2.2, 7.97);
 
-// Fire extinguisher — west wall at z=-1 (south of window range, safe)
-place(mkCyl(0.07, 0.52, M.red, 12), -7.5, 0.26, -1.0);
-place(mkCyl(0.04, 0.10, M.chrome, 10), -7.5, 0.58, -1.0);
+// Fire extinguisher
+place(mkCyl(0.07, 0.52, M.red, 8), -7.5, 0.26, -1.0);
 
-// Small trash can — entrance corner
-place(mkCyl(0.12, 0.28, M.panelGrey, 10), -6.9, 0.14, -1.5);
+// Small trash can
+place(mkCyl(0.12, 0.28, M.panelGrey, 8), -6.9, 0.14, -1.5);
 
 // ── WORKSHOP 1 (z = -18 to -2) ────────────────────────────────────────────────
-workbench(-4, -7);  chair(-4, -6.1, true);
-workbench( 4, -7);  chair( 4, -6.1, true);
-workbench(-4, -13); chair(-4, -12.1, true);
-workbench( 4, -13); chair( 4, -12.1, true);
+workbench(-4, -7);  chair(-4, -7.9, true);
+workbench( 4, -7);  chair( 4, -7.9, true);
+workbench(-4, -13); chair(-4, -13.9, true);
+workbench( 4, -13); chair( 4, -13.9, true);
 
-// Wire spools on small shelf — east wall WS1 (moved away from z=-6 window)
-{
-  // Shelf bracket
-  place(mkBox(0.06, 0.06, 0.9, M.panelGrey), 7.8, 0.55, -3);
+// Wire spools shelf + PPE rack + pinboard — desktop only
+if (!isMobile) {
   place(mkBox(0.9, 0.04, 0.9, M.panelGrey), 7.45, 0.58, -3);
-  // Spools lying on shelf (rotation.x = PI/2 → flat ring)
-  const sp1 = new THREE.Mesh(new THREE.TorusGeometry(.30, .09, 14, 22), M.yellow);
+  const sp1 = new THREE.Mesh(new THREE.TorusGeometry(.30, .09, 8, 16), M.yellow);
   sp1.rotation.x = Math.PI / 2; place(sp1, 7.3, 0.70, -2.7);
-  const sp2 = new THREE.Mesh(new THREE.TorusGeometry(.26, .08, 14, 22), M.copper);
+  const sp2 = new THREE.Mesh(new THREE.TorusGeometry(.26, .08, 8, 16), M.copper);
   sp2.rotation.x = Math.PI / 2; place(sp2, 7.3, 0.68, -3.3);
-}
 
-// PPE rack — west wall (moved away from z=-6 window)
-{
-  place(mkBox(0.04, 1.1, 1.4, new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.5, metalness: 0.7 })), -7.88, 1.6, -9);
-  [M.yellow, M.orange].forEach((mat, i) => {
-    place(new THREE.Mesh(new THREE.SphereGeometry(.22, 14, 10, 0, Math.PI * 2, 0, Math.PI * .55), mat), -7.5, 2.2, -8.3 + i * 0.8);
-  });
-}
+  place(mkBox(0.04, 1.1, 1.4, new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.5 })), -7.88, 1.6, -9);
+  [M.yellow, M.orange].forEach((mat, i) =>
+    place(new THREE.Mesh(new THREE.SphereGeometry(.22, 8, 6, 0, Math.PI * 2, 0, Math.PI * .55), mat), -7.5, 2.2, -8.3 + i * 0.8));
 
-// Safety pinboard — east wall
-{
   place(mkBox(0.04, 1.0, 1.5, new THREE.MeshStandardMaterial({ color: 0xaa8855, roughness: 0.9 })), 7.88, 1.8, -13);
-  [0xffeedd, 0xddeeff, 0xeeffdd].forEach((clr, i) => {
-    place(mkBox(0.045, 0.26, 0.32, new THREE.MeshBasicMaterial({ color: clr })), 7.88, 1.5 + (i % 2) * 0.38, -12.2 + i * 0.6);
-  });
+  [0xffeedd, 0xddeeff, 0xeeffdd].forEach((clr, i) =>
+    place(mkBox(0.045, 0.26, 0.32, new THREE.MeshBasicMaterial({ color: clr })), 7.88, 1.5 + (i % 2) * 0.38, -12.2 + i * 0.6));
 }
 
 // ── WORKSHOP 2 (z = -32 to -18) ───────────────────────────────────────────────
-workbench(-4, -22); chair(-4, -21.1, true);
-workbench( 4, -22); chair( 4, -21.1, true);
-workbench(-4, -28); chair(-4, -27.1, true);
-workbench( 4, -28); chair( 4, -27.1, true);
+workbench(-4, -22); chair(-4, -22.9, true);
+workbench( 4, -22); chair( 4, -22.9, true);
+workbench(-4, -28); chair(-4, -28.9, true);
+workbench( 4, -28); chair( 4, -28.9, true);
 
 // Tool cabinet — south wall
 {
   const cab = mkBox(1.2, 1.6, 0.55, M.panelGrey);
   cab.position.set(-5.5, 0.8, -31.5); scene.add(cab);
   addCol(-5.5, 0.8, -31.5, 1.2, 1.6, 0.55);
-  for (let i = 0; i < 4; i++) {
+  if (!isMobile) for (let i = 0; i < 4; i++)
     place(mkBox(0.28, 0.04, 0.04, M.chrome), -5.5, 0.3 + i * 0.4, -31.22);
-  }
 }
 
 // Schematic poster — south wall WS2
-{
-  place(mkBox(1.6, 1.1, 0.03, new THREE.MeshStandardMaterial({ color: 0x0a1f3a, roughness: 0.9 })), 4, 2.0, -31.97);
-  place(mkBox(1.68, 1.18, 0.02, new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.5 })), 4, 2.0, -31.96);
-  [0x44ff88, 0x3b82f6, 0xf59e0b].forEach((clr, i) => {
-    place(mkBox(1.2, 0.01, 0.02, new THREE.MeshBasicMaterial({ color: clr })), 4, 1.7 + i * 0.28, -31.95);
-  });
-}
+place(mkBox(1.6, 1.1, 0.03, new THREE.MeshStandardMaterial({ color: 0x0a1f3a, roughness: 0.9 })), 4, 2.0, -31.97);
 
 // ── BREAKER PANEL ─────────────────────────────────────────────────────────────
 export function breakerPanel(cx, cy, cz, ry, id, label, count = 8) {
@@ -733,6 +769,310 @@ export class Door {
       this.angle += diff * Math.min(1, dt * 7);
       this.pivot.rotation.y = this.angle;
     }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SCENE ENRICHMENT — props, conduit, floor markings, details
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── Helper: junction box on wall ───────────────────────────────────────────
+const _jbM = new THREE.MeshStandardMaterial({ color: 0x555f66, roughness: 0.55, metalness: 0.55 });
+const _jbFM = new THREE.MeshStandardMaterial({ color: 0x3a4a52, roughness: 0.45, metalness: 0.6 });
+function junctionBox(x, y, z, ry = 0) {
+  const grp = new THREE.Group();
+  const body = mkBox(.18, .14, .08, _jbM); grp.add(body);
+  const face = mkBox(.14, .10, .02, _jbFM); face.position.z = .05; grp.add(face);
+  const ko1 = mkCyl(.015, .025, M.chrome, 8); ko1.rotation.x = Math.PI/2; ko1.position.set(-.06,.04,.06); grp.add(ko1);
+  const ko2 = mkCyl(.015, .025, M.chrome, 8); ko2.rotation.x = Math.PI/2; ko2.position.set( .06,.04,.06); grp.add(ko2);
+  grp.position.set(x, y, z); grp.rotation.y = ry; scene.add(grp);
+}
+
+// ── Helper: EMT conduit segment ────────────────────────────────────────────
+const _condM = new THREE.MeshStandardMaterial({ color: 0x778899, roughness: 0.35, metalness: 0.78 });
+function conduit(x1, y, z1, x2, z2) {
+  const dx = x2 - x1, dz = z2 - z1;
+  const len = Math.sqrt(dx*dx + dz*dz);
+  const c = mkCyl(.022, len, _condM, 8);
+  c.rotation.z = Math.PI / 2;
+  c.rotation.y = Math.atan2(dz, dx);
+  c.position.set((x1+x2)/2, y, (z1+z2)/2);
+  scene.add(c);
+  // end couplings
+  [[x1,z1],[x2,z2]].forEach(([ex,ez]) => {
+    const coup = mkCyl(.028, .04, _jbM, 8);
+    coup.rotation.z = Math.PI/2; coup.position.set(ex, y, ez); scene.add(coup);
+  });
+}
+
+// ── Helper: vertical conduit drop ─────────────────────────────────────────
+function conduitV(x, y1, y2, z) {
+  const len = Math.abs(y2 - y1);
+  const c = mkCyl(.022, len, _condM, 8);
+  c.position.set(x, (y1+y2)/2, z); scene.add(c);
+}
+
+// ── Helper: safety floor tape line ────────────────────────────────────────
+const _tapeM = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+const _tapeRM = new THREE.MeshBasicMaterial({ color: 0xdd2211 });
+function floorTape(x1, z1, x2, z2, red = false) {
+  const dx = x2-x1, dz = z2-z1, len = Math.sqrt(dx*dx+dz*dz);
+  const t = new THREE.Mesh(new THREE.PlaneGeometry(len, .06), red ? _tapeRM : _tapeM);
+  t.rotation.x = -Math.PI/2;
+  t.rotation.z = Math.atan2(dz, dx);
+  t.position.set((x1+x2)/2, 0.002, (z1+z2)/2);
+  scene.add(t);
+}
+
+// ── Helper: ceiling cable tray segment ────────────────────────────────────
+function ceilTray(x1, z1, x2, z2, y = H - 0.45) {
+  const dx = x2-x1, dz = z2-z1, len = Math.sqrt(dx*dx+dz*dz);
+  const tray = mkBox(len, .08, .32, M.panelGrey);
+  tray.rotation.y = Math.atan2(dz, dx);
+  tray.position.set((x1+x2)/2, y, (z1+z2)/2);
+  scene.add(tray);
+}
+
+// ── Helper: RCD/Isolator switch unit on wall ───────────────────────────────
+const _rcdBodyM = new THREE.MeshStandardMaterial({ color: 0xe8e8e4, roughness: 0.6, metalness: 0.1 });
+function rcdUnit(x, y, z, ry = 0) {
+  const grp = new THREE.Group();
+  place(mkBox(.12, .18, .06, _rcdBodyM), 0, 0, 0); // body
+  const led = mkBox(.025, .025, .02, M.green); led.position.set(.03, .06, .04); grp.add(led);
+  const btn = mkCyl(.018, .02, M.red, 10); btn.rotation.x = Math.PI/2; btn.position.set(0, -.02, .04); grp.add(btn);
+  const lbl = mkBox(.08, .02, .01, new THREE.MeshBasicMaterial({ color: 0x111111 })); lbl.position.set(0, .07, .04); grp.add(lbl);
+  grp.position.set(x, y, z); grp.rotation.y = ry; scene.add(grp);
+}
+
+// ── Helper: electrical cable bundle run ───────────────────────────────────
+function cableBundle(x, y1, y2, z, clrs = [0xb45309,0x3b82f6,0x22c55e]) {
+  clrs.forEach((clr, i) => {
+    const off = (i - 1) * 0.025;
+    const cm = mkCyl(.009, Math.abs(y2-y1), new THREE.MeshStandardMaterial({ color: clr, roughness: 0.8 }), 6);
+    cm.position.set(x + off, (y1+y2)/2, z); scene.add(cm);
+  });
+}
+
+// ── Helper: emergency exit sign ───────────────────────────────────────────
+const _exitGrnM = new THREE.MeshStandardMaterial({ color: 0x00cc44, emissive: new THREE.Color(0x008822), emissiveIntensity: 1.0, roughness: 0.1 });
+const _exitWhtM = new THREE.MeshBasicMaterial({ color: 0xffffff });
+function exitSign(x, y, z, ry = 0) {
+  const grp = new THREE.Group();
+  const body = mkBox(.30, .12, .04, _exitGrnM); grp.add(body);
+  const txt  = mkBox(.22, .06, .01, _exitWhtM); txt.position.set(0, 0, .025); grp.add(txt);
+  grp.position.set(x, y, z); grp.rotation.y = ry; scene.add(grp);
+  // Sign glow
+  const gl = new THREE.PointLight(0x00ff44, 0.3, 2.5); gl.position.set(x, y, z); scene.add(gl);
+}
+
+// ── Helper: tool chest / rollaway cabinet ─────────────────────────────────
+function toolChest(x, z) {
+  const tcM = new THREE.MeshStandardMaterial({ color: 0xcc2200, roughness: 0.45, metalness: 0.35 });
+  const tcDM = new THREE.MeshStandardMaterial({ color: 0xaa1a00, roughness: 0.48, metalness: 0.3 });
+  place(mkBox(.55, 1.0, .38, tcM), x, .5, z);
+  addCol(x, .5, z, .55, 1.0, .38);
+  // Drawers
+  [.12, .32, .52, .72].forEach(dy => {
+    place(mkBox(.48, .16, .02, tcDM), x, dy, z + .20);
+    place(mkBox(.12, .03, .02, M.chrome), x, dy, z + .21); // handle
+  });
+  // Casters
+  [-.22,.22].forEach(dx => [-.14,.14].forEach(dz =>
+    place(mkCyl(.04, .05, _rubberM, 8), x+dx, .025, z+dz)));
+}
+
+// ── Helper: potted plant ──────────────────────────────────────────────────
+const _plantM  = new THREE.MeshStandardMaterial({ color: 0x1a6622, roughness: 0.95 });
+const _potM    = new THREE.MeshStandardMaterial({ color: 0xb05a2a, roughness: 0.8 });
+function plant(x, y, z, scale = 1.0) {
+  place(mkCyl(.08*scale, .15*scale, _potM, 10), x, y + .075*scale, z);
+  // Stem
+  place(mkCyl(.015*scale, .22*scale, _plantM, 6), x, y + .22*scale, z);
+  // Leaf clusters
+  [[0,.32,.06],[.08,.28,.04],[-.07,.26,.05]].forEach(([lx,ly,lz]) => {
+    const lf = new THREE.Mesh(new THREE.SphereGeometry(.09*scale, 7, 5), _plantM);
+    lf.scale.set(1.4,0.7,1.2); lf.position.set(x+lx*scale, y+ly*scale, z+lz*scale); scene.add(lf);
+  });
+}
+
+// ── Helper: water cooler ──────────────────────────────────────────────────
+const _wcBodyM = new THREE.MeshStandardMaterial({ color: 0xdde8f0, roughness: 0.45, metalness: 0.2 });
+const _wcBotM  = new THREE.MeshStandardMaterial({ color: 0xaaccee, transparent: true, opacity: 0.7, roughness: 0.05 });
+function waterCooler(x, z) {
+  place(mkBox(.28, .80, .30, _wcBodyM), x, .40, z);
+  addCol(x, .40, z, .28, .80, .30);
+  place(mkCyl(.09, .30, _wcBotM, 12), x, .96, z);        // bottle
+  place(mkBox(.28, .04, .30, M.panelGrey), x, .83, z);   // collar
+  place(mkCyl(.04, .06, M.chrome, 8), x - .08, .72, z + .16); // tap
+  place(mkCyl(.04, .06, M.chrome, 8), x + .08, .72, z + .16); // tap
+  place(mkBox(.26, .04, .28, new THREE.MeshStandardMaterial({ color: 0xaaaaaa })), x, .06, z); // base tray
+}
+
+// ── Helper: safety sign board ─────────────────────────────────────────────
+const _signYM = new THREE.MeshStandardMaterial({ color: 0xf5c518, roughness: 0.7 });
+const _signBM = new THREE.MeshBasicMaterial({ color: 0x111111 });
+function safetySign(x, y, z, ry = 0) {
+  const grp = new THREE.Group();
+  mkBox(.36, .26, .02, _signYM); grp.add(place(mkBox(.36, .26, .02, _signYM), 0, 0, 0));
+  place(mkBox(.28, .06, .01, _signBM), 0, 0.05, .015);   // text line
+  place(mkBox(.20, .04, .01, _signBM), 0, -0.04, .015);  // text line
+  const g = new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; scene.add(g);
+  scene.remove(g); // cleanup — re-add properly:
+  const body = mkBox(.36,.26,.02, _signYM);
+  body.position.set(x,y,z); body.rotation.y=ry; scene.add(body);
+  place(mkBox(.26,.05,.01, _signBM), x + (ry===0?0:0), y+0.06, z + (ry===0?.012:.012));
+  place(mkBox(.18,.04,.01, _signBM), x, y-0.03, z + (ry===0?.012:.012));
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONDUIT RUNS & JUNCTION BOXES
+// ══════════════════════════════════════════════════════════════════════════════
+
+// WS1 east wall conduit run (vertical + horizontal)
+conduit(7.88, 2.8, -3.5, 7.88, -16.5);
+conduitV(7.88, 0.4, 2.8, -3.5);
+junctionBox(7.88, 2.8, -3.5, -Math.PI/2);
+junctionBox(7.88, 2.8, -8.5, -Math.PI/2);
+junctionBox(7.88, 2.8, -14.0,-Math.PI/2);
+junctionBox(7.88, 0.8, -3.5, -Math.PI/2);
+
+// WS1 west wall conduit
+conduit(-7.88, 2.4, -4.0, -7.88, -17.0);
+conduitV(-7.88, 0.4, 2.4, -4.0);
+junctionBox(-7.88, 2.4, -7.0, Math.PI/2);
+junctionBox(-7.88, 2.4,-12.5, Math.PI/2);
+
+// WS2 conduit runs
+conduit(7.88, 2.6, -19.0, 7.88, -31.5);
+junctionBox(7.88, 2.6, -22.0,-Math.PI/2);
+junctionBox(7.88, 2.6, -28.5,-Math.PI/2);
+conduit(-7.88, 2.6, -19.0, -7.88, -31.5);
+junctionBox(-7.88, 2.6,-24.0, Math.PI/2);
+
+// Ceiling cable tray WS2
+ceilTray(-6, -18.5, 6, -18.5);
+ceilTray(-6, -31.5, 6, -31.5);
+
+// RCD units near panels
+rcdUnit(7.88, 2.1, -4.5, -Math.PI/2);
+rcdUnit(7.88, 2.1, -10.5,-Math.PI/2);
+rcdUnit(-7.88, 2.1,-9.5, Math.PI/2);
+rcdUnit(7.88, 2.1, -20.0,-Math.PI/2);
+rcdUnit(-7.88, 2.1,-26.5, Math.PI/2);
+
+// Cable bundles + floor tape — desktop only (too many draw calls for mobile)
+if (!isMobile) {
+  cableBundle(7.82, 2.78, 1.0, -3.5);
+  cableBundle(-7.82, 2.38, 1.0, -7.0);
+  cableBundle(-7.82, 2.38, 1.0,-12.5);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FLOOR SAFETY MARKINGS — desktop only
+// ══════════════════════════════════════════════════════════════════════════════
+if (!isMobile) {
+  floorTape(0, -2.5, 0, -17.5);
+  [[-4,-7],[4,-7],[-4,-13],[4,-13],[-4,-22],[4,-22],[-4,-28],[4,-28]].forEach(([bx,bz]) => {
+    floorTape(bx-1.4, bz-1.1, bx+1.4, bz-1.1);
+    floorTape(bx-1.4, bz+0.8, bx+1.4, bz+0.8);
+    floorTape(bx-1.4, bz-1.1, bx-1.4, bz+0.8);
+    floorTape(bx+1.4, bz-1.1, bx+1.4, bz+0.8);
+  });
+  floorTape(-1.8, -1.5, 1.8, -1.5, true);
+  floorTape(-1.8,-17.5, 1.8,-17.5, true);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENTRANCE AREA EXTRAS
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── All enrichment props: desktop only ───────────────────────────────────────
+if (!isMobile) {
+  waterCooler(6.2, 6.8);
+  plant(-1.0, 0, 7.8);
+  plant( 1.8, 0, 7.8, 1.1);
+  exitSign(0, 3.2, -1.5);
+  exitSign(0, 3.2,-17.5);
+  safetySign(-7.97, 1.5, -0.5, Math.PI/2);
+  safetySign( 7.97, 1.5,  1.0,-Math.PI/2);
+
+  place(mkBox(0.48, 0.90, 0.52, M.panelGrey), 6.6, 0.45, 5.8);
+  addCol(6.6, 0.45, 5.8, 0.48, 0.90, 0.52);
+
+  // Tool chests WS1
+  toolChest(-6.8, -5.0);
+  toolChest(-6.8,-11.5);
+
+  // Component shelf east wall WS1
+  {
+    const shM = new THREE.MeshStandardMaterial({ color: 0x445566, roughness: 0.6 });
+    place(mkBox(.06, 1.8, .06, shM), 7.6, 0.9, -8.5);
+    place(mkBox(.06, 1.8, .06, shM), 7.6, 0.9, -11.5);
+    [0.35, 0.75, 1.15, 1.55].forEach(y => {
+      place(mkBox(.24, .035, 2.96, M.bench), 7.28, y + .02, -10.0);
+    });
+    const binC = [0xcc2200, 0x2244cc, 0x228822, 0xff8800, 0x882288, 0x228888, 0xcc8800, 0x444444];
+    binC.forEach((clr, i) => {
+      place(mkBox(.20, .14, .14, new THREE.MeshStandardMaterial({ color: clr, roughness: 0.75 })),
+        7.26, 0.35 + Math.floor(i/4)*0.40 + .07, -8.7 + (i%4)*0.7);
+    });
+    addCol(7.4, 0.9, -10.0, .28, 1.8, 3.2);
+  }
+
+  // Oscilloscope
+  {
+    const oscScrM = new THREE.MeshStandardMaterial({ color: 0x001a0a, emissive: new THREE.Color(0x00ff44), emissiveIntensity: 0.6, roughness: 0.1 });
+    place(mkBox(.28, .18, .22, new THREE.MeshStandardMaterial({ color: 0x0a1a2a, roughness: 0.55 })), 4.6, 1.06, -7.05);
+    place(mkBox(.22, .12, .02, oscScrM), 4.6, 1.08, -6.94);
+  }
+
+  // PPE hard hats
+  {
+    [0xf5c518, 0xdd2211].forEach((clr, i) => {
+      const mat = new THREE.MeshStandardMaterial({ color: clr, roughness: 0.55 });
+      const hh = new THREE.Mesh(new THREE.SphereGeometry(.12, 8, 6, 0, Math.PI*2, 0, Math.PI*.52), mat);
+      hh.position.set(-7.5, 1.85, -7.0 + i * 0.9); scene.add(hh);
+    });
+  }
+
+  // Tool chests + dist board WS2
+  toolChest(-3.0, -31.4);
+  {
+    place(mkBox(.06, 1.35, 0.90, new THREE.MeshStandardMaterial({ color: 0x1a2838, roughness: 0.55 })), -7.95, 2.15, -24.0);
+    addCol(-7.95, 2.15, -24.0, .10, 1.4, 0.95);
+  }
+
+  // Cable drum WS2
+  {
+    const drumM = new THREE.MeshStandardMaterial({ color: 0x8b4513, roughness: 0.9 });
+    place(mkCyl(.38, .08, drumM, 10), 6.0, .04, -29.5);
+    place(mkCyl(.22, .40, new THREE.MeshStandardMaterial({ color: 0xcc6600, roughness: 0.85 }), 10), 6.0, .24, -29.5);
+    place(mkCyl(.38, .08, drumM, 10), 6.0, .44, -29.5);
+    addCol(6.0, .24, -29.5, .78, .52, .78);
+  }
+
+  // Equipment rack east WS2
+  {
+    place(mkBox(.45, 1.80, .55, new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5 })), 7.0, 0.9, -21.5);
+    addCol(7.0, 0.9, -21.5, .45, 1.80, .55);
+  }
+
+  // PCB boards on WS2 benches
+  {
+    const pcbM = new THREE.MeshStandardMaterial({ color: 0x1a4a1a, roughness: 0.7 });
+    [[-4,-22],[4,-22],[-4,-28],[4,-28]].forEach(([bx,bz]) =>
+      place(mkBox(.36, .26, .012, pcbM), bx + .4, 1.16, bz + .42));
+  }
+
+  // Ceiling conduit WS1
+  {
+    const hc2 = mkCyl(.022, 12, _condM, 8);
+    hc2.rotation.z = Math.PI/2; hc2.position.set(0, H - 0.28, -10); scene.add(hc2);
+  }
+  // WS2 cable tray
+  {
+    const ct = mkBox(12, .08, .32, M.panelGrey);
+    ct.position.set(0, H - 0.45, -25); scene.add(ct);
   }
 }
 

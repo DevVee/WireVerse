@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import { camera, checkCol, scene, FLOOR1_Y } from './world.js';
+import { camera, checkCol, FLOOR1_Y, SPAWN, SPAWN_YAW } from './world.js';
 import { Audio } from './audio.js';
 
 // ── PLAYER STATE ─────────────────────────────────────────────────────────────
 export const Player = {
-  pos: new THREE.Vector3(1, 1.72, -24), // NEW: Entrance Spawn
-  yaw: 0, pitch: 0,
+  pos: SPAWN.clone(),              // Spawn at Entrance
+  yaw: SPAWN_YAW, pitch: 0,       // facing north toward Workshop 1 door
   yawVel: 0, pitchVel: 0,
   vel: new THREE.Vector3(),
   vy: 0, // Vertical velocity
@@ -47,48 +47,76 @@ if (!isMobile && cvs) {
 
   document.addEventListener('mousemove', e => {
     if (!pointerLocked) return;
-    const sens = window.camSensitivity || 0.7;
-    Player.yawVel -= e.movementX * 0.0016 * sens;
-    Player.pitchVel -= e.movementY * 0.0016 * sens;
+    const sens = window.camSensitivity ?? 1.0;
+    Player.yawVel -= e.movementX * 0.0020 * sens;
+    Player.pitchVel -= e.movementY * 0.0020 * sens;
   });
 }
 
-// ── D-PAD MOVEMENT BUTTONS ────────────────────────────────────────────────────
-let touchSprinting = false;
+// ── ANALOG JOYSTICK ───────────────────────────────────────────────────────────
+// joyInput: analog values -1..1 for X (strafe) and Y (forward/back)
+export const joyInput = { x: 0, y: 0 };
+let _joyId = -1, _joyCX = 0, _joyCY = 0, _joyR = 55;
 
-// Bind a D-pad button: sets keys[code]=true while held, clears on release
-function _dpadBind(id, code) {
-  const btn = document.getElementById(id);
-  if (!btn) return;
-  const dn = e => { e.preventDefault(); keys[code] = true; };
-  const up = e => { e.preventDefault(); keys[code] = false; };
-  btn.addEventListener('touchstart', dn, { passive: false });
-  btn.addEventListener('touchend',   up, { passive: false });
-  btn.addEventListener('touchcancel',up, { passive: false });
-  btn.addEventListener('mousedown', dn);
-  btn.addEventListener('mouseup',   up);
-  btn.addEventListener('mouseleave', up);
-}
-
-// Sprint button
-const _btnSprint = document.getElementById('btnDpadSprint');
-if (_btnSprint) {
-  const sprintDn = e => { e.preventDefault(); touchSprinting = true; };
-  const sprintUp = e => { e.preventDefault(); touchSprinting = false; };
-  _btnSprint.addEventListener('touchstart',  sprintDn, { passive: false });
-  _btnSprint.addEventListener('touchend',    sprintUp, { passive: false });
-  _btnSprint.addEventListener('touchcancel', sprintUp, { passive: false });
-  _btnSprint.addEventListener('mousedown',  sprintDn);
-  _btnSprint.addEventListener('mouseup',    sprintUp);
-  _btnSprint.addEventListener('mouseleave', sprintUp);
-}
-
-// Wire D-pad direction buttons — run AFTER DOM is ready so IDs exist
 setTimeout(() => {
-  _dpadBind('dpadUp',    'ArrowUp');
-  _dpadBind('dpadDown',  'ArrowDown');
-  _dpadBind('dpadLeft',  'DpadLeft');
-  _dpadBind('dpadRight', 'DpadRight');
+  const joyOuter = document.getElementById('joyOuter');
+  const joyInner = document.getElementById('joyInner');
+  if (!joyOuter) return;
+
+  const DEAD = 0.18; // larger dead zone = less twitchy at rest
+
+  joyOuter.addEventListener('touchstart', e => {
+    if (Player.state !== 'standing') return;
+    e.preventDefault();
+    if (_joyId !== -1) return;
+    const t = e.changedTouches[0];
+    _joyId = t.identifier;
+    const rect = joyOuter.getBoundingClientRect();
+    _joyCX = rect.left + rect.width * 0.5;
+    _joyCY = rect.top  + rect.height * 0.5;
+    _joyR  = rect.width * 0.5;
+    joyOuter.classList.add('joy-active');
+  }, { passive: false });
+
+  document.addEventListener('touchmove', e => {
+    if (_joyId === -1) return;
+    for (const t of e.changedTouches) {
+      if (t.identifier !== _joyId) continue;
+      const dx = t.clientX - _joyCX;
+      const dy = t.clientY - _joyCY;
+      const dist = Math.hypot(dx, dy);
+      const maxR = _joyR * 0.72;
+      const clamp = Math.min(dist, maxR);
+      const ang = Math.atan2(dy, dx);
+
+      if (joyInner) {
+        const kx = Math.cos(ang) * clamp;
+        const ky = Math.sin(ang) * clamp;
+        joyInner.style.transform = `translate(calc(-50% + ${kx}px), calc(-50% + ${ky}px))`;
+      }
+
+      // Normalize with dead zone — output is 0..0.75 max to reduce speed
+      if (dist < _joyR * DEAD) {
+        joyInput.x = 0; joyInput.y = 0;
+      } else {
+        const norm = Math.max(0, (clamp / maxR - DEAD) / (1 - DEAD)) * 0.75;
+        joyInput.x = (dx / dist) * norm;
+        joyInput.y = (dy / dist) * norm;
+      }
+    }
+  }, { passive: true });
+
+  const _joyRelease = e => {
+    for (const t of e.changedTouches) {
+      if (t.identifier !== _joyId) continue;
+      _joyId = -1;
+      joyInput.x = 0; joyInput.y = 0;
+      if (joyInner) joyInner.style.transform = 'translate(-50%, -50%)';
+      joyOuter.classList.remove('joy-active');
+    }
+  };
+  document.addEventListener('touchend',    _joyRelease, { passive: true });
+  document.addEventListener('touchcancel', _joyRelease, { passive: true });
 }, 0);
 
 // ── TOUCH LOOK ────────────────────────────────────────────────────────────────
@@ -107,13 +135,14 @@ if (lookZone) {
   lookZone.addEventListener('touchmove', e => {
     if (Player.state !== 'standing') return;
     e.preventDefault();
-    const sens = window.camSensitivity || 0.7;
+    const sens = window.camSensitivity ?? 1.0;
     for (const t of e.changedTouches) {
       if (lookTouches[t.identifier]) {
         const dx = t.clientX - lookTouches[t.identifier].x;
         const dy = t.clientY - lookTouches[t.identifier].y;
-        Player.yawVel -= dx * 0.00065 * sens;
-        Player.pitchVel -= dy * 0.00065 * sens;
+        // Direct application — immediately add to velocity each move event
+        Player.yawVel -= dx * 0.0022 * sens;
+        Player.pitchVel -= dy * 0.0022 * sens;
         lookTouches[t.identifier] = { x: t.clientX, y: t.clientY };
       }
     }
@@ -150,17 +179,9 @@ if (btnJump) {
 
 // ── ROOM DETECTION ────────────────────────────────────────────────────────────
 export function getRoom(p) {
-  if (p.z < -18) return 'ENTRANCE';
-  if (p.x > 4 && p.z < -2) return 'WORKSHOP';
-  if (p.x > 20 && p.z > -8 && p.z < 14) return 'CONTROL CENTER';
-  if (p.x > 4 && p.z > 0 && p.z < 14) return 'GENERATOR ROOM';
-  if (p.x < -1 && p.z > -14 && p.z < 4) return 'DIST-A PANEL';
-  if (p.x < -1 && p.z > 4 && p.z < 18) return 'DIST-B PANEL';
-  if (p.x > 4 && p.z > 14 && p.z < 28) return 'UTILITY ROOM';
-  if (p.x < -1 && p.z > 18) return 'STORAGE';
-  if (p.x > 20 && p.z > 10) return 'TESTING LAB';
-  if (p.z > 26) return 'STAIRWELL';
-  return 'CORRIDOR';
+  if (p.z >= -2)  return 'ENTRANCE';
+  if (p.z >= -18) return 'WORKSHOP 1';
+  return 'WORKSHOP 2';
 }
 
 // ── PHYSICS ──────────────────────────────────────────────────────────────────
@@ -182,8 +203,9 @@ export function updatePlayer(dt) {
 
   // Smooth look inertia for standing
   if (Player.state === 'standing') {
-    // Lower SMOOTH = crisper/lighter feel; higher = more glide/inertia
-    const SMOOTH = isMobile ? 0.28 : 0.40;
+    // Lower SMOOTH = crisper/direct; higher = more glide/inertia
+    // Mobile: very low inertia so the camera follows the finger precisely
+    const SMOOTH = isMobile ? 0.08 : 0.38;
     Player.yaw += Player.yawVel;
     Player.pitch += Player.pitchVel;
     Player.yawVel *= SMOOTH;
@@ -201,20 +223,21 @@ export function updatePlayer(dt) {
     camera.rotation.x = Player.pitch;
   }
 
-  // Sprint
-  Player.sprinting = touchSprinting || keys['ShiftLeft'] || keys['ShiftRight'];
-
   // Movement (Only when standing)
-  const maxSpd = Player.sprinting ? Player.SPRINT : Player.SPEED;
+  const maxSpd = Player.SPEED;
   const sinY = Math.sin(Player.yaw), cosY = Math.cos(Player.yaw);
   _fwd.set(-sinY, 0, -cosY);
   _rgt.set(cosY, 0, -sinY);
 
-  let wx = 0, wy = 0;
+  // Analog joystick (mobile) + keyboard (desktop/keyboard)
+  // joySensitivity amplifies the joystick's analog range so less deflection = full speed
+  const _jSens = Math.min(window.joySensitivity ?? 1.0, 2.0);
+  let wx = Math.max(-1, Math.min(1, joyInput.x * _jSens));
+  let wy = Math.max(-1, Math.min(1, joyInput.y * _jSens));
   if (keys['KeyW'] || keys['ArrowUp'])    wy = -1;
   if (keys['KeyS'] || keys['ArrowDown'])  wy =  1;
-  if (keys['KeyA'] || keys['DpadLeft'])   wx = -1;
-  if (keys['KeyD'] || keys['DpadRight'])  wx =  1;
+  if (keys['KeyA'] || keys['ArrowLeft'])  wx = -1;
+  if (keys['KeyD'] || keys['ArrowRight']) wx =  1;
 
   _wish.set(0, 0, 0);
   if (Player.state === 'standing') {
@@ -234,7 +257,7 @@ export function updatePlayer(dt) {
   // Collision sliding
   _np.copy(Player.pos).addScaledVector(Player.vel, dt);
   _np.x = Math.max(-14.5, Math.min(34.5, _np.x));
-  _np.z = Math.max(-29.0, Math.min(34.5, _np.z));
+  _np.z = Math.max(-31.5, Math.min(34.5, _np.z));
   if (!checkCol(_np)) {
     Player.pos.copy(_np);
   } else {
@@ -292,7 +315,7 @@ export function updatePlayer(dt) {
     // Add bobbing on top of physical Y
     const finalY = physicalY + curSin * 0.03 * Player.bobAmt;
     camera.position.set(Player.pos.x, finalY, Player.pos.z);
-  } else if (Player.state === 'sitting' || Player.state === 'computer') {
+  } else if (Player.state === 'sitting' || Player.state === 'computer' || Player.state === 'wall-panel') {
     // Smoothly interpolate camera to target pos/rot
     const tPos = Player.targetCamPos;
     const tRot = Player.targetCamRot;

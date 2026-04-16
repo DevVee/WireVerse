@@ -11,7 +11,11 @@
  */
 
 import * as THREE from 'three';
-import { Player } from './player.js';
+import { initOutletTutorial, outletTutOnStateChange } from './tutorial-guide.js';
+
+// Player is provided by the main 3D world via window.Player.
+// In standalone mode (Learn Technician page) window.Player is a no-op stub.
+const _getPlayer = () => window.Player || null;
 
 // ─── Private state ───────────────────────────────────────────────────────────
 let _renderer = null, _scene, _camera, _clock;
@@ -36,7 +40,8 @@ let clickScrewObjs = [], clickBreakerObjs = [];
 
 // ─── Game state ───────────────────────────────────────────────────────────────
 let gameState, selectedTool, wiresState, completedTasks, timerVal, timerRunning;
-let _touchWire = null; // shared between drag-drop and canvas events
+let _touchWire  = null; // shared between drag-drop and canvas events
+let _touchClone = null; // ghost clone element that follows the finger
 
 // ─── Animation state ──────────────────────────────────────────────────────────
 let screwRemoving, screwSpinT, screwReattaching, screwReattachT;
@@ -99,10 +104,13 @@ export function openOutlet(socketId) {
   const lbl = document.getElementById('or-socket-label');
   if (lbl) lbl.textContent = `Socket #${socketId} — ${LABELS[socketId] || 'Room'}`;
 
-  // Freeze player
-  Player.state = 'repair';
+  // Freeze player (no-op in standalone learn mode)
+  const _p = _getPlayer(); if (_p) _p.state = 'repair';
 
   _resetAll();
+
+  // Show Sir Juan intro tutorial on first outlet open
+  try { initOutletTutorial(); } catch(e) {}
 
   if (!_open) {
     _open = true;
@@ -115,8 +123,8 @@ export function closeOutlet() {
   const overlay = document.getElementById('outletRepairOverlay');
   if (overlay) overlay.style.display = 'none';
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-  // Restore player
-  Player.state = 'standing';
+  // Restore player (no-op in standalone learn mode)
+  const _pr = _getPlayer(); if (_pr) _pr.state = 'standing';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -452,8 +460,6 @@ function _initDragDrop() {
   });
 
   // ── Mobile touch drag support (HTML5 drag-drop doesn't work on touch) ──────
-  let _touchClone = null;
-
   ['brown', 'blue', 'green'].forEach(color => {
     const draggable = document.getElementById(`or-wd-${color}`);
     if (!draggable) return;
@@ -507,6 +513,16 @@ function _initDragDrop() {
         _showToast('Wrong terminal! Match the wire color.', 'err');
       }
     }
+    _touchWire = null;
+  }, { passive: true });
+
+  // touchcancel fires when system interrupts the touch (notification, scroll, etc.)
+  // Without this, the clone gets orphaned and stays on screen permanently.
+  document.addEventListener('touchcancel', () => {
+    if (!_touchClone) return;
+    const dragEl = document.getElementById(`or-wd-${_touchWire}`);
+    if (dragEl) dragEl.style.opacity = '';
+    _touchClone.remove(); _touchClone = null;
     _touchWire = null;
   }, { passive: true });
 }
@@ -605,6 +621,7 @@ function _afterBreakerOff() {
   _setInstr('<span class="or-snum">STEP 2</span>Select <span>Screwdriver</span> then tap the center <span>screw</span>');
   _enableTool('screwdriver'); _selectTool('screwdriver');
   _setTut(screwHead, 'TAP SCREW');
+  try { outletTutOnStateChange('screw'); } catch(e) {}
   _animateCam(new THREE.Vector3(1.2, 0.8, 6.5), new THREE.Vector3(0, 0, 0), 800, () => { gameState = 'screw'; });
 }
 
@@ -660,6 +677,7 @@ function _doTest() {
           if (ro) ro.classList.remove('show');
           _completeTask(8, 100);
           gameState = 'done'; timerRunning = false;
+          try { outletTutOnStateChange('done'); } catch(e) {}
           if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
           _showToast('220V AC — Outlet working perfectly!', 'ok');
           _animateCam(new THREE.Vector3(1.2, 0.8, 6.5), new THREE.Vector3(0, 0, 0), 1200, () => {
@@ -719,6 +737,7 @@ function _connectWire(color) {
       _setInstr('<span class="or-snum">STEP 6</span>All wires connected! Tap the <span>outlet area</span> to close the cover');
       const ins = $o('instruction'); if (ins) ins.style.display = 'block';
       _setTut(jBox, 'TAP TO CLOSE');
+      try { outletTutOnStateChange('rescrew'); } catch(e) {}
       gameState = 'rescrew';
       _animateCam(new THREE.Vector3(0.8, 0.4, 5.5), new THREE.Vector3(0, 0.2, 0), 700, () => { });
     }, 900);
@@ -835,6 +854,10 @@ function _showCamHint(msg) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function _resetAll() {
+  // Clean up any orphaned touch clone before resetting
+  if (_touchClone) { _touchClone.remove(); _touchClone = null; }
+  _touchWire = null;
+
   gameState = 'breaker_off'; selectedTool = null;
   wiresState = { brown: false, blue: false, green: false };
   completedTasks = 0; timerVal = 300; timerRunning = true;
@@ -964,6 +987,7 @@ function _loop() {
       _showToast('Screw removed! Tap the outlet cover.', 'ok');
       _setInstr('<span class="or-snum">STEP 3</span>Tap the <span>outlet cover</span> to open it');
       _setTut(facePlate, 'TAP COVER');
+      try { outletTutOnStateChange('open'); } catch(e) {}
       _animateCam(new THREE.Vector3(-1.8, 1.4, 5.2), new THREE.Vector3(0, 0.4, 0), 700,
         () => { gameState = 'open'; });
     }
@@ -991,6 +1015,7 @@ function _loop() {
       inspecting = false;
       _completeTask(4, 48);
       _showToast('Wires disconnected — drag each wire to its correct terminal.', 'info');
+      try { outletTutOnStateChange('wiring'); } catch(e) {}
       const wp = $o('wire-panel');
       if (wp) { wp.style.display = 'block'; wp.classList.add('hi'); }
       const ins = $o('instruction'); if (ins) ins.style.display = 'none';
@@ -1028,6 +1053,7 @@ function _loop() {
       _showToast('Outlet closed! Turn the breaker back ON.', 'ok');
       _setInstr('<span class="or-snum">STEP 7</span>Find the <span>breaker panel</span> — switch it <span>ON</span>');
       _setTut(bkHandle, 'TAP BREAKER');
+      try { outletTutOnStateChange('breaker_on'); } catch(e) {}
       _animateCam(new THREE.Vector3(1.2, 0.8, 6.5), new THREE.Vector3(0, 0, 0), 1200,
         () => { gameState = 'breaker_on'; });
     }

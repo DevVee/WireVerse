@@ -15,13 +15,14 @@ import * as THREE from 'three';
 import { scene } from './world.js';
 
 // ── Station definitions ──────────────────────────────────────────────────────
+// switchType matches level IDs 4/5/6 in EXPLORE stage: 1way=station1, 2way=station2, 3way=station3
 const STATION_DEFS = [
-  // Station 1 — Workshop north wall (z≈-20), face south (ry=0)
-  { id: 1, x: 13, y: 0.90, z: -19.3, ry: 0,             room: 'Workshop' },
-  // Station 2 — Generator Room west wall (x≈4.5), face east (ry=π/2)
-  { id: 2, x: 4.5, y: 0.90, z: 7,    ry: Math.PI / 2,   room: 'Generator Room' },
-  // Station 3 — Utility Room south wall (z≈14.5), face north (ry=π)
-  { id: 3, x: 9,  y: 0.90, z: 14.5,  ry: Math.PI,       room: 'Utility Room' },
+  // Station 1 — Workshop 1 south wall, face north (ry=π) — 1-Way Switch
+  { id: 1, x: -5,    y: 0.90, z: -17.75, ry: Math.PI,       room: 'Workshop 1', switchType: '1way', label: '1-WAY SWITCH' },
+  // Station 2 — Workshop 1 east wall, face west (ry=-π/2) — 2-Way Switch
+  { id: 2, x: 7.75,  y: 0.90, z: -11,    ry: -Math.PI / 2,  room: 'Workshop 1', switchType: '2way', label: '2-WAY SWITCH' },
+  // Station 3 — Workshop 2 west wall, face east (ry=π/2) — 3-Way Switch
+  { id: 3, x: -7.75, y: 0.90, z: -22,    ry: Math.PI / 2,   room: 'Workshop 2', switchType: '3way', label: '3-WAY SWITCH' },
 ];
 
 // ── Public exports ────────────────────────────────────────────────────────────
@@ -71,22 +72,24 @@ export function initSwitches() {
     dot.position.set(0.08, 0.12, 0.096);
     group.add(dot);
 
-    // Station label (number)
+    // Station label — shows switch type (e.g. "1-WAY")
     const numCanvas = document.createElement('canvas');
-    numCanvas.width = 64; numCanvas.height = 32;
+    numCanvas.width = 128; numCanvas.height = 40;
     const nc = numCanvas.getContext('2d');
-    nc.fillStyle = 'rgba(0,0,0,0)';
-    nc.clearRect(0, 0, 64, 32);
-    nc.font = 'bold 18px sans-serif';
+    nc.clearRect(0, 0, 128, 40);
+    nc.fillStyle = 'rgba(0,0,0,0.65)';
+    nc.roundRect(2, 2, 124, 36, 6);
+    nc.fill();
+    nc.font = 'bold 14px sans-serif';
     nc.fillStyle = '#F5C200';
     nc.textAlign = 'center';
-    nc.fillText(`S${def.id}`, 32, 22);
+    nc.fillText(def.label || `S${def.id}`, 64, 25);
     const numTex = new THREE.CanvasTexture(numCanvas);
     const numMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.12, 0.06),
+      new THREE.PlaneGeometry(0.22, 0.07),
       new THREE.MeshBasicMaterial({ map: numTex, transparent: true, depthWrite: false })
     );
-    numMesh.position.set(0, 0.20, 0.10);
+    numMesh.position.set(0, 0.22, 0.10);
     group.add(numMesh);
 
     // ── Interaction proxy (full bounding box, used for raycasting) ─────────
@@ -95,16 +98,62 @@ export function initSwitches() {
       new THREE.MeshBasicMaterial({ visible: false })
     );
     proxy.position.z = 0.1;
-    proxy.userData = { type: 'switch_station', stationId: def.id, label: `Install Switch #${def.id}` };
+    proxy.userData = { type: 'switch_station', stationId: def.id, switchType: def.switchType, label: `${def.label || 'Switch'} Station #${def.id}` };
     group.add(proxy);
 
     scene.add(group);
 
-    const record = { id: def.id, group, body, lever, dot, proxy, dotMat: dot.material, fixed: false };
+    // ── Floor footprint guide (1.4m in front of switch, points toward it) ──────
+    const fpGroup = new THREE.Group();
+    const arrowMat = new THREE.MeshBasicMaterial({
+      color: 0xF5C200, transparent: true, opacity: 0.75,
+      side: THREE.DoubleSide, depthWrite: false,
+    });
+    const arrowMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.40), arrowMat);
+    arrowMesh.rotation.x = -Math.PI / 2;
+    fpGroup.add(arrowMesh);
+    const arrowMat2 = new THREE.MeshBasicMaterial({
+      color: 0xff8800, transparent: true, opacity: 0.50,
+      side: THREE.DoubleSide, depthWrite: false,
+    });
+    const arrowMesh2 = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.26), arrowMat2);
+    arrowMesh2.rotation.x = -Math.PI / 2;
+    arrowMesh2.position.y = 0.004;
+    fpGroup.add(arrowMesh2);
+    const fpRingMat = new THREE.MeshBasicMaterial({
+      color: 0xF5C200, transparent: true, opacity: 0.22,
+      side: THREE.DoubleSide, depthWrite: false,
+    });
+    const fpRing = new THREE.Mesh(new THREE.RingGeometry(0.16, 0.28, 20), fpRingMat);
+    fpRing.rotation.x = -Math.PI / 2;
+    fpGroup.add(fpRing);
+
+    // Place 1.4m in front along the group's +Z direction (face direction)
+    const fpOffset = new THREE.Vector3(0, 0, 1.4);
+    fpOffset.applyEuler(new THREE.Euler(0, def.ry, 0));
+    fpGroup.position.set(def.x + fpOffset.x, 0.06, def.z + fpOffset.z);
+    fpGroup.rotation.y = def.ry + Math.PI; // tip points toward switch
+    scene.add(fpGroup);
+
+    const record = {
+      id: def.id, group, body, lever, dot, proxy, dotMat: dot.material, fixed: false,
+      fpGroup, arrowMat, arrowMat2, fpRingMat,
+    };
     switchStations.push(record);
     switchProxies.push(proxy);
-    // also push body so broad raycasts pick it up
     proxy.userData._parentRecord = record;
+  });
+}
+
+// ── Per-frame update (call from main loop) ────────────────────────────────────
+export function updateSwitches(t) {
+  switchStations.forEach(st => {
+    if (st.fixed || !st.fpGroup) return;
+    const p = Math.sin(t * 4.5 + st.id * 1.1) * 0.5 + 0.5;
+    st.fpGroup.position.y = 0.06 + Math.sin(t * 2.8 + st.id) * 0.035;
+    st.arrowMat.opacity  = 0.50 + p * 0.45;
+    st.arrowMat2.opacity = 0.30 + p * 0.35;
+    st.fpRingMat.opacity = 0.12 + p * 0.20;
   });
 }
 

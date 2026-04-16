@@ -56,33 +56,19 @@ if (!isMobile && cvs) {
 // ── ANALOG JOYSTICK ───────────────────────────────────────────────────────────
 // joyInput: analog values -1..1 for X (strafe) and Y (forward/back)
 export const joyInput = { x: 0, y: 0 };
-let touchSprinting = false;
 let _joyId = -1, _joyCX = 0, _joyCY = 0, _joyR = 55;
-
-// Sprint (RUN) button
-const _btnSprint = document.getElementById('btnDpadSprint');
-if (_btnSprint) {
-  const spDn = e => { e.preventDefault(); touchSprinting = true; };
-  const spUp = e => { e.preventDefault(); touchSprinting = false; };
-  _btnSprint.addEventListener('touchstart',  spDn, { passive: false });
-  _btnSprint.addEventListener('touchend',    spUp, { passive: false });
-  _btnSprint.addEventListener('touchcancel', spUp, { passive: false });
-  _btnSprint.addEventListener('mousedown',  spDn);
-  _btnSprint.addEventListener('mouseup',    spUp);
-  _btnSprint.addEventListener('mouseleave', spUp);
-}
 
 setTimeout(() => {
   const joyOuter = document.getElementById('joyOuter');
   const joyInner = document.getElementById('joyInner');
   if (!joyOuter) return;
 
-  const DEAD = 0.07; // 7% dead zone
+  const DEAD = 0.18; // larger dead zone = less twitchy at rest
 
   joyOuter.addEventListener('touchstart', e => {
     if (Player.state !== 'standing') return;
     e.preventDefault();
-    if (_joyId !== -1) return; // already tracking one finger
+    if (_joyId !== -1) return;
     const t = e.changedTouches[0];
     _joyId = t.identifier;
     const rect = joyOuter.getBoundingClientRect();
@@ -99,33 +85,24 @@ setTimeout(() => {
       const dx = t.clientX - _joyCX;
       const dy = t.clientY - _joyCY;
       const dist = Math.hypot(dx, dy);
-      const maxR = _joyR * 0.72; // knob travel limit
+      const maxR = _joyR * 0.72;
       const clamp = Math.min(dist, maxR);
       const ang = Math.atan2(dy, dx);
 
-      // Move knob visually
       if (joyInner) {
         const kx = Math.cos(ang) * clamp;
         const ky = Math.sin(ang) * clamp;
         joyInner.style.transform = `translate(calc(-50% + ${kx}px), calc(-50% + ${ky}px))`;
       }
 
-      // Normalize: 0..1 (apply dead zone)
-      const norm = Math.max(0, (clamp / maxR - DEAD) / (1 - DEAD));
+      // Normalize with dead zone — output is 0..0.75 max to reduce speed
       if (dist < _joyR * DEAD) {
         joyInput.x = 0; joyInput.y = 0;
       } else {
+        const norm = Math.max(0, (clamp / maxR - DEAD) / (1 - DEAD)) * 0.75;
         joyInput.x = (dx / dist) * norm;
         joyInput.y = (dy / dist) * norm;
       }
-
-      // Auto-sprint when joystick pushed to 88%+ AND running is active
-      // (user can also use the RUN button independently)
-      if (norm > 0.88) touchSprinting = true;
-      else if (!_btnSprint?.matches(':active')) touchSprinting = false;
-
-      // Sprint visual feedback
-      if (joyOuter) joyOuter.classList.toggle('sprinting', norm > 0.88);
     }
   }, { passive: true });
 
@@ -134,9 +111,8 @@ setTimeout(() => {
       if (t.identifier !== _joyId) continue;
       _joyId = -1;
       joyInput.x = 0; joyInput.y = 0;
-      if (!_btnSprint?.matches(':active')) touchSprinting = false;
       if (joyInner) joyInner.style.transform = 'translate(-50%, -50%)';
-      joyOuter.classList.remove('joy-active', 'sprinting');
+      joyOuter.classList.remove('joy-active');
     }
   };
   document.addEventListener('touchend',    _joyRelease, { passive: true });
@@ -247,11 +223,8 @@ export function updatePlayer(dt) {
     camera.rotation.x = Player.pitch;
   }
 
-  // Sprint
-  Player.sprinting = touchSprinting || keys['ShiftLeft'] || keys['ShiftRight'];
-
   // Movement (Only when standing)
-  const maxSpd = Player.sprinting ? Player.SPRINT : Player.SPEED;
+  const maxSpd = Player.SPEED;
   const sinY = Math.sin(Player.yaw), cosY = Math.cos(Player.yaw);
   _fwd.set(-sinY, 0, -cosY);
   _rgt.set(cosY, 0, -sinY);

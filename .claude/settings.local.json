@@ -3,7 +3,11 @@
     "allow": [
       "Bash(node --input-type=module --eval ':*)",
       "Bash(ls a:/Electric/*.html)",
-      "Bash(node -e ':*)"
+      "Bash(node -e ':*)",
+      "Bash(node --input-type=module --experimental-vm-modules)",
+      "Bash(node --input-type=module)",
+      "Bash(wc -l /a/Electric/www/js/*.js)",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }

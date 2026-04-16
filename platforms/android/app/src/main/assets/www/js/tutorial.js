@@ -1,6 +1,6 @@
 // ══════════════════════════════════════════════════════════════════════════════
 // TUTORIAL SYSTEM  —  Phase 1: Orientation
-// TESDA NC II / NC III  |  ElectroTech Sim
+// PinoyTek  |  ElectroTech Sim
 // ══════════════════════════════════════════════════════════════════════════════
 
 // ── PHASE DEFINITIONS ─────────────────────────────────────────────────────────
@@ -23,11 +23,11 @@ export const SAFETY_RULES = [
   {
     icon: '🧤',
     title: 'USE CORRECT PPE',
-    desc: 'Wear insulating gloves (Class 00 min), safety glasses, and closed-toe shoes rated for the voltage class. (TESDA CBLM NC II — Unit 1)',
+    desc: 'Wear insulating gloves (Class 00 min), safety glasses, and closed-toe shoes rated for the voltage class. (PinoyTek CBLM NC II — Unit 1)',
   },
 ];
 
-// ── COMPONENT LIBRARY  (TESDA NC II / NC III standard) ────────────────────────
+// ── COMPONENT LIBRARY  (PinoyTek NC II / NC III standard) ────────────────────────
 export const COMPONENT_LIBRARY = {
   'breaker': {
     name: 'Miniature Circuit Breaker (MCB)',
@@ -73,7 +73,7 @@ export const COMPONENT_LIBRARY = {
     name: 'Circuit Validation Station',
     iecSymbol: '[✓ LED]',
     function: 'Tests continuity, polarity, and insulation resistance of completed wiring. LEDs indicate pass/fail per test point.',
-    standard: 'TESDA Assessment criteria — NC II practical exam',
+    standard: 'PinoyTek Assessment criteria — NC II practical exam',
     wiring: 'Connect probes to test points as indicated. All LEDs must be GREEN to pass.',
     tesda: 'NC II — Perform testing and commissioning',
   },
@@ -97,7 +97,7 @@ export const COMPONENT_LIBRARY = {
     name: 'Tool Rack',
     iecSymbol: '[TOOLS]',
     function: 'Stores hand tools used during installation and maintenance. Always return tools after use and inspect for damage before use.',
-    standard: 'TESDA CBLM — Work safely with electricity',
+    standard: 'PinoyTek CBLM — Work safely with electricity',
     wiring: '—',
     tesda: 'NC II — Use hand tools',
   },
@@ -105,7 +105,7 @@ export const COMPONENT_LIBRARY = {
     name: 'Training Module Whiteboard',
     iecSymbol: '[BOARD]',
     function: 'Displays the current module objectives, schematic overview, and safety reminders for the day\'s practical session.',
-    standard: 'TESDA Training Regulations — NC II (ELC722301)',
+    standard: 'PinoyTek Training Regulations — NC II (ELC722301)',
     wiring: '—',
     tesda: 'NC II — Participate in workplace communication',
   },
@@ -138,7 +138,7 @@ export const COMPONENT_LIBRARY = {
 // ── ORIENTATION CARD CONTENT  (shown when player reads the classroom whiteboard) ──
 export const ORIENTATION_CARD = {
   title: 'MODULE 1 — ORIENTATION',
-  subtitle: 'TESDA NC II  |  Basic Electrical Installation',
+  subtitle: 'PinoyTek NC II  |  Basic Electrical Installation',
   sections: [
     {
       heading: 'Today\'s Objectives',
@@ -157,7 +157,7 @@ export const ORIENTATION_CARD = {
         'IEC 60898-1 — Circuit breaker rating and testing',
         'IEC 60228 — Conductor cross-sections',
         'OSHS Rule 1080 — Philippine Electrical Safety',
-        'TESDA TR ELC722301 — NC II competencies',
+        'PinoyTek TR ELC722301 — NC II competencies',
       ],
     },
     {
@@ -239,7 +239,7 @@ export function initSafetyBriefing(onComplete) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// COMPONENT INSPECTOR  —  shows TESDA info card for any interactable
+// COMPONENT INSPECTOR  —  shows PinoyTek info card for any interactable
 // ══════════════════════════════════════════════════════════════════════════════
 let _inspectorTimeout = null;
 

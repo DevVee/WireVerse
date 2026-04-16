@@ -3,15 +3,12 @@ import { Audio } from './audio.js';
 import {
   renderer, scene, camera,
   ambLight, warnLight, roomLightSets,
-  allInteractables, doors, colBoxes,
+  allInteractables, doors,
   mainPanel, distAPanel, distBPanel, wsPanel,
-  mainSwitch, genSwitch,
   generator, updateGenerator,
   scadaTerminals, updateSCADA,
   cableStations,
-  oscWave1, oscWave2, updateOscilloscopes,
-  wireObjects, scenarioTerminals, validationBoard,
-  workshopWiringStations,
+  updateOscilloscopes,
   M
 } from './world.js';
 import { updateOutlets, markOutletFixed, outletSockets } from './outlets.js';
@@ -19,6 +16,7 @@ import { initOutletScenario, openOutlet, closeOutlet } from './outlet-scenario.j
 import { initSwitchScenario, openSwitch, closeSwitch } from './switch-scenario.js';
 import { initSwitches, switchStations, switchProxies, markSwitchFixed, drawSwitchMinimap, updateSwitches } from './switches.js';
 import { Player, updatePlayer, getRoom, isMobile } from './player.js';
+import { initTutorial, tutorialOnInteract, tutorialOnTaskOpen } from './tutorial-guide.js';
 
 
 // Global Audio for menu.js
@@ -45,16 +43,6 @@ function feedbackLog(msg, type = 'info') {
     `<div style="color:${l.color};margin:1px 0;">${l.msg}</div>`
   ).join('');
 }
-
-function errorFlash() {
-  const el = document.getElementById('errorFlash');
-  if (!el) return;
-  el.style.opacity = '1';
-  clearTimeout(el._t);
-  el._t = setTimeout(() => { el.style.opacity = '0'; }, 350);
-}
-
-
 
 // ── ELECTRICAL STATE ──────────────────────────────────────────────────────────
 const ES = {
@@ -250,9 +238,7 @@ function updateTaskDisplay() {
     if (!task.completed) {
       div.addEventListener('click', () => {
         startTask(task.id);
-        // Close modal after picking task
-        document.getElementById('taskPanel')?.classList.remove('task-open');
-        document.getElementById('btnTopTasks')?.classList.remove('pressed');
+        _closeTaskPanel();
       });
     }
     list.appendChild(div);
@@ -303,6 +289,9 @@ function doInteract() {
   }
   if (Player.state === 'computer' || Player.state === 'cctv' || Player.state === 'circuit' || Player.state === 'outlet' || Player.state === 'repair') return;
   if (!focusedObj) return;
+
+  // Notify tutorial system of interaction
+  tutorialOnInteract();
 
   const ud = focusedObj.userData;
   if (Audio.ctx) Audio.click();
@@ -561,7 +550,6 @@ function resizeMinimap() {
 }
 resizeMinimap();
 window.addEventListener('resize', resizeMinimap);
-const MM_W = 148, MM_H = 148; // kept for any legacy refs
 
 const MAP = { minX: -10, maxX: 10, minZ: -34, maxZ: 10 };
 
@@ -850,12 +838,14 @@ function updateHUD(dt, animT) {
         } else { focusedObj = null; }
       }
 
+      // Only show the big FIX button for outlet-socket type; hide for everything else on mobile
+      const isOutlet = focusedObj?.userData?.type === 'outlet-socket';
+      const showBtn = isOutlet && newPrompt !== 'NONE';
       if (promptEl && _hudCache.prompt !== newPrompt) {
-        if (newPrompt === 'NONE') {
-          // Use setProperty with important to reliably override any CSS !important rules
+        if (!showBtn) {
           promptEl.style.setProperty('display', 'none', 'important');
         } else {
-          promptEl.textContent = newPrompt;
+          promptEl.textContent = 'FIX';
           promptEl.style.setProperty('display', 'flex', 'important');
         }
         _hudCache.prompt = newPrompt;
@@ -895,33 +885,39 @@ function updateHUD(dt, animT) {
 }
 
 // ── GAME LOOP ─────────────────────────────────────────────────────────────────
-const clock = new THREE.Clock();
 let animT = 0;
 
-const _FPS_CAP = isMobile ? 30 : 60; // 30fps on mobile — halves GPU workload
-const _FPS_INTERVAL = 1000 / _FPS_CAP;
-let _lastFrameMs = 0;
 let _frameCount = 0;
-function loop(timestamp) {
+let _prevTime = performance.now();
+const _menuOverlay = document.getElementById('overlay');
+
+function loop(now) {
   requestAnimationFrame(loop);
-  const elapsed = timestamp - _lastFrameMs;
-  if (elapsed < _FPS_INTERVAL) return; // skip frame to hold 60fps
-  _lastFrameMs = timestamp - (elapsed % _FPS_INTERVAL);
-  const dt = Math.min(clock.getDelta(), 0.05);
+
+  // While menu is showing — do nothing, preserve GPU
+  if (_menuOverlay && _menuOverlay.style.display !== 'none') {
+    _prevTime = now; // reset so dt=0 on resume instead of a huge spike
+    return;
+  }
+
+  // True delta — no artificial cap; let rAF run at device's native rate (60/120Hz)
+  const dt = Math.min((now - _prevTime) / 1000, 0.05);
+  _prevTime = now;
   animT += dt;
   _frameCount++;
 
   updatePlayer(dt);
 
-  // Stagger expensive updates across 2 frames at 60fps
-  const fm = _frameCount % 2;
-  if (fm === 0) { applyPower(); updateGenerator(dt); updateSCADA(dt, animT); updateOscilloscopes(animT); }
-  if (fm === 1) { updateOutlets(animT); updateSwitches(animT); doors.forEach(d => d.update(dt)); }
+  // Stagger secondary updates: one bucket per frame, round-robin
+  const fm = _frameCount % 3;
+  if (fm === 0) { applyPower(); updateGenerator(dt); }
+  if (fm === 1) { updateSCADA(dt, animT); updateOscilloscopes(animT); }
+  if (fm === 2) { updateOutlets(animT); updateSwitches(animT); doors.forEach(d => d.update(dt)); }
 
   updateHUD(dt, animT);
 
-  // Use bloom composer on desktop if loaded, otherwise standard render
-  if (window._composer) window._composer.render();
+  // Desktop: bloom composer; mobile: plain render (no postprocessing)
+  if (!isMobile && window._composer) window._composer.render();
   else renderer.render(scene, camera);
 }
 
@@ -1018,12 +1014,22 @@ if (startBtn) {
       } catch (e) {}
 
       try {
-        if (typeof loop === 'function') loop();
+        if (typeof loop === 'function') requestAnimationFrame(loop);
         if (!isMobile) {
           const cvs = document.getElementById('c');
           if (cvs && cvs.requestPointerLock) cvs.requestPointerLock();
         }
       } catch (e) { console.error("Loop/Render Error:", e); }
+
+      // ── Launch tutorial after settle ─────────────────────────────────────
+      setTimeout(() => {
+        try {
+          const _tutLevelId = window.currentLevelId || 1;
+          const _tutStageId = window.currentStageId || 1;
+          initTutorial(() => ({ x: Player.pos.x, z: Player.pos.z, yaw: Player.yaw }), _tutStageId, _tutLevelId);
+        } catch (e) { console.error("Tutorial init error:", e); }
+      }, 1200);
+
     }, 3200);
   });
 }
@@ -1033,15 +1039,7 @@ if (startBtn) {
 // ── INPUT ─────────────────────────────────────────────────────────────────────
 window.addEventListener('keydown', e => {
   if (e.code === 'KeyE') doInteract();
-  if (e.code === 'KeyT') {
-    const panel = document.getElementById('taskPanel');
-    if (panel) {
-      const isOpen = panel.classList.contains('task-open');
-      panel.classList.toggle('task-open', !isOpen);
-      document.getElementById('btnTopTasks')?.classList.toggle('pressed', !isOpen);
-      if (!isOpen) updateTaskDisplay();
-    }
-  }
+  if (e.code === 'KeyT') { _toggleTaskPanel(); }
   if (e.code === 'KeyM') {
     const mm = document.getElementById('minimapWrapper');
     if (mm) mm.style.display = mm.style.display === 'none' ? 'block' : 'none';
@@ -1178,6 +1176,17 @@ const LevelManager = {
   targetOutletId: 1,
 
   init() {
+    // Restore level persisted across reload (window vars lost on location.reload())
+    const ps = localStorage.getItem('et_pending_stage');
+    const pl = localStorage.getItem('et_pending_level');
+    if (ps && pl) {
+      window.currentStageId  = parseInt(ps);
+      window.currentLevelId  = parseInt(pl);
+      window.currentOutletId = parseInt(pl);
+      localStorage.removeItem('et_pending_stage');
+      localStorage.removeItem('et_pending_level');
+    }
+
     const stageId  = window.currentStageId  || 1;
     const levelId  = window.currentLevelId  || 1;
     const outletId = window.currentOutletId || levelId;
@@ -1225,7 +1234,6 @@ const LevelManager = {
     if (Audio.ctx) Audio.success?.();
 
     // Populate modal
-    const STAGE_NAMES = { 1: 'Outlet Repair', 2: 'Learn Electrician' };
     const LEVEL_SUBS  = {
       '1-1': 'Entrance outlet repaired & tested.',
       '1-2': 'Workshop 1 outlet repaired & tested.',
@@ -1246,45 +1254,62 @@ const LevelManager = {
       if (star) setTimeout(() => star.classList.add('lit','drop'), i * 220);
     }
 
-    // Next-level message + button
-    const hasNext    = DB.isLevelUnlocked ? false : false; // computed below
+    // Prev / Next / Exit navigation
+    const LEVEL_NAMES = {
+      '1-1': 'Entrance Outlet',
+      '1-2': 'Workshop 1 Outlet',
+      '1-3': 'Workshop 2 Outlet',
+    };
     const nextLevelId = levelId + 1;
-    const nextExists  = nextLevelId <= 3; // 3 levels per stage
-    const nextMsg     = document.getElementById('lcm-next-msg');
-    const nextBtn     = document.getElementById('lcmNextBtn');
-    const backBtn     = document.getElementById('lcmBackBtn');
+    const prevLevelId = levelId - 1;
+    const nextExists  = nextLevelId <= 3;
+    const prevExists  = prevLevelId >= 1;
 
+    const nextMsg  = document.getElementById('lcm-next-msg');
+    const nextBtn  = document.getElementById('lcmNextBtn');
+    const prevBtn  = document.getElementById('lcmPrevBtn');
+    const exitBtn  = document.getElementById('lcmExitBtn');
+
+    // Next level message
     if (nextExists) {
-      const NEXT_NAMES = {
-        '1-2': 'Workshop 1 Outlet',
-        '1-3': 'Workshop 2 Outlet',
-      };
-      const nextName = NEXT_NAMES[`${stageId}-${nextLevelId}`] || `Level ${nextLevelId}`;
+      const nextName = LEVEL_NAMES[`${stageId}-${nextLevelId}`] || `Level ${nextLevelId}`;
       if (nextMsg) { nextMsg.style.display = 'block'; nextMsg.innerHTML = `<strong>Next:</strong> ${nextName}`; }
-      if (nextBtn) {
-        nextBtn.style.display = 'block';
-        nextBtn._bound = false;
-      }
+      if (nextBtn) nextBtn.style.display = 'block';
     } else {
       if (nextMsg) { nextMsg.style.display = 'block'; nextMsg.innerHTML = `<strong>Stage ${stageId} Complete!</strong> All levels done.`; }
       if (nextBtn) nextBtn.style.display = 'none';
     }
 
-    // Bind buttons (clear old listeners by replacing)
-    if (nextBtn) {
+    if (prevBtn) prevBtn.style.display = prevExists ? 'block' : 'none';
+    if (exitBtn) exitBtn.style.display = 'block';
+
+    // Bind buttons (clone to clear stale listeners)
+    if (nextBtn && nextExists) {
       const newNext = nextBtn.cloneNode(true);
       nextBtn.parentNode.replaceChild(newNext, nextBtn);
       newNext.addEventListener('click', () => {
-        // Launch next level in same stage
-        window.currentLevelId  = nextLevelId;
-        window.currentOutletId = nextLevelId; // outletId == levelId for stage 1
+        localStorage.setItem('et_pending_stage', stageId);
+        localStorage.setItem('et_pending_level', nextLevelId);
         window.location.reload();
       });
     }
-    if (backBtn) {
-      const newBack = backBtn.cloneNode(true);
-      backBtn.parentNode.replaceChild(newBack, backBtn);
-      newBack.addEventListener('click', () => { window.location.reload(); });
+    if (prevBtn && prevExists) {
+      const newPrev = prevBtn.cloneNode(true);
+      prevBtn.parentNode.replaceChild(newPrev, prevBtn);
+      newPrev.addEventListener('click', () => {
+        localStorage.setItem('et_pending_stage', stageId);
+        localStorage.setItem('et_pending_level', prevLevelId);
+        window.location.reload();
+      });
+    }
+    if (exitBtn) {
+      const newExit = exitBtn.cloneNode(true);
+      exitBtn.parentNode.replaceChild(newExit, exitBtn);
+      newExit.addEventListener('click', () => {
+        localStorage.removeItem('et_pending_stage');
+        localStorage.removeItem('et_pending_level');
+        window.location.reload();
+      });
     }
 
     const modal = document.getElementById('levelCompleteModal');
@@ -1638,15 +1663,73 @@ if (igmClose) igmClose.addEventListener('click', () => setInGameMenu(false));
 const btnResume = document.getElementById('btnResume');
 if (btnResume) btnResume.addEventListener('click', () => setInGameMenu(false));
 
+function _doRestartLevel() {
+  setInGameMenu(false);
+  // Reset outlets
+  try {
+    outletSockets.forEach(s => {
+      if (s.fixed) {
+        s.fixed = false;
+        // Restore broken visual if possible
+        if (s.group) {
+          s.group.traverse(ch => {
+            if (ch.isMesh && ch.userData?.isSocket) ch.material = M.eRed || ch.material;
+          });
+        }
+      }
+    });
+    TASKS.daily.forEach(t => {
+      if (t.id === 'outlet_repair') { t.completed = false; t._fixedCount = 0; }
+    });
+  } catch(e) {}
+  // Reset switch stations
+  try {
+    switchStations.forEach(s => { if (s.fixed) { s.fixed = false; } });
+    TASKS.daily.forEach(t => {
+      if (t.id === 'switch_repair') { t.completed = false; }
+    });
+  } catch(e) {}
+  // Reset all daily tasks progress
+  TASKS.daily.forEach(t => { t.completed = false; });
+  activeTask = null;
+  updateTaskDisplay();
+  // Clear tutorial flag so it can replay if desired
+  notify('Level restarted — all progress reset.', 3000);
+}
+
 const btnRestartLevel = document.getElementById('btnRestartLevel');
 if (btnRestartLevel) btnRestartLevel.addEventListener('click', () => {
-  setInGameMenu(false);
-  notify('Restarting level...', 2000);
+  // Show inline confirmation inside the in-game menu
+  const confirmEl = document.getElementById('igmConfirm');
+  if (confirmEl) { confirmEl.style.display = 'flex'; return; }
+  _doRestartLevel();
+});
+
+// Confirm/cancel buttons inside igmConfirm
+const btnConfirmRestart = document.getElementById('btnConfirmRestart');
+const btnCancelRestart  = document.getElementById('btnCancelRestart');
+if (btnConfirmRestart) btnConfirmRestart.addEventListener('click', () => {
+  const confirmEl = document.getElementById('igmConfirm');
+  if (confirmEl) confirmEl.style.display = 'none';
+  _doRestartLevel();
+});
+if (btnCancelRestart) btnCancelRestart.addEventListener('click', () => {
+  const confirmEl = document.getElementById('igmConfirm');
+  if (confirmEl) confirmEl.style.display = 'none';
 });
 
 const btnMainMenu = document.getElementById('btnMainMenu');
 if (btnMainMenu) btnMainMenu.addEventListener('click', () => {
-  location.reload();
+  setInGameMenu(false);
+  // Show menu overlay directly — no page reload, no intro screen
+  const overlay = document.getElementById('overlay');
+  if (overlay) {
+    overlay.style.display = '';
+    overlay.style.opacity = '1';
+  }
+  if (window._returnToMainMenu) window._returnToMainMenu();
+  // Stop game audio
+  try { if (Audio.ctx) Audio.hum(false); } catch (e) {}
 });
 
 // Keyboard shortcut: Escape / P
@@ -1659,39 +1742,63 @@ window.addEventListener('keydown', e => {
 });
 
 // ── Tasks Panel ────────────────────────────────────────────────────────────
-const btnTopTasks = document.getElementById('btnTopTasks');
-if (btnTopTasks) {
-  btnTopTasks.addEventListener('click', () => {
-    const panel = document.getElementById('taskPanel');
-    if (!panel) return;
-    const isOpen = panel.classList.contains('task-open');
-    panel.classList.toggle('task-open', !isOpen);
-    btnTopTasks.classList.toggle('pressed', !isOpen);
-    if (Audio.ctx) (!isOpen ? Audio.uiSelect() : Audio.uiBack());
-    if (!isOpen) updateTaskDisplay(); // refresh when opening
-  });
+function _toggleTaskPanel() {
+  const panel = document.getElementById('taskPanel');
+  if (!panel) return;
+  const isOpen = panel.classList.contains('task-open');
+  panel.classList.toggle('task-open', !isOpen);
+  if (Audio.ctx) (!isOpen ? Audio.uiSelect() : Audio.uiBack());
+  if (!isOpen) { updateTaskDisplay(); tutorialOnTaskOpen(); }
 }
 
+// Make the entire starHUD clickable to open the tasks panel
+const starHUD = document.getElementById('starHUD');
+if (starHUD) {
+  starHUD.style.cursor = 'pointer';
+  starHUD.addEventListener('click', _toggleTaskPanel);
+}
+
+// ── Minimap click to enlarge ──────────────────────────────────────────────────
+(function() {
+  const minimap = document.getElementById('minimap');
+  if (!minimap) return;
+  let big = false;
+  minimap.style.cursor = 'pointer';
+  minimap.title = 'Tap to enlarge / shrink map';
+  minimap.addEventListener('click', () => {
+    big = !big;
+    if (big) {
+      minimap.style.width  = '260px';
+      minimap.style.height = '260px';
+      minimap.style.zIndex = '200';
+      minimap.style.boxShadow = '0 0 30px rgba(34,221,255,0.25), 0 6px 40px rgba(0,0,0,0.8)';
+      minimap.style.borderColor = 'rgba(34,221,255,0.65)';
+      minimap.style.transition = 'all 0.3s cubic-bezier(0.22,1,0.36,1)';
+    } else {
+      minimap.style.width  = '140px';
+      minimap.style.height = '140px';
+      minimap.style.zIndex = '15';
+      minimap.style.boxShadow = '';
+      minimap.style.borderColor = '';
+    }
+  });
+})();
+
 // Close task modal via its close button
+function _closeTaskPanel() {
+  document.getElementById('taskPanel')?.classList.remove('task-open');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const btnCloseTask = document.getElementById('btnCloseTask');
-  if (btnCloseTask) {
-    btnCloseTask.addEventListener('click', () => {
-      document.getElementById('taskPanel')?.classList.remove('task-open');
-      document.getElementById('btnTopTasks')?.classList.remove('pressed');
-    });
-  }
+  if (btnCloseTask) btnCloseTask.addEventListener('click', _closeTaskPanel);
 });
 
-// Also close task modal via close button (handles late DOM)
 setTimeout(() => {
   const btnCloseTask = document.getElementById('btnCloseTask');
   if (btnCloseTask && !btnCloseTask._bound) {
     btnCloseTask._bound = true;
-    btnCloseTask.addEventListener('click', () => {
-      document.getElementById('taskPanel')?.classList.remove('task-open');
-      document.getElementById('btnTopTasks')?.classList.remove('pressed');
-    });
+    btnCloseTask.addEventListener('click', _closeTaskPanel);
   }
 }, 0);
 

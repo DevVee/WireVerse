@@ -7,7 +7,7 @@ function mkTex(canvas) {
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.minFilter = THREE.LinearMipmapLinearFilter;
   t.magFilter = THREE.LinearFilter;
-  t.anisotropy = _isMob ? 4 : 8;
+  t.anisotropy = _isMob ? 8 : 16;
   return t;
 }
 

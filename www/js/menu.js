@@ -1001,7 +1001,7 @@
     if (overlay) overlay.style.display = 'block';
     const hud = document.getElementById('hud');
     if (hud) hud.style.display = 'none';
-    ['btnTopTasks', 'btnPauseTop', 'toolBelt', 'stepProgress', 'feedbackLog', 'errorFlash'].forEach(id => {
+    ['btnPauseTop', 'toolBelt', 'stepProgress', 'feedbackLog', 'errorFlash'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
@@ -1115,6 +1115,13 @@
     bindAll();
     initMenu();
   }
+
+  // Public: called by game when returning to menu without a page reload
+  window._returnToMainMenu = function () {
+    const player = DB.getPlayer();
+    if (player) updateGreeting(player);
+    showScreen('screenMain');
+  };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

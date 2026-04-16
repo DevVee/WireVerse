@@ -24,17 +24,14 @@ function mkCyl(rt, rb, h, segs, color, rough = 0.4, metal = 0.3) {
 
 // ── Socket positions ──────────────────────────────────────────────────────────
 // (x, y, z) = world position; ry = rotation around Y so face points INTO the room
+// Spread across different walls for better exploration discoverability.
 const SOCKET_DEFS = [
-  // Lobby north wall (z=-28.11 center, south inner face z=-28.0): face +Z into lobby
-  { id: 1, x:  1.5,  y: 0.90, z: -27.96, ry: 0,             room: 'Lobby'        },
-  // Wiring Lab north wall (z=-20.11 center, south inner face z=-20.0): face +Z into lab
-  { id: 2, x: 12.0,  y: 0.90, z: -19.96, ry: 0,             room: 'Wiring Lab'   },
-  // Corridor west wall (x=-2 center, east face x=-1.89): face +X into corridor
-  { id: 3, x: -1.85, y: 0.90, z:  -8.0,  ry:  Math.PI / 2,  room: 'Corridor'     },
-  // Control Room east wall (x=34.11 center, west inner face x=34.0): face -X into room
-  { id: 4, x: 34.02, y: 0.90, z:   2.0,  ry: -Math.PI / 2,  room: 'Control Room' },
-  // Tool Room / Dist-B east wall (x=-2 center, west face x=-2.11): face -X into room
-  { id: 5, x: -2.13, y: 0.90, z:  12.0,  ry: -Math.PI / 2,  room: 'Tool Room'    },
+  // Entrance — north wall (z≈8), face south (ry=π)
+  { id: 1, x:  3.0,   y: 0.42, z:  7.88, ry:  Math.PI,      room: 'Entrance'   },
+  // Workshop 1 — west wall (x≈-8), face east (ry=π/2)
+  { id: 2, x: -7.88,  y: 0.42, z:  -8.0, ry:  Math.PI / 2,  room: 'Workshop 1' },
+  // Workshop 2 — south wall (z≈-32), face north (ry=0)
+  { id: 3, x: -3.0,   y: 0.42, z: -31.88, ry: 0,             room: 'Workshop 2' },
 ];
 
 export const outletSockets = [];
