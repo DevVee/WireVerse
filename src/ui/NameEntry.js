@@ -18,10 +18,6 @@ export class NameEntry {
         ${logoHTML('clamp(42px, 11vw, 64px)')}
         <p class="ne-tagline">LEARN. CONNECT. POWER THE FUTURE.</p>
 
-        <div class="ne-mascot">
-          <img src="/Mascot.png" alt="Volt" draggable="false" />
-        </div>
-
         <div class="ne-card">
           <h2 class="ne-title">WELCOME, ELECTRICIAN!</h2>
           <p class="ne-subtitle">Enter your name to begin your journey</p>
