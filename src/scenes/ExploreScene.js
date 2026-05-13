@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { Database } from '../systems/Database.js';
+import { Database }      from '../systems/Database.js';
+import { SoundManager }  from '../systems/SoundManager.js';
 import { OutletScenario } from './OutletScenario.js';
 import { SwitchScenario } from './SwitchScenario.js';
 
@@ -11,25 +12,29 @@ const BASE_Y  = 1.72;  // eye height
 const SPAWN     = new THREE.Vector3(0, BASE_Y, 5);
 const SPAWN_YAW = Math.PI;
 
-// Outlet / switch defs (same positions as before)
 const OUTLET_DEFS = [
-  { id: 1, pos: new THREE.Vector3(-7.7, 1.2,  3),    label: 'Entrance West'  },
-  { id: 2, pos: new THREE.Vector3( 7.7, 1.2,  0),    label: 'Entrance East'  },
-  { id: 3, pos: new THREE.Vector3(-7.7, 1.2, -8),    label: 'Workshop A West'},
-  { id: 4, pos: new THREE.Vector3( 7.7, 1.2,-14),    label: 'Workshop A East'},
+  { id: 1, pos: new THREE.Vector3(-7.7, 1.2,  3),    label: 'Entrance West'   },
+  { id: 2, pos: new THREE.Vector3( 7.7, 1.2,  0),    label: 'Entrance East'   },
+  { id: 3, pos: new THREE.Vector3(-7.7, 1.2, -8),    label: 'Workshop A West' },
+  { id: 4, pos: new THREE.Vector3( 7.7, 1.2,-14),    label: 'Workshop A East' },
   { id: 5, pos: new THREE.Vector3( 0,   1.2,-31.8),  label: 'Workshop B North'},
+  { id: 6, pos: new THREE.Vector3(-7.7, 1.2,-20),    label: 'Workshop B West' },
+  { id: 7, pos: new THREE.Vector3( 7.7, 1.2,-28),    label: 'Workshop B East' },
 ];
 const SWITCH_DEFS = [
-  { id: 1, pos: new THREE.Vector3(-7.7, 1.5, -5),   label: 'Workshop A Station 1'},
-  { id: 2, pos: new THREE.Vector3( 7.7, 1.5,-22),   label: 'Workshop B Station 2'},
-  { id: 3, pos: new THREE.Vector3(-7.7, 1.5,-28),   label: 'Workshop B Station 3'},
+  { id: 1, pos: new THREE.Vector3(-7.7, 1.5, -5),   label: 'Workshop A Station 1' },
+  { id: 2, pos: new THREE.Vector3( 7.7, 1.5,-22),   label: 'Workshop B Station 2' },
+  { id: 3, pos: new THREE.Vector3(-7.7, 1.5,-28),   label: 'Workshop B Station 3' },
+  { id: 4, pos: new THREE.Vector3( 7.7, 1.5, -2),   label: 'Entrance Station 4'   },
+  { id: 5, pos: new THREE.Vector3(-7.7, 1.5,-20),   label: 'Workshop B Station 5' },
 ];
 // ─────────────────────────────────────────────────────────────────────────────
 
 export class ExploreScene {
-  constructor(state, root) {
+  constructor(state, root, guide = null) {
     this.state  = state;
     this.root   = root;
+    this._guide = guide;
     this._raf   = null;
     this._listeners = [];
 
@@ -52,6 +57,7 @@ export class ExploreScene {
     this._outlets  = OUTLET_DEFS.map(d => ({ ...d, fixed: !!saved.outlets[d.id]  }));
     this._switches = SWITCH_DEFS.map(d => ({ ...d, fixed: !!saved.switches[d.id] }));
     this._nearest  = null;
+    this._guideTipsFired = {};
 
     this._colBoxes = [];
     this._isMob    = navigator.maxTouchPoints > 0;
@@ -59,12 +65,14 @@ export class ExploreScene {
     this._outletScenario  = null;
     this._switchScenario  = null;
 
+    SoundManager.init();
     this._initThree();
     this._buildWorld();
     this._buildInteractables();
     this._setupInput();
     this._startLoop();
     this._updateScoreHUD();
+    SoundManager.startAmbient();
   }
 
   // ── THREE INIT ────────────────────────────────────────────────────────────────
@@ -85,11 +93,11 @@ export class ExploreScene {
     this._renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this._scene = new THREE.Scene();
-    this._scene.background = new THREE.Color(0x9ecff5);
+    this._scene.background = new THREE.Color(0x060810);
     if (isMob) {
-      this._scene.fog = new THREE.Fog(0xc5e4f7, 28, 45);
+      this._scene.fog = new THREE.Fog(0x060810, 12, 32);
     } else {
-      this._scene.fog = new THREE.FogExp2(0xc5e4f7, 0.004);
+      this._scene.fog = new THREE.FogExp2(0x060810, 0.028);
     }
 
     // PMREM env map (desktop only)
@@ -103,10 +111,10 @@ export class ExploreScene {
           m.position.set(px, py, pz);
           envSc.add(m);
         };
-        mkEnvMesh(120, 2, 120, 0x87ceeb,  0,   0,  0);
-        mkEnvMesh(120, 2, 120, 0x87ceeb,  0,  20,  0);
-        mkEnvMesh(2,  60, 2,   0xfff0c8, 18,   0,-10);
-        mkEnvMesh(120, 2, 120, 0xc8b87a,  0, -20,  0);
+        mkEnvMesh(120, 2, 120, 0x0a0e1a,  0,   0,  0);
+        mkEnvMesh(120, 2, 120, 0x0a0e1a,  0,  20,  0);
+        mkEnvMesh(2,  60, 2,   0x1a2a44, 18,   0,-10);
+        mkEnvMesh(120, 2, 120, 0x08100e,  0, -20,  0);
         const envTex = pmrem.fromScene(envSc);
         this._scene.environment = envTex.texture;
         pmrem.dispose();
@@ -355,12 +363,12 @@ export class ExploreScene {
       });
     }
 
-    // Workshop wall mats (blue-tinted)
+    // Workshop wall mats — dark industrial night tone
     const wsWallMat = new THREE.MeshStandardMaterial({
-      map:wT, color:0x2a6fa8, roughness:.80, metalness:.0, envMapIntensity:.35,
+      map:wT, color:0x0e1c2e, roughness:.88, metalness:.0, envMapIntensity:.18,
     });
     const ws2WallMat = new THREE.MeshStandardMaterial({
-      map:wT, color:0x1f5a8c, roughness:.84, metalness:.0, envMapIntensity:.28,
+      map:wT, color:0x0a1622, roughness:.90, metalness:.0, envMapIntensity:.12,
     });
     if (isMob) {
       wsWallMat.normalMap = null; ws2WallMat.normalMap = null;
@@ -369,13 +377,13 @@ export class ExploreScene {
 
     // ── LIGHTING ────────────────────────────────────────────────────────────────
     this._roomLightSets = {};
-    scene.add(new THREE.AmbientLight(0xfff0d8, isMob ? 1.6 : 0.55));
+    scene.add(new THREE.AmbientLight(0x1a2a44, isMob ? 0.35 : 0.18));
     if (!isMob) {
-      scene.add(new THREE.HemisphereLight(0x9ecff5, 0xd4c4a0, 0.40));
+      scene.add(new THREE.HemisphereLight(0x0a1428, 0x080c10, 0.12));
     }
 
-    // Main fill directional
-    const sun = new THREE.DirectionalLight(0xfff8e0, isMob ? 1.6 : 2.8);
+    // Very dim cool directional — just enough to reveal silhouettes
+    const sun = new THREE.DirectionalLight(0xe8f0ff, isMob ? 0.5 : 1.4);
     sun.position.set(12,18,8); sun.target.position.set(0,0,-12);
     scene.add(sun); scene.add(sun.target);
     if (!isMob) {
@@ -384,21 +392,19 @@ export class ExploreScene {
       sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 65;
       sun.shadow.camera.left = sun.shadow.camera.bottom = -20;
       sun.shadow.camera.right = sun.shadow.camera.top   =  20;
-      sun.shadow.bias = -0.0015; sun.shadow.normalBias = 0.04; sun.shadow.radius = 3.5;
-      const skyFill = new THREE.DirectionalLight(0xc8e8ff, 0.45);
-      skyFill.position.set(-8,10,2); scene.add(skyFill);
+      sun.shadow.bias = -0.0015; sun.shadow.normalBias = 0.04; sun.shadow.radius = 4.5;
     }
 
     // Warm fill points in each room for depth
     const addRoom = (x, y, z, color, int) => {
-      const pl = new THREE.PointLight(color, int, 10, 1.6);
+      const pl = new THREE.PointLight(color, int, 12, 1.8);
       pl.position.set(x,y,z); scene.add(pl);
     };
-    addRoom(0,  3.2,  2,  0xffe8c0, isMob?1.8:0.9);
-    addRoom(-2, 3.2, -8,  0xfff0d0, isMob?1.6:0.8);
-    addRoom( 3, 3.2,-14,  0xfff0d0, isMob?1.6:0.8);
-    addRoom( 0, 3.2,-22,  0xffe8c0, isMob?1.5:0.7);
-    addRoom( 0, 3.2,-28,  0xffe8c0, isMob?1.5:0.7);
+    addRoom(0,  3.2,  2,  0xffe8c0, isMob?1.2:0.55);
+    addRoom(-2, 3.2, -8,  0xfff0d0, isMob?1.0:0.45);
+    addRoom( 3, 3.2,-14,  0xfff0d0, isMob?1.0:0.45);
+    addRoom( 0, 3.2,-22,  0xffe8c0, isMob?0.9:0.40);
+    addRoom( 0, 3.2,-28,  0xffe8c0, isMob?0.9:0.40);
 
     // ── ROOM FLOORS / CEILINGS ──────────────────────────────────────────────────
     const _mkRoom = (cx, cz, w, d) => {
@@ -449,16 +455,11 @@ export class ExploreScene {
       this._mkDoor(2, 0, -18),
     ];
 
-    // ── CEILING LIGHTS ──────────────────────────────────────────────────────────
-    this._mkLight(0,  H-.2,   3, 0xfff4e0, 1.4, 'entrance');
-    this._mkLight(-3, H-.2,  -6, 0xfff8f0, 2.2, 'workshop');
-    this._mkLight( 3, H-.2,  -6, 0xfff8f0, 2.2, 'workshop');
-    this._mkLight(-3, H-.2, -14, 0xfff8f0, 2.0, 'workshop');
-    this._mkLight( 3, H-.2, -14, 0xfff8f0, 2.0, 'workshop');
-    this._mkLight(-3, H-.2, -22, 0xfff4e0, 1.8, 'workshop');
-    this._mkLight( 3, H-.2, -22, 0xfff4e0, 1.8, 'workshop');
-    this._mkLight(-3, H-.2, -29, 0xfff4e0, 1.6, 'workshop');
-    this._mkLight( 3, H-.2, -29, 0xfff4e0, 1.6, 'workshop');
+    // ── CEILING LIGHTS — fewer, brighter, dramatic shadows ────────────────────
+    this._mkLight(0,  H-.2,   3, 0xfff4e0, 2.8, 'entrance');
+    this._mkLight( 0, H-.2, -10, 0xfff8f0, 3.2, 'workshop');
+    this._mkLight( 0, H-.2, -18, 0xfff8f0, 3.0, 'workshop');
+    this._mkLight( 0, H-.2, -28, 0xfff4e0, 2.6, 'workshop');
 
     // ── CEILING CABLE TRAY (WS1) ─────────────────────────────────────────────────
     {
@@ -734,13 +735,32 @@ export class ExploreScene {
     const grp = new THREE.Group();
     const enc = this._mkBox(1.05,1.55,.18,M.panel); enc.position.set(0,1.78,0); grp.add(enc);
     const trim= this._mkBox(1.07,1.57,.14,M.panelGrey); trim.position.set(0,1.78,.02); grp.add(trim);
+
+    const saved = Database.getExploreProgress();
+    const breakerFixed = Database.load().exploreBreakerFixed;
+    this._breakerBreakers = [];
     for (let i=0;i<count;i++) {
       const row=Math.floor(i/2), col=i%2;
-      const on=i<Math.floor(count*.75);
-      const br=this._mkBox(.16,.28,.07, on ? M.green : M.red);
-      br.position.set(-.23+col*.46, 2.3-row*.32, .12); grp.add(br);
+      // breaker #3 (index 2) is the tripped one unless already fixed
+      const tripped = !breakerFixed && i === 2;
+      const on = tripped ? false : i < Math.floor(count*.75);
+      const br = this._mkBox(.16,.28,.07, tripped ? M.red : on ? M.green : M.panelGrey);
+      br.position.set(-.23+col*.46, 2.3-row*.32, .12);
+      br.userData = { type:'breaker', index:i, tripped };
+      grp.add(br);
+      if (tripped) this._breakerInteractMesh = br;
+      this._breakerBreakers.push({ mesh:br, tripped });
     }
+    // Interaction hitbox on the full panel face
+    const hit = this._mkBox(1.0, 1.5, 0.1, new THREE.MeshBasicMaterial({ visible:false }));
+    hit.position.set(0, 1.78, 0.14);
+    hit.userData = { type:'breaker', id:1 };
+    grp.add(hit);
+    this._breakerHit = hit;
+
     grp.position.set(cx,cy,cz); grp.rotation.y=ry; this._scene.add(grp);
+    this._breakerGroup = grp;
+    this._breakerFixed = breakerFixed;
   }
 
   // ── INTERACTABLES ─────────────────────────────────────────────────────────────
@@ -758,12 +778,12 @@ export class ExploreScene {
       const hole2=hole.clone(); hole2.position.set(.025,.015,.01); g.add(hole2);
       const earth=hole.clone(); earth.position.set(0,-.022,.01); g.add(earth);
       if (!o.fixed) {
-        // Warning glow light
-        const glow = new THREE.PointLight(0xff4400, .7, .8);
-        glow.position.set(0,0,.12); g.add(glow); g.userData._glow=glow;
+        // Danger red area glow — visible from across the dark room
+        const glow = new THREE.PointLight(0xff2200, 1.4, 2.2);
+        glow.position.set(0,0,.3); g.add(glow); g.userData._glow=glow;
         // Spark emissive indicator
         const spark = new THREE.Mesh(new THREE.BoxGeometry(.015,.025,.06),
-          new THREE.MeshStandardMaterial({ color:0xff6600, emissive:new THREE.Color(0xff4400), emissiveIntensity:6, roughness:1 }));
+          new THREE.MeshStandardMaterial({ color:0xff6600, emissive:new THREE.Color(0xff4400), emissiveIntensity:8, roughness:1 }));
         spark.position.set(.03,.03,.02); g.add(spark); g.userData._spark=spark;
       }
       g.position.copy(o.pos);
@@ -790,9 +810,10 @@ export class ExploreScene {
     });
 
     this._interactMeshes = [
-      ...this._outletMeshes.map(o => ({ mesh:o.plate, type:'outlet', id:o.id })),
-      ...this._switchMeshes.map(s => ({ mesh:s.box,   type:'switch', id:s.id  })),
-      ...this._doors.map(d        => ({ mesh:d.mesh,  type:'door',   id:d.id  })),
+      ...this._outletMeshes.map(o => ({ mesh:o.plate, type:'outlet',  id:o.id })),
+      ...this._switchMeshes.map(s => ({ mesh:s.box,   type:'switch',  id:s.id })),
+      ...this._doors.map(d        => ({ mesh:d.mesh,  type:'door',    id:d.id })),
+      ...(this._breakerHit ? [{ mesh:this._breakerHit, type:'breaker', id:1 }] : []),
     ];
   }
 
@@ -890,10 +911,13 @@ export class ExploreScene {
         this._on(lookZone,'touchmove',e=>{
           if (this._repairOpen) return;
           e.preventDefault();
+          const sens = 0.0032;
           for (const t of e.changedTouches) {
             if (this._lookTouches[t.identifier]) {
-              this._player.yawVel   -=(t.clientX-this._lookTouches[t.identifier].x)*.0022;
-              this._player.pitchVel -=(t.clientY-this._lookTouches[t.identifier].y)*.0022;
+              const dx = t.clientX - this._lookTouches[t.identifier].x;
+              const dy = t.clientY - this._lookTouches[t.identifier].y;
+              this._player.yawVel   -= dx * sens;
+              this._player.pitchVel -= dy * sens;
               this._lookTouches[t.identifier]={x:t.clientX,y:t.clientY};
             }
           }
@@ -958,7 +982,7 @@ export class ExploreScene {
   _updatePlayer(dt) {
     const p = this._player;
     const isMob = this._isMob;
-    const SMOOTH = isMob ? .08 : .38;
+    const SMOOTH = isMob ? .14 : .38;
 
     p.yaw   += p.yawVel;
     p.pitch += p.pitchVel;
@@ -1015,24 +1039,27 @@ export class ExploreScene {
     }
 
     const spd2=p.vel.length(), moving=spd2>.2;
-    if (moving) { this._bobT+=dt*7*(spd2/SPEED); this._bobAmt=Math.min(1,this._bobAmt+dt*7); }
-    else         { this._bobAmt=Math.max(0,this._bobAmt-dt*6); }
+    if (moving) {
+      this._bobT+=dt*7*(spd2/SPEED); this._bobAmt=Math.min(1,this._bobAmt+dt*7);
+      SoundManager.play('footstep', dt);
+    } else { this._bobAmt=Math.max(0,this._bobAmt-dt*6); }
     const bobY=Math.sin(this._bobT)*.04*this._bobAmt;
     this._camera.position.set(p.pos.x, p.pos.y+bobY, p.pos.z);
   }
 
   // ── INTERACTION ───────────────────────────────────────────────────────────────
   _updateInteractPrompt() {
-    if (!this._ray) this._ray = new THREE.Raycaster();
-    this._ray.setFromCamera(new THREE.Vector2(0,0), this._camera);
-    let best=null, bestD=Infinity;
+    // Proximity-based detection: trigger when player is within range of outlet/switch/door
+    const INTERACT_RADIUS = 2.4;
+    const pp = this._player.pos;
+    let best = null, bestD = Infinity;
     for (const im of this._interactMeshes) {
-      const hits=this._ray.intersectObject(im.mesh,false);
-      if (hits.length && hits[0].distance<3.2 && hits[0].distance<bestD) {
-        bestD=hits[0].distance; best=im;
-      }
+      const worldPos = new THREE.Vector3();
+      im.mesh.getWorldPosition(worldPos);
+      const d = pp.distanceTo(worldPos);
+      if (d < INTERACT_RADIUS && d < bestD) { bestD = d; best = im; }
     }
-    this._nearest=best;
+    this._nearest = best;
 
     let label='', active=false;
     if (best) {
@@ -1044,10 +1071,27 @@ export class ExploreScene {
         const isFixed=this._outlets.find(o=>o.id===best.id)?.fixed;
         label=isFixed?'✅ OUTLET OK':'🔧 FIX OUTLET';
         active=!isFixed;
-      } else {
+      } else if (best.type==='switch') {
         const isFixed=this._switches.find(s=>s.id===best.id)?.fixed;
         label=isFixed?'✅ SWITCH OK':'💡 WIRE SWITCH';
         active=!isFixed;
+      } else if (best.type==='breaker') {
+        label=this._breakerFixed?'✅ PANEL OK':'⚠️ RESET BREAKER';
+        active=!this._breakerFixed;
+      }
+    }
+
+    // Fire contextual mascot tips once per session when player approaches
+    if (best && !this._repairOpen && this._guide) {
+      if (best.type === 'outlet' && !this._outlets.find(o => o.id === best.id)?.fixed && !this._guideTipsFired.outlet) {
+        this._guideTipsFired.outlet = true;
+        this._guide.show('near_outlet');
+      } else if (best.type === 'switch' && !this._switches.find(s => s.id === best.id)?.fixed && !this._guideTipsFired.switch) {
+        this._guideTipsFired.switch = true;
+        this._guide.show('near_switch');
+      } else if (best.type === 'breaker' && !this._breakerFixed && !this._guideTipsFired.breaker) {
+        this._guideTipsFired.breaker = true;
+        this._guide.show('near_breaker');
       }
     }
 
@@ -1080,13 +1124,6 @@ export class ExploreScene {
     const lbl=this.root.querySelector('#ex-btn-label');
     if (lbl) { lbl.textContent=label; lbl.classList.toggle('show', active); }
 
-    // Objectives panel
-    const outletsDone=this._outlets.every(o=>o.fixed);
-    const switchesDone=this._switches.every(s=>s.fixed);
-    const objO=this.root.querySelector('#ex-obj-outlets');
-    const objS=this.root.querySelector('#ex-obj-switches');
-    if (objO) objO.classList.toggle('done',outletsDone);
-    if (objS) objS.classList.toggle('done',switchesDone);
   }
 
   _doInteract() {
@@ -1102,7 +1139,48 @@ export class ExploreScene {
       const s=this._switches.find(x=>x.id===id);
       if (s?.fixed) { this._notify('Switch already installed!','ok'); return; }
       this._openSwitchRepair(id);
+    } else if (type==='breaker') {
+      this._doFixBreaker();
     }
+  }
+
+  _doFixBreaker() {
+    if (this._breakerFixed) { this._notify('⚡ Breaker panel OK', 'ok'); return; }
+    // Simple overlay-free fix: show a notification and fix it
+    this._openBreakerRepair();
+  }
+
+  _openBreakerRepair() {
+    if (this._breakerFixed) return;
+    this._repairOpen = true;
+    if (document.exitPointerLock) document.exitPointerLock();
+
+    // Show the breaker overlay
+    const overlay = this.root.querySelector('#brk-overlay');
+    if (overlay) {
+      overlay.style.display = 'flex';
+      // highlight the tripped breaker
+      const trippedEl = overlay.querySelector('#brk-tripped');
+      if (trippedEl) trippedEl.onclick = () => this._fixBreaker(overlay);
+    }
+  }
+
+  _fixBreaker(overlay) {
+    if (overlay) overlay.style.display = 'none';
+    this._repairOpen = false;
+    this._breakerFixed = true;
+    Database.saveExploreBreaker();
+    Database.addXP(100);
+    // Update visual — turn tripped breaker green
+    if (this._breakerBreakers) {
+      const b = this._breakerBreakers.find(x => x.tripped);
+      if (b) { b.mesh.material = this._M.green; b.tripped = false; }
+    }
+    SoundManager.play('breaker_click');
+    SoundManager.play('xp_gain');
+    this._notify('✅ Breaker reset! +100 XP', 'ok');
+    this._updateScoreHUD();
+    if (this._guide) this._guide.show('after_fix');
   }
 
   _toggleDoor(id) {
@@ -1110,6 +1188,7 @@ export class ExploreScene {
     if (!d) return;
     d.open = !d.open;
     d.targetRot = d.open ? -Math.PI / 2 : 0;
+    SoundManager.play('door');
     this._notify(d.open ? '🚪 Door opened' : '🚪 Door closed', 'info');
   }
 
@@ -1124,8 +1203,9 @@ export class ExploreScene {
       this._outletScenario = new OutletScenario(
         this.root,
         (socketId, stars) => {
-          // onFixed callback
           Database.saveExploreOutlet(socketId);
+          Database.addXP(150);
+          this._guide?.show('after_fix');
           const o=this._outlets.find(x=>x.id===socketId);
           if (o) o.fixed=true;
           const om=this._outletMeshes.find(x=>x.id===socketId);
@@ -1137,6 +1217,9 @@ export class ExploreScene {
             if (spark) spark.visible=false;
           }
           this._updateScoreHUD();
+          SoundManager.play('success');
+          SoundManager.play('xp_gain');
+          this._notify('⚡ +150 XP — Outlet Fixed!', 'ok');
         }
       );
     }
@@ -1163,6 +1246,7 @@ export class ExploreScene {
         this.root,
         (switchId) => {
           Database.saveExploreSwitch(switchId);
+          Database.addXP(200);
           const s = this._switches.find(x => x.id === switchId);
           if (s) s.fixed = true;
           const sm = this._switchMeshes.find(x => x.id === switchId);
@@ -1170,7 +1254,9 @@ export class ExploreScene {
             color: 0xffdd44, roughness: .6,
             emissive: new THREE.Color(0xffdd44), emissiveIntensity: .5,
           });
-          this._notify(`✅ Switch #${switchId} installed!`, 'ok');
+          SoundManager.play('success');
+          SoundManager.play('xp_gain');
+          this._notify(`✅ Switch #${switchId} installed! +200 XP`, 'ok');
           this._updateScoreHUD();
         }
       );
@@ -1219,8 +1305,10 @@ export class ExploreScene {
 
   // ── HUD ───────────────────────────────────────────────────────────────────────
   _updateScoreHUD() {
-    const total=this._outlets.length+this._switches.length;
-    const fixed=this._outlets.filter(o=>o.fixed).length+this._switches.filter(s=>s.fixed).length;
+    const total = this._outlets.length + this._switches.length + 1; // +1 breaker
+    const fixed = this._outlets.filter(o=>o.fixed).length
+                + this._switches.filter(s=>s.fixed).length
+                + (this._breakerFixed ? 1 : 0);
     const el=this.root.querySelector('#ex-score');
     if (el) el.textContent=`${fixed}/${total}`;
     if (fixed>=total && total>0) {
@@ -1229,6 +1317,9 @@ export class ExploreScene {
         const scoreEl=this.root.querySelector('#ex-sc-score');
         if (scoreEl) scoreEl.textContent=`${fixed}/${total} Objectives`;
         setTimeout(()=>sc.classList.add('show'), 1200);
+        setTimeout(()=>SoundManager.play('complete'), 1000);
+        Database.saveLearnStage('ways');
+        if (this._guide) this._guide.show('all_done');
       }
     }
   }

@@ -12,25 +12,29 @@ import { ElectricianToolsLesson } from '../learn/ElectricianToolsLesson.js';
 import { WireStrippingLesson }   from '../learn/WireStrippingLesson.js';
 import { StagesHub }             from './StagesHub.js';
 import { OutletLesson }          from '../learn/OutletLesson.js';
+import { HtmlLessonScreen }      from '../learn/HtmlLessonScreen.js';
 import { ExploreScreen }         from './ExploreScreen.js';
 
 const MAP = {
-  splash:           'splash',
-  loading:          'loading',
-  nameEntry:        'nameEntry',
-  menu:             'menu',
-  settings:         'settings',
-  achievements:     'achievements',
-  tools:            'tools',
-  credits:          'credits',
-  wireLearn:        'wireLearn',
-  wireTypes:        'wireTypes',
-  electricianTools: 'electricianTools',
-  wireStripping:    'wireStripping',
-  stagesHub:        'stagesHub',
-  outletLesson:     'outletLesson',
-  explore:          'explore',
-  game:             null,
+  splash:             'splash',
+  loading:            'loading',
+  nameEntry:          'nameEntry',
+  menu:               'menu',
+  settings:           'settings',
+  achievements:       'achievements',
+  tools:              'tools',
+  credits:            'credits',
+  wireLearn:          'wireLearn',
+  wireTypes:          'wireTypes',
+  electricianTools:   'electricianTools',
+  wireStripping:      'wireStripping',
+  stagesHub:          'stagesHub',
+  outletLesson:       'outletLesson',
+  learnOutlet:        'learnOutlet',
+  ways:               'ways',
+  switchInstallation: 'switchInstallation',
+  explore:            'explore',
+  game:               null,
 };
 
 export class UIManager {
@@ -58,9 +62,12 @@ export class UIManager {
       wireTypes:        new WireTypesLesson(this.state),
       electricianTools: new ElectricianToolsLesson(this.state),
       wireStripping:    new WireStrippingLesson(this.state),
-      stagesHub:        new StagesHub(this.state),
-      outletLesson:     new OutletLesson(this.state),
-      explore:          new ExploreScreen(this.state),
+      stagesHub:          new StagesHub(this.state),
+      outletLesson:       new OutletLesson(this.state),
+      learnOutlet:        new HtmlLessonScreen(this.state, { key:'learnOutlet',        src:'/learn-outlet.html',        title:'FIX THE FAULTS',       backState:'stagesHub' }),
+      ways:               new HtmlLessonScreen(this.state, { key:'ways',               src:'/ways.html',                title:'SWITCH WAYS',          backState:'stagesHub' }),
+      switchInstallation: new HtmlLessonScreen(this.state, { key:'switchInstallation', src:'/switch_installation.html', title:'SWITCH INSTALLATION',  backState:'stagesHub' }),
+      explore:            new ExploreScreen(this.state),
     };
 
     for (const screen of Object.values(this.screens)) {

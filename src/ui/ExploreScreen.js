@@ -1,4 +1,5 @@
 import { ExploreScene } from '../scenes/ExploreScene.js';
+import { MascotGuide }  from '../systems/MascotGuide.js';
 
 const CSS = `
 .ex-wrap{position:absolute;inset:0;background:#07101f;overflow:hidden;}
@@ -6,93 +7,267 @@ const CSS = `
 /* Main world canvas */
 #ex-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
 
-/* Top HUD bar */
-.ex-hud{position:absolute;top:0;left:0;right:0;height:48px;background:rgba(4,8,18,.88);border-bottom:1px solid rgba(0,212,255,.15);display:flex;align-items:center;padding:0 14px;gap:10px;z-index:10;pointer-events:none;}
-.ex-hud-back{pointer-events:all;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.22);color:#00d4ff;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;padding:7px 13px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
-.ex-hud-room{flex:1;text-align:center;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.8);}
-.ex-hud-score{font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(0,212,255,.7);}
+/* ── TOP HUD BAR ─────────────────────────────────────────────── */
+.ex-hud{
+  position:absolute;top:0;left:0;right:0;
+  height:54px;
+  background:linear-gradient(180deg,rgba(2,6,16,.96) 0%,rgba(4,10,24,.82) 100%);
+  border-bottom:1px solid rgba(0,212,255,.18);
+  box-shadow:0 2px 20px rgba(0,0,0,.7),0 0 40px rgba(0,212,255,.04);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  display:flex;align-items:center;padding:0 12px;gap:8px;z-index:20;pointer-events:none;
+}
+.ex-hud-back{
+  pointer-events:all;
+  background:linear-gradient(135deg,rgba(0,212,255,.12),rgba(0,150,200,.06));
+  border:1px solid rgba(0,212,255,.35);
+  color:#00d4ff;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;
+  padding:8px 14px;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  box-shadow:0 0 12px rgba(0,212,255,.15),inset 0 1px 0 rgba(255,255,255,.08);
+  transition:all .18s;white-space:nowrap;
+}
+.ex-hud-back:active{transform:scale(.94);background:rgba(0,212,255,.2);}
+.ex-hud-room{
+  flex:1;text-align:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:4px;
+  color:rgba(255,255,255,.9);text-transform:uppercase;
+  text-shadow:0 0 20px rgba(0,212,255,.4);
+}
+.ex-hud-score-wrap{display:flex;align-items:center;gap:6px;}
+.ex-hud-score{
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;
+  color:#00d4ff;letter-spacing:1px;
+  background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);
+  padding:4px 10px;border-radius:8px;
+}
 
-/* Minimap */
-#ex-minimap{position:absolute;top:56px;left:14px;width:120px;height:120px;border-radius:10px;border:1px solid rgba(0,212,255,.3);background:rgba(4,8,18,.7);z-index:10;}
+/* ── MINIMAP ─────────────────────────────────────────────── */
+#ex-minimap{
+  position:absolute;top:62px;left:12px;
+  width:110px;height:110px;border-radius:12px;
+  border:1px solid rgba(0,212,255,.35);
+  background:rgba(2,6,16,.85);
+  box-shadow:0 0 16px rgba(0,212,255,.12),0 4px 12px rgba(0,0,0,.5);
+  z-index:15;
+}
+.ex-minimap-label{
+  position:absolute;top:180px;left:12px;
+  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:3px;color:rgba(0,212,255,.45);text-transform:uppercase;
+  z-index:15;pointer-events:none;
+}
 
-/* Center crosshair (desktop) */
-#ex-crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:18px;height:18px;pointer-events:none;z-index:10;}
-#ex-crosshair::before,#ex-crosshair::after{content:'';position:absolute;background:rgba(255,255,255,.7);border-radius:1px;}
+/* ── CROSSHAIR (desktop) ─────────────────────────────────── */
+#ex-crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;pointer-events:none;z-index:15;}
+#ex-crosshair::before,#ex-crosshair::after{content:'';position:absolute;background:rgba(255,255,255,.65);border-radius:1px;}
 #ex-crosshair::before{width:2px;height:100%;left:50%;transform:translateX(-50%);}
 #ex-crosshair::after{width:100%;height:2px;top:50%;transform:translateY(-50%);}
-#ex-crosshair.ex-crosshair--hit::before,#ex-crosshair.ex-crosshair--hit::after{background:#00d4ff;}
+#ex-crosshair.ex-crosshair--hit::before,#ex-crosshair.ex-crosshair--hit::after{background:#00d4ff;box-shadow:0 0 8px #00d4ff;}
 
-/* Interaction prompt (desktop) */
-#ex-prompt{position:absolute;bottom:56%;left:50%;transform:translateX(-50%);background:rgba(4,8,18,.92);border:1px solid rgba(0,212,255,.5);color:#00d4ff;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;padding:7px 18px;border-radius:8px;z-index:10;display:none;pointer-events:none;white-space:nowrap;}
+/* ── INTERACTION PROMPT (desktop) ─────────────────────────── */
+#ex-prompt{
+  position:absolute;bottom:58%;left:50%;transform:translateX(-50%);
+  background:rgba(2,6,16,.94);
+  border:1px solid rgba(0,212,255,.6);
+  color:#00d4ff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;
+  letter-spacing:2px;padding:8px 20px;border-radius:10px;
+  z-index:15;display:none;pointer-events:none;white-space:nowrap;
+  box-shadow:0 0 20px rgba(0,212,255,.25);
+}
 
-/* Notify log */
-#ex-notify{position:absolute;top:56px;right:14px;width:220px;z-index:10;pointer-events:none;}
-.ex-notif{background:rgba(4,8,18,.92);border:1px solid rgba(0,212,255,.18);border-radius:8px;padding:7px 13px;font-family:'Barlow Condensed',sans-serif;font-size:12px;color:#aab8cc;margin-bottom:4px;animation:exNotifFade 3s ease forwards;}
-@keyframes exNotifFade{0%,60%{opacity:1}100%{opacity:0}}
-.ex-notif.ok{color:#44ff88;border-color:rgba(68,255,136,.3);}
+/* ── NOTIFICATIONS ───────────────────────────────────────── */
+#ex-notify{position:absolute;top:62px;right:12px;width:200px;z-index:15;pointer-events:none;}
+.ex-notif{
+  background:rgba(2,6,16,.94);border:1px solid rgba(0,212,255,.2);
+  border-radius:10px;padding:8px 14px;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;color:#aab8cc;
+  margin-bottom:5px;
+  animation:exNotifIn .2s ease-out,exNotifFade 3.2s ease forwards;
+  box-shadow:0 4px 12px rgba(0,0,0,.4);
+}
+@keyframes exNotifIn{from{opacity:0;transform:translateX(16px);}to{opacity:1;transform:translateX(0);}}
+@keyframes exNotifFade{0%,65%{opacity:1;transform:translateX(0);}100%{opacity:0;transform:translateX(12px);}}
+.ex-notif.ok{color:#44ff88;border-color:rgba(68,255,136,.35);background:rgba(2,20,8,.94);}
 .ex-notif.info{color:#60b0ff;border-color:rgba(96,176,255,.3);}
 
-/* Desktop pointer-lock message */
-#ex-ptr-msg{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-family:'Barlow Condensed',sans-serif;font-size:12px;color:rgba(255,255,255,.35);letter-spacing:2px;z-index:10;pointer-events:none;}
+/* ── DESKTOP HINT ────────────────────────────────────────── */
+#ex-ptr-msg{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);font-family:'Barlow Condensed',sans-serif;font-size:12px;color:rgba(255,255,255,.3);letter-spacing:2px;z-index:10;pointer-events:none;}
 
-/* Objectives panel */
-#ex-objectives{
-  position:absolute;bottom:56px;left:14px;
-  background:rgba(4,8,18,.88);border:1px solid rgba(0,212,255,.2);
-  border-radius:10px;padding:10px 14px;z-index:10;pointer-events:none;
-  min-width:160px;max-width:200px;
-}
-.ex-obj-title{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:.18em;color:rgba(0,212,255,.6);text-transform:uppercase;margin-bottom:7px;}
-.ex-obj-item{display:flex;align-items:center;gap:7px;font-family:'Barlow Condensed',sans-serif;font-size:11px;color:rgba(255,255,255,.55);margin-bottom:4px;line-height:1.3;}
-.ex-obj-item.done{color:rgba(68,255,136,.6);text-decoration:line-through;}
-.ex-obj-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,80,60,.8);flex-shrink:0;}
-.ex-obj-item.done .ex-obj-dot{background:#44ff88;}
 
-/* ── MOBILE CONTROLS ─────────────────────────────────────────────── */
-.ex-joy-outer{position:absolute;bottom:28px;left:22px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.12);z-index:20;touch-action:none;}
-.ex-joy-outer.joy-active{background:rgba(0,212,255,.07);border-color:rgba(0,212,255,.3);}
-.ex-joy-inner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:rgba(0,212,255,.22);border:2px solid rgba(0,212,255,.55);}
+/* ══════════════════════════════════════════════════════════
+   MOBILE CONTROLS — REDESIGNED
+   ══════════════════════════════════════════════════════════ */
+
+/* Look zone covers full screen but is behind controls */
 .ex-look-zone{position:absolute;inset:0;z-index:15;touch-action:none;}
 
-/* Interact button */
+/* ── JOYSTICK ────────────────────────────────────────────── */
+.ex-joy-outer{
+  position:absolute;bottom:32px;left:24px;
+  width:140px;height:140px;border-radius:50%;
+  /* Multi-layer ring design */
+  background:radial-gradient(circle at 50% 50%,
+    rgba(0,212,255,.04) 0%,
+    rgba(0,212,255,.02) 60%,
+    transparent 100%);
+  border:2px solid rgba(0,212,255,.18);
+  box-shadow:
+    0 0 0 1px rgba(0,212,255,.06),
+    inset 0 0 30px rgba(0,212,255,.04),
+    0 8px 32px rgba(0,0,0,.5);
+  z-index:20;touch-action:none;
+  transition:border-color .15s,box-shadow .15s,background .15s;
+}
+/* Inner dashed guide ring */
+.ex-joy-outer::before{
+  content:'';position:absolute;inset:12px;border-radius:50%;
+  border:1px dashed rgba(0,212,255,.1);
+}
+/* Outer pulse ring */
+.ex-joy-outer::after{
+  content:'';position:absolute;inset:-6px;border-radius:50%;
+  border:1px solid rgba(0,212,255,.06);
+}
+.ex-joy-outer.joy-active{
+  background:radial-gradient(circle at 50% 50%,
+    rgba(0,212,255,.1) 0%,
+    rgba(0,212,255,.04) 60%,
+    transparent 100%);
+  border-color:rgba(0,212,255,.45);
+  box-shadow:
+    0 0 0 1px rgba(0,212,255,.12),
+    0 0 24px rgba(0,212,255,.18),
+    inset 0 0 30px rgba(0,212,255,.06),
+    0 8px 32px rgba(0,0,0,.5);
+}
+/* Thumb nub */
+.ex-joy-inner{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:56px;height:56px;border-radius:50%;
+  background:radial-gradient(circle at 38% 32%,
+    rgba(0,220,255,.55) 0%,
+    rgba(0,160,220,.35) 45%,
+    rgba(0,80,140,.4) 100%);
+  border:2px solid rgba(0,212,255,.7);
+  box-shadow:
+    0 4px 16px rgba(0,0,0,.6),
+    0 0 20px rgba(0,212,255,.3),
+    inset 0 1px 0 rgba(255,255,255,.2),
+    inset 0 -2px 6px rgba(0,0,0,.3);
+  transition:box-shadow .1s;
+}
+.ex-joy-outer.joy-active .ex-joy-inner{
+  box-shadow:
+    0 4px 16px rgba(0,0,0,.6),
+    0 0 28px rgba(0,212,255,.55),
+    inset 0 1px 0 rgba(255,255,255,.25),
+    inset 0 -2px 6px rgba(0,0,0,.3);
+}
+/* Directional arrows on joystick */
+.ex-joy-arrows{
+  position:absolute;inset:0;border-radius:50%;pointer-events:none;
+}
+.ex-joy-arrows::before,.ex-joy-arrows::after{
+  content:'';position:absolute;
+  border:solid rgba(0,212,255,.18);
+}
+.ex-joy-arrows::before{
+  width:0;height:0;
+  border-width:6px 4px;border-style:solid;border-color:rgba(0,212,255,.18) transparent transparent transparent;
+  top:12px;left:50%;transform:translateX(-50%);
+  border-top-color:rgba(0,212,255,.25);
+}
+
+/* ── INTERACT BUTTON ─────────────────────────────────────── */
 .ex-btn-interact{
-  position:absolute;bottom:36px;right:24px;
-  width:76px;height:76px;border-radius:50%;
-  background:rgba(0,12,30,.6);
-  border:2.5px solid rgba(0,212,255,.2);
-  color:rgba(0,212,255,.4);
+  position:absolute;bottom:38px;right:22px;
+  width:86px;height:86px;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,
+    rgba(0,30,60,.9) 0%,
+    rgba(0,16,38,.95) 100%);
+  border:2.5px solid rgba(0,212,255,.22);
+  color:rgba(0,212,255,.38);
   display:flex;align-items:center;justify-content:center;
   z-index:20;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:none;
-  flex-direction:column;gap:1px;
-  transition:border-color .2s,background .2s,box-shadow .2s,color .2s,opacity .2s;
+  flex-direction:column;gap:2px;
+  box-shadow:
+    0 6px 24px rgba(0,0,0,.6),
+    inset 0 1px 0 rgba(255,255,255,.07),
+    inset 0 -2px 8px rgba(0,0,0,.4);
+  transition:all .18s cubic-bezier(.4,0,.2,1);
 }
+.ex-btn-interact:active{transform:scale(.92);}
 .ex-btn-interact--active{
-  border-color:#00d4ff !important;
-  background:rgba(0,212,255,.12) !important;
+  border-color:rgba(0,212,255,.75) !important;
+  background:radial-gradient(circle at 40% 35%,
+    rgba(0,60,100,.9) 0%,
+    rgba(0,30,70,.95) 100%) !important;
   color:#00d4ff !important;
-  box-shadow:0 0 20px rgba(0,212,255,.4),0 0 40px rgba(0,212,255,.15);
-  animation:ex-btn-pulse 1.2s ease-in-out infinite;
+  box-shadow:
+    0 0 0 3px rgba(0,212,255,.12),
+    0 0 28px rgba(0,212,255,.5),
+    0 0 60px rgba(0,212,255,.18),
+    0 6px 24px rgba(0,0,0,.5),
+    inset 0 1px 0 rgba(255,255,255,.12) !important;
+  animation:ex-btn-pulse 1.1s ease-in-out infinite;
 }
 @keyframes ex-btn-pulse{
-  0%,100%{box-shadow:0 0 16px rgba(0,212,255,.35),0 0 32px rgba(0,212,255,.12);}
-  50%{box-shadow:0 0 26px rgba(0,212,255,.65),0 0 50px rgba(0,212,255,.25);}
+  0%,100%{box-shadow:0 0 0 3px rgba(0,212,255,.1),0 0 22px rgba(0,212,255,.4),0 6px 20px rgba(0,0,0,.5);}
+  50%{box-shadow:0 0 0 5px rgba(0,212,255,.18),0 0 38px rgba(0,212,255,.65),0 6px 20px rgba(0,0,0,.5);}
 }
-.ex-btn-interact-icon{font-size:26px;line-height:1;}
-.ex-btn-interact-txt{font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.8;}
+.ex-btn-interact-icon{font-size:28px;line-height:1;}
+.ex-btn-interact-txt{
+  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;opacity:.7;
+}
 
-/* Action label above interact button */
+/* ── ACTION LABEL ABOVE INTERACT ─────────────────────────── */
 #ex-btn-label{
-  position:absolute;bottom:118px;right:24px;
-  background:rgba(4,8,18,.92);border:1px solid rgba(0,212,255,.5);
+  position:absolute;bottom:132px;right:16px;
+  background:rgba(2,6,16,.95);
+  border:1px solid rgba(0,212,255,.55);
   color:#00d4ff;font-family:'Barlow Condensed',sans-serif;
-  font-size:11px;font-weight:700;letter-spacing:.1em;
-  padding:5px 12px;border-radius:20px;z-index:20;
-  pointer-events:none;white-space:nowrap;
-  display:none;text-align:center;
+  font-size:12px;font-weight:700;letter-spacing:.1em;
+  padding:5px 13px;border-radius:20px;z-index:22;
+  pointer-events:none;white-space:nowrap;text-align:center;
+  opacity:0;transform:translateY(4px);
+  transition:opacity .2s,transform .2s;
+  box-shadow:0 0 16px rgba(0,212,255,.25);
 }
-#ex-btn-label.show{display:block;}
+#ex-btn-label.show{opacity:1;transform:translateY(0);}
 
-.ex-btn-jump{position:absolute;bottom:28px;right:114px;width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;z-index:20;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:none;}
+/* ── JUMP BUTTON ─────────────────────────────────────────── */
+.ex-btn-jump{
+  position:absolute;bottom:42px;right:118px;
+  width:58px;height:58px;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,rgba(30,30,60,.9),rgba(10,10,30,.95));
+  border:2px solid rgba(255,255,255,.16);
+  color:rgba(255,255,255,.55);
+  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  z-index:20;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:none;
+  box-shadow:0 4px 16px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.07);
+  transition:all .15s;
+}
+.ex-btn-jump:active{transform:scale(.9);border-color:rgba(255,255,255,.3);}
+
+/* ── ALWAYS-VISIBLE MENU BUTTON (mobile) ─────────────────── */
+.ex-menu-fab{
+  position:absolute;top:64px;right:12px;
+  width:42px;height:42px;border-radius:12px;
+  background:linear-gradient(135deg,rgba(0,212,255,.12),rgba(0,100,180,.08));
+  border:1px solid rgba(0,212,255,.32);
+  color:#00d4ff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  z-index:20;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  box-shadow:0 0 14px rgba(0,212,255,.12),0 4px 12px rgba(0,0,0,.45);
+  transition:all .18s;
+}
+.ex-menu-fab:active{transform:scale(.88);background:rgba(0,212,255,.22);}
+.ex-menu-fab-line{width:18px;height:2px;background:#00d4ff;border-radius:1px;opacity:.85;transition:opacity .2s;}
+.ex-menu-fab-label{font-family:'Barlow Condensed',sans-serif;font-size:7px;font-weight:700;letter-spacing:1px;color:rgba(0,212,255,.7);}
+
 
 /* ══════════════════════════════════════════════════════════════════
    OUTLET REPAIR OVERLAY — matches Electric Copy scenarios/outlet-repair.html
@@ -136,7 +311,7 @@ const CSS = `
 #or-mission-panel{
   position:absolute;top:60px;left:18px;
   background:rgba(10,10,14,.88);border:1px solid rgba(0,212,255,.3);
-  border-radius:10px;padding:14px 18px;min-width:230px;pointer-events:auto;
+  border-radius:10px;padding:14px 18px;min-width:230px;pointer-events:none;
 }
 .or-mp-header{
   font-size:11px;font-weight:700;letter-spacing:.12em;
@@ -332,7 +507,7 @@ const CSS = `
 #sw-canvas{display:block;width:100%;height:100%;position:absolute;inset:0;}
 #sw-hud{position:absolute;inset:0;pointer-events:none;z-index:10;font-family:'Barlow Condensed',sans-serif;}
 #sw-topbar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(to bottom,rgba(0,0,0,.7) 0%,transparent 100%);}
-#sw-mission-panel{position:absolute;top:60px;left:18px;background:rgba(10,10,14,.88);border:1px solid rgba(0,212,255,.3);border-radius:10px;padding:14px 18px;min-width:230px;pointer-events:auto;}
+#sw-mission-panel{position:absolute;top:60px;left:18px;background:rgba(10,10,14,.88);border:1px solid rgba(0,212,255,.3);border-radius:10px;padding:14px 18px;min-width:230px;pointer-events:none;}
 #sw-progress-wrap{position:absolute;top:60px;right:18px;background:rgba(10,10,14,.88);border:1px solid rgba(0,212,255,.3);border-radius:10px;padding:12px 16px;min-width:130px;}
 #sw-instruction{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(10,10,14,.88);border:1px solid rgba(0,212,255,.3);border-radius:10px;padding:10px 20px;font-size:14px;font-weight:500;text-align:center;pointer-events:none;max-width:480px;transition:opacity .3s;line-height:1.6;color:#fff;}
 #sw-instruction span{color:#00d4ff;}
@@ -411,13 +586,15 @@ export class ExploreScreen {
 
         <!-- HUD -->
         <div class="ex-hud">
-          <button class="ex-hud-back">← STAGES</button>
+          <button class="ex-hud-back">← MENU</button>
           <span class="ex-hud-room" id="ex-room">ENTRANCE</span>
-          <span class="ex-hud-score" id="ex-score">0/8</span>
+          <div class="ex-hud-score-wrap">
+            <span class="ex-hud-score" id="ex-score">0/8</span>
+          </div>
         </div>
 
         <!-- Minimap -->
-        <canvas id="ex-minimap" width="120" height="120"></canvas>
+        <canvas id="ex-minimap" width="110" height="110"></canvas>
 
         <!-- Prompt -->
         <div id="ex-prompt">🔧 FIX [E]</div>
@@ -429,26 +606,27 @@ export class ExploreScreen {
         ${!isMobile ? '<div id="ex-crosshair"></div>' : ''}
 
         <!-- Desktop hint -->
-        ${!isMobile ? '<div id="ex-ptr-msg">CLICK TO LOOK • WASD MOVE • E INTERACT</div>' : ''}
+        ${!isMobile ? '<div id="ex-ptr-msg">CLICK TO LOOK · WASD MOVE · E INTERACT</div>' : ''}
 
-        <!-- Objectives panel (desktop only — overlaps joystick on mobile) -->
-        ${!isMobile ? `
-        <div id="ex-objectives">
-          <div class="ex-obj-title">Room Tasks</div>
-          <div class="ex-obj-item" id="ex-obj-outlets"><div class="ex-obj-dot"></div>Fix all outlets</div>
-          <div class="ex-obj-item" id="ex-obj-switches"><div class="ex-obj-dot"></div>Wire all switches</div>
-        </div>` : ''}
 
         <!-- Mobile controls -->
         ${isMobile ? `
           <div class="ex-look-zone" id="ex-look-zone"></div>
-          <div class="ex-joy-outer" id="ex-joy-outer"><div class="ex-joy-inner" id="ex-joy-inner"></div></div>
+          <div class="ex-joy-outer" id="ex-joy-outer">
+            <div class="ex-joy-arrows"></div>
+            <div class="ex-joy-inner" id="ex-joy-inner"></div>
+          </div>
           <div id="ex-btn-label"></div>
           <div class="ex-btn-interact" id="ex-btn-interact">
-            <div class="ex-btn-interact-icon">🔧</div>
+            <div class="ex-btn-interact-icon">⚡</div>
             <div class="ex-btn-interact-txt">ACT</div>
           </div>
-          <div class="ex-btn-jump" id="ex-btn-jump">↑</div>
+          <div class="ex-btn-jump" id="ex-btn-jump">▲</div>
+          <div class="ex-menu-fab" id="ex-mob-menu">
+            <div class="ex-menu-fab-line"></div>
+            <div class="ex-menu-fab-line"></div>
+            <div class="ex-menu-fab-line"></div>
+          </div>
         ` : ''}
 
         <!-- ═══════ OUTLET REPAIR OVERLAY ═══════ -->
@@ -551,6 +729,49 @@ export class ExploreScreen {
               <button class="or-so-btn" id="or-replay-btn">PLAY AGAIN</button>
             </div>
           </div>
+        </div>
+
+        <!-- ═══════ BREAKER REPAIR OVERLAY ═══════ -->
+        <div id="brk-overlay" style="
+          display:none;position:absolute;inset:0;background:rgba(0,0,0,.85);
+          z-index:40;align-items:center;justify-content:center;flex-direction:column;gap:18px;
+          font-family:'Barlow Condensed',sans-serif;
+        ">
+          <div style="font-size:36px;">⚡</div>
+          <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:.12em;">TRIPPED BREAKER</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.55);text-align:center;max-width:280px;line-height:1.6;">
+            Breaker #3 has tripped. Tap it to reset and restore power.
+          </div>
+          <div id="brk-panel" style="
+            display:grid;grid-template-columns:1fr 1fr;gap:10px;
+            background:rgba(10,20,40,.95);border:1px solid rgba(0,212,255,.3);
+            border-radius:14px;padding:20px 24px;
+          ">
+            ${[...Array(8)].map((_, i) => i === 2
+              ? `<div id="brk-tripped" style="
+                  width:72px;height:44px;border-radius:8px;
+                  background:#ef4444;border:2px solid #ff6666;
+                  display:flex;align-items:center;justify-content:center;
+                  font-size:11px;font-weight:800;color:#fff;letter-spacing:.08em;
+                  cursor:pointer;box-shadow:0 0 18px rgba(255,50,50,.6);
+                  animation:brkPulse 1s infinite;
+                ">TRIP #3</div>`
+              : `<div style="
+                  width:72px;height:44px;border-radius:8px;
+                  background:${i < 6 ? '#22c55e' : 'rgba(255,255,255,.1)'};
+                  border:1px solid rgba(255,255,255,.15);
+                  display:flex;align-items:center;justify-content:center;
+                  font-size:10px;color:rgba(255,255,255,.4);
+                ">#${i+1}</div>`
+            ).join('')}
+          </div>
+          <style>@keyframes brkPulse{0%,100%{box-shadow:0 0 12px rgba(255,50,50,.5);}50%{box-shadow:0 0 28px rgba(255,50,50,.9);}}</style>
+          <button id="brk-cancel" style="
+            padding:8px 24px;border-radius:8px;background:rgba(255,255,255,.06);
+            border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.45);
+            font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
+            letter-spacing:.1em;cursor:pointer;
+          ">✕ CANCEL</button>
         </div>
 
         <!-- ═══════ STAGE COMPLETE OVERLAY ═══════ -->
@@ -657,6 +878,17 @@ export class ExploreScreen {
       this.state.setState('stagesHub');
     });
 
+    // Mobile FAB menu button
+    const mobMenu = el.querySelector('#ex-mob-menu');
+    if (mobMenu) {
+      mobMenu.addEventListener('touchstart', e => {
+        e.preventDefault();
+        this._scene?.destroy();
+        this._scene = null;
+        this.state.setState('stagesHub');
+      }, { passive: false });
+    }
+
     // Outlet overlay cancel button
     el.querySelector('#or-back-btn').addEventListener('click', () => {
       this._scene?.closeRepair();
@@ -671,7 +903,15 @@ export class ExploreScreen {
     el.querySelector('#ex-sc-btn').addEventListener('click', () => {
       this._scene?.destroy();
       this._scene = null;
+      this._guide?.destroy();
+      this._guide = null;
       this.state.setState('stagesHub');
+    });
+
+    // Breaker cancel
+    el.querySelector('#brk-cancel').addEventListener('click', () => {
+      el.querySelector('#brk-overlay').style.display = 'none';
+      this._scene && (this._scene._repairOpen = false);
     });
 
     this._el = el;
@@ -680,12 +920,17 @@ export class ExploreScreen {
 
   onShow() {
     if (!this._scene) {
-      this._scene = new ExploreScene(this.state, this._el.querySelector('.ex-wrap'));
+      const wrap = this._el.querySelector('.ex-wrap');
+      this._guide = new MascotGuide(wrap);
+      this._scene = new ExploreScene(this.state, wrap, this._guide);
+      this._guide.showTutorial();
     }
   }
 
   onHide() {
     this._scene?.destroy();
     this._scene = null;
+    this._guide?.destroy();
+    this._guide = null;
   }
 }

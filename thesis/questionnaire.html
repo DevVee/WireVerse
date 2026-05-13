@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WireVerse Thesis Questionnaire</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 12pt;
+      color: #000;
+      background: #fff;
+      padding: 0;
+    }
+
+    .page {
+      width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 1in 1.2in 1in 1.5in;
+      background: #fff;
+    }
+
+    h1 { font-size: 14pt; text-align: center; text-transform: uppercase; margin-bottom: 4px; }
+    h2 { font-size: 13pt; text-align: center; margin-bottom: 4px; }
+    h3 { font-size: 12pt; text-align: center; margin-bottom: 12px; }
+
+    .center { text-align: center; }
+    .underline { text-decoration: underline; }
+    .bold { font-weight: bold; }
+    .italic { font-style: italic; }
+
+    .header-block { text-align: center; margin-bottom: 20px; }
+    .header-block p { margin-bottom: 2px; }
+
+    .letter-block {
+      margin-bottom: 24px;
+    }
+    .letter-block p {
+      text-indent: 0.5in;
+      text-align: justify;
+      line-height: 2;
+    }
+
+    .salutation { margin-bottom: 10px; }
+    .closing { margin-top: 20px; }
+
+    hr { border: none; border-top: 1px solid #000; margin: 20px 0; }
+    .double-hr { border-top: 3px double #000; margin: 20px 0; }
+
+    .section-title {
+      font-weight: bold;
+      text-transform: uppercase;
+      margin: 18px 0 6px 0;
+      text-align: center;
+    }
+
+    .part-title {
+      font-weight: bold;
+      text-decoration: underline;
+      margin: 18px 0 6px 0;
+    }
+
+    .sub-title {
+      font-weight: bold;
+      margin: 14px 0 6px 0;
+    }
+
+    .direction {
+      font-style: italic;
+      margin-bottom: 10px;
+    }
+
+    ol.question-list {
+      margin-left: 0.4in;
+      margin-bottom: 10px;
+    }
+    ol.question-list li {
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+    ol.alpha {
+      list-style-type: lower-alpha;
+      margin-left: 0.6in;
+    }
+    ol.alpha li { margin-bottom: 2px; }
+
+    .profile-field {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 10px;
+    }
+    .profile-field label { min-width: 2.2in; }
+    .profile-field .choices { display: flex; gap: 18px; flex-wrap: wrap; }
+    .choice-item { display: flex; align-items: center; gap: 4px; }
+    .box { display: inline-block; width: 12px; height: 12px; border: 1px solid #000; vertical-align: middle; }
+
+    .likert-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 16px 0;
+      font-size: 11pt;
+    }
+    .likert-table th, .likert-table td {
+      border: 1px solid #000;
+      padding: 5px 7px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .likert-table th { background: #e8e8e8; font-weight: bold; }
+    .likert-table td.item-text { text-align: left; }
+    .likert-table td.score-cell { width: 0.55in; }
+
+    .scale-legend {
+      margin: 6px 0 10px 0;
+      font-size: 11pt;
+    }
+    .scale-legend span { margin-right: 14px; }
+
+    .signature-block {
+      margin-top: 30px;
+    }
+    .sig-line {
+      display: flex;
+      align-items: flex-end;
+      margin-bottom: 10px;
+      gap: 8px;
+    }
+    .sig-label { min-width: 2.2in; font-weight: bold; }
+    .sig-blank { flex: 1; border-bottom: 1px solid #000; min-width: 2in; height: 18px; }
+
+    .page-break { page-break-before: always; }
+    .note { font-size: 10pt; font-style: italic; margin-top: 4px; }
+
+    @media print {
+      .page { margin: 0; padding: 1in 1.2in 1in 1.5in; }
+      .page-break { page-break-before: always; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     COVER / TRANSMITTAL LETTER
+     ============================================================ -->
+<div class="page">
+  <div class="header-block">
+    <p class="bold">[NAME OF SCHOOL / INSTITUTION]</p>
+    <p>[Department / College Name]</p>
+    <p>[City, Province]</p>
+    <p>Academic Year 2025–2026</p>
+  </div>
+
+  <br />
+
+  <div class="letter-block">
+    <p class="bold">Date: ___________________</p>
+    <br />
+    <p>Dear Respondent,</p>
+    <br />
+    <p>
+      The researchers are currently conducting a study entitled <span class="bold">"WireVerse: An Educational Mobile Game for Electrical Wiring for TESDA NC II Trainees and Electricians"</span> as a partial fulfillment of the requirements for the degree of Bachelor of Science in Information Technology / Computer Science.
+    </p>
+    <br />
+    <p>
+      In line with this, we are humbly requesting your valuable time and honest participation in answering this questionnaire. Your responses will be treated with utmost confidentiality and will be used solely for academic purposes. Rest assured that your identity will not be disclosed in the study.
+    </p>
+    <br />
+    <p>
+      Your cooperation and honest answers are greatly appreciated. Thank you very much.
+    </p>
+  </div>
+
+  <div class="closing">
+    <p>Respectfully yours,</p>
+    <br /><br />
+    <p class="bold">______________________________</p>
+    <p>Researcher / Proponent</p>
+    <br />
+    <p>Noted by:</p>
+    <br /><br />
+    <p class="bold">______________________________</p>
+    <p>Thesis / Capstone Adviser</p>
+  </div>
+</div>
+
+<!-- ============================================================
+     QUESTIONNAIRE PROPER
+     ============================================================ -->
+<div class="page page-break">
+
+  <div class="header-block">
+    <h1>Thesis / Capstone Questionnaire</h1>
+    <h2>WireVerse: An Educational Mobile Game</h2>
+    <h2>for Electrical Wiring</h2>
+    <h3>For TESDA NC II Trainees and Electricians</h3>
+    <hr />
+  </div>
+
+  <!-- ========================
+       PART I: DEMOGRAPHIC PROFILE
+       ======================== -->
+  <p class="part-title">PART I: DEMOGRAPHIC PROFILE OF RESPONDENTS</p>
+  <p class="direction">
+    Direction: Please fill in the necessary information below. Put a check mark (<span class="bold">✓</span>) on the appropriate box.
+  </p>
+
+  <div style="margin-left:0.3in;">
+
+    <div class="profile-field">
+      <label class="bold">1. Name (Optional):</label>
+      <div style="flex:1; border-bottom:1px solid #000; height:18px;"></div>
+    </div>
+
+    <div class="profile-field">
+      <label class="bold">2. Age:</label>
+      <div class="choices">
+        <div class="choice-item"><span class="box"></span> 15–20</div>
+        <div class="choice-item"><span class="box"></span> 21–25</div>
+        <div class="choice-item"><span class="box"></span> 26–30</div>
+        <div class="choice-item"><span class="box"></span> 31–40</div>
+        <div class="choice-item"><span class="box"></span> 41 and above</div>
+      </div>
+    </div>
+
+    <div class="profile-field">
+      <label class="bold">3. Sex:</label>
+      <div class="choices">
+        <div class="choice-item"><span class="box"></span> Male</div>
+        <div class="choice-item"><span class="box"></span> Female</div>
+        <div class="choice-item"><span class="box"></span> Prefer not to say</div>
+      </div>
+    </div>
+
+    <div class="profile-field" style="flex-wrap:wrap; gap:6px;">
+      <label class="bold">4. Highest Educational Attainment:</label>
+      <div class="choices">
+        <div class="choice-item"><span class="box"></span> High School Graduate</div>
+        <div class="choice-item"><span class="box"></span> Senior High School Graduate</div>
+        <div class="choice-item"><span class="box"></span> College Level</div>
+        <div class="choice-item"><span class="box"></span> College Graduate</div>
+        <div class="choice-item"><span class="box"></span> Vocational / Technical</div>
+      </div>
+    </div>
+
+    <div class="profile-field" style="flex-wrap:wrap; gap:6px;">
+      <label class="bold">5. Years of Experience in Electrical Work:</label>
+      <div class="choices">
+        <div class="choice-item"><span class="box"></span> None</div>
+        <div class="choice-item"><span class="box"></span> Less than 1 year</div>
+        <div class="choice-item"><span class="box"></span> 1–3 years</div>
+        <div class="choice-item"><span class="box"></span> 3–5 years</div>
+        <div class="choice-item"><span class="box"></span> More than 5 years</div>
+      </div>
+    </div>
+
+    <div class="profile-field" style="flex-wrap:wrap; gap:6px;">
+      <label class="bold">6. TESDA NC II Status:</label>
+      <div class="choices">
+        <div class="choice-item"><span class="box"></span> Currently Training</div>
+        <div class="choice-item"><span class="box"></span> NC II Passer</div>
+        <div class="choice-item"><span class="box"></span> Practitioner (Licensed)</div>
+        <div class="choice-item"><span class="box"></span> Not yet enrolled</div>
+      </div>
+    </div>
+
+    <div class="profile-field" style="flex-wrap:wrap; gap:6px;">
+      <label class="bold">7. Have you used any educational game or mobile app for learning before?</label>
+      <div class="choices">
+        <div class="choice-item"><span class="box"></span> Yes</div>
+        <div class="choice-item"><span class="box"></span> No</div>
+      </div>
+    </div>
+
+  </div><!-- end demographic -->
+
+</div><!-- end page -->
+
+<!-- ============================================================
+     PRE-TEST
+     ============================================================ -->
+<div class="page page-break">
+
+  <p class="part-title">PART II: PRE-TEST — Knowledge Assessment (Before Using WireVerse)</p>
+  <p class="direction">
+    Direction: This is a pre-assessment to determine your prior knowledge on electrical wiring. Choose the letter of the best answer. Do NOT use any references.
+  </p>
+
+  <ol class="question-list">
+
+    <li>
+      What does <span class="bold">AWG</span> stand for?
+      <ol class="alpha">
+        <li>American Wire Gauge</li>
+        <li>Alternating Wire Gauge</li>
+        <li>Ampere Wire Grade</li>
+        <li>Authorized Wire Grounding</li>
+      </ol>
+    </li>
+
+    <li>
+      What is the standard residential voltage supply in the Philippines?
+      <ol class="alpha">
+        <li>110V / 50 Hz</li>
+        <li>220V / 60 Hz</li>
+        <li>110V / 60 Hz</li>
+        <li>380V / 60 Hz</li>
+      </ol>
+    </li>
+
+    <li>
+      Which wire color represents the <span class="bold">grounding wire</span> in Philippine standard color coding?
+      <ol class="alpha">
+        <li>Black</li>
+        <li>Red</li>
+        <li>White</li>
+        <li>Green or Yellow-Green</li>
+      </ol>
+    </li>
+
+    <li>
+      Which wire color represents the <span class="bold">neutral wire</span> in Philippine residential wiring?
+      <ol class="alpha">
+        <li>Red</li>
+        <li>Black</li>
+        <li>White</li>
+        <li>Green</li>
+      </ol>
+    </li>
+
+    <li>
+      Which of the following wire types is commonly used for <span class="bold">indoor concealed wiring</span> in the Philippines?
+      <ol class="alpha">
+        <li>THHN</li>
+        <li>Coaxial cable</li>
+        <li>Fiber optic cable</li>
+        <li>Cat6 LAN cable</li>
+      </ol>
+    </li>
+
+    <li>
+      A <span class="bold">15-ampere</span> circuit breaker is paired with which minimum wire size?
+      <ol class="alpha">
+        <li>AWG 10</li>
+        <li>AWG 12</li>
+        <li>AWG 14</li>
+        <li>AWG 16</li>
+      </ol>
+    </li>
+
+    <li>
+      What tool is specifically designed to <span class="bold">remove insulation</span> from a wire without damaging the conductor?
+      <ol class="alpha">
+        <li>Long-nose pliers</li>
+        <li>Wire stripper</li>
+        <li>Flathead screwdriver</li>
+        <li>Utility knife</li>
+      </ol>
+    </li>
+
+    <li>
+      In a single-pole switch installation, the switch must be connected to the:
+      <ol class="alpha">
+        <li>Neutral wire only</li>
+        <li>Grounding wire only</li>
+        <li>Hot (live) wire to interrupt the circuit</li>
+        <li>Both hot and neutral wires simultaneously</li>
+      </ol>
+    </li>
+
+    <li>
+      What does <span class="bold">PVC</span> stand for in the context of electrical wiring materials?
+      <ol class="alpha">
+        <li>Protective Voltage Conductor</li>
+        <li>Polyvinyl Chloride</li>
+        <li>Plastic Vinyl Conduit</li>
+        <li>Polymeric Vinyl Coating</li>
+      </ol>
+    </li>
+
+    <li>
+      A <span class="bold">GFCI (Ground Fault Circuit Interrupter)</span> outlet is primarily installed to protect against:
+      <ol class="alpha">
+        <li>Power surges from lightning</li>
+        <li>Overloading of circuits</li>
+        <li>Ground faults and the risk of electric shock</li>
+        <li>Short circuits inside appliances</li>
+      </ol>
+    </li>
+
+    <li>
+      In terms of wire diameter, a wire with a <span class="bold">larger AWG number</span> has a:
+      <ol class="alpha">
+        <li>Larger diameter</li>
+        <li>Smaller diameter</li>
+        <li>Same diameter as all others</li>
+        <li>Variable diameter depending on material</li>
+      </ol>
+    </li>
+
+    <li>
+      What is the primary purpose of a <span class="bold">junction box</span> in electrical installations?
+      <ol class="alpha">
+        <li>To increase voltage in the circuit</li>
+        <li>To measure the current flowing through the wire</li>
+        <li>To enclose and protect wire splices and connections</li>
+        <li>To regulate the ampere rating of the circuit</li>
+      </ol>
+    </li>
+
+    <li>
+      Before beginning any electrical wiring work, the <span class="bold">first safety step</span> must be:
+      <ol class="alpha">
+        <li>Wear rubber shoes only</li>
+        <li>Work as fast as possible to limit exposure</li>
+        <li>Turn off the circuit breaker and verify with a voltage tester</li>
+        <li>Unplug all appliances in the room</li>
+      </ol>
+    </li>
+
+    <li>
+      In a <span class="bold">parallel circuit</span>, all connected devices:
+      <ol class="alpha">
+        <li>Share the same current</li>
+        <li>Have the same voltage across each branch</li>
+        <li>Are connected end-to-end in a single path</li>
+        <li>Depend on one switch to operate</li>
+      </ol>
+    </li>
+
+    <li>
+      Which tool is used to <span class="bold">detect if a wire is energized (live)</span> without making direct contact?
+      <ol class="alpha">
+        <li>Continuity tester</li>
+        <li>Analog ammeter</li>
+        <li>Non-contact voltage tester (volt pen)</li>
+        <li>Ohmmeter</li>
+      </ol>
+    </li>
+
+  </ol>
+
+  <p class="note">— End of Part II: Pre-Test —</p>
+</div>
+
+<!-- ============================================================
+     POST-TEST
+     ============================================================ -->
+<div class="page page-break">
+
+  <p class="part-title">PART III: POST-TEST — Knowledge Assessment (After Using WireVerse)</p>
+  <p class="direction">
+    Direction: After using the WireVerse application, answer the following questions to measure what you have learned. Choose the letter of the best answer.
+  </p>
+
+  <ol class="question-list">
+
+    <li>
+      According to the Philippine Electrical Code (PEC), the <span class="bold">minimum wire size</span> for lighting branch circuits is:
+      <ol class="alpha">
+        <li>AWG 16</li>
+        <li>AWG 14</li>
+        <li>AWG 12</li>
+        <li>AWG 10</li>
+      </ol>
+    </li>
+
+    <li>
+      Which of the following wire types is <span class="bold">NOT recommended</span> for permanent concealed wiring?
+      <ol class="alpha">
+        <li>THHN wire</li>
+        <li>TW wire</li>
+        <li>Extension cord wire</li>
+        <li>UF (Underground Feeder) cable</li>
+      </ol>
+    </li>
+
+    <li>
+      If a switch is incorrectly wired to the <span class="bold">neutral wire</span> instead of the hot wire, what is the consequence?
+      <ol class="alpha">
+        <li>The circuit works the same as a correct installation</li>
+        <li>The device remains energized even when the switch is OFF, creating a shock hazard</li>
+        <li>The circuit breaker trips immediately upon switch operation</li>
+        <li>The device receives less power than normal</li>
+      </ol>
+    </li>
+
+    <li>
+      The <span class="bold">hot (live) wire</span> color in standard Philippine residential wiring is:
+      <ol class="alpha">
+        <li>White</li>
+        <li>Green</li>
+        <li>Black or Red</li>
+        <li>Yellow</li>
+      </ol>
+    </li>
+
+    <li>
+      A <span class="bold">20-ampere circuit</span> requires a minimum wire gauge of:
+      <ol class="alpha">
+        <li>AWG 14</li>
+        <li>AWG 12</li>
+        <li>AWG 10</li>
+        <li>AWG 8</li>
+      </ol>
+    </li>
+
+    <li>
+      Which of the following correctly describes a <span class="bold">series circuit</span>?
+      <ol class="alpha">
+        <li>All devices share the same voltage regardless of resistance</li>
+        <li>Current flows through one single path, passing through all devices in sequence</li>
+        <li>Each device has its own independent current path</li>
+        <li>The circuit only uses direct current (DC)</li>
+      </ol>
+    </li>
+
+    <li>
+      What is the correct procedure for <span class="bold">stripping wire insulation</span> safely?
+      <ol class="alpha">
+        <li>Use a utility knife and cut deeply around the insulation</li>
+        <li>Set the wire stripper to the correct gauge, clamp, and pull the insulation off</li>
+        <li>Use long-nose pliers to peel the insulation by hand</li>
+        <li>Burn the insulation off with a lighter</li>
+      </ol>
+    </li>
+
+    <li>
+      When installing a duplex outlet, the <span class="bold">neutral wire</span> connects to the:
+      <ol class="alpha">
+        <li>Smaller (narrow) slot terminal — brass-colored screw</li>
+        <li>Larger (wide) slot terminal — silver-colored screw</li>
+        <li>Grounding (round hole) terminal — green screw</li>
+        <li>Either slot terminal interchangeably</li>
+      </ol>
+    </li>
+
+    <li>
+      What does the <span class="bold">ampere rating</span> of a circuit breaker indicate?
+      <ol class="alpha">
+        <li>The maximum voltage the breaker can handle</li>
+        <li>The maximum continuous current the circuit can carry before the breaker trips</li>
+        <li>The resistance of the wiring in the circuit</li>
+        <li>The power in watts that the circuit can produce</li>
+      </ol>
+    </li>
+
+    <li>
+      In an outlet installation, the <span class="bold">grounding wire</span> is connected to the:
+      <ol class="alpha">
+        <li>Brass-colored terminal screw</li>
+        <li>Silver-colored terminal screw</li>
+        <li>Green terminal screw (U-shaped slot)</li>
+        <li>No terminal — it is left loose</li>
+      </ol>
+    </li>
+
+    <li>
+      According to safety standards, what is the recommended <span class="bold">mounting height</span> of a standard wall outlet from the finished floor level in the Philippines?
+      <ol class="alpha">
+        <li>6 inches (15 cm)</li>
+        <li>12 inches (30 cm)</li>
+        <li>18 inches (45 cm)</li>
+        <li>36 inches (90 cm)</li>
+      </ol>
+    </li>
+
+    <li>
+      What does <span class="bold">Ohm's Law</span> state?
+      <ol class="alpha">
+        <li>Voltage equals Current divided by Resistance (V = I / R)</li>
+        <li>Current equals Voltage multiplied by Resistance (I = V × R)</li>
+        <li>Voltage equals Current multiplied by Resistance (V = I × R)</li>
+        <li>Resistance equals Voltage multiplied by Current (R = V × I)</li>
+      </ol>
+    </li>
+
+    <li>
+      A circuit with a <span class="bold">short circuit</span> is characterized by:
+      <ol class="alpha">
+        <li>A very high resistance path that reduces current</li>
+        <li>A very low resistance unintended path that causes excessive current flow</li>
+        <li>An open path where no current can flow</li>
+        <li>A circuit that is too long for its breaker rating</li>
+      </ol>
+    </li>
+
+    <li>
+      What is the purpose of using an <span class="bold">electrical conduit</span> in wiring installations?
+      <ol class="alpha">
+        <li>To increase the current capacity of the wire</li>
+        <li>To reduce voltage drop across long wire runs</li>
+        <li>To protect wires from physical damage and provide a raceway system</li>
+        <li>To insulate the wire from moisture only</li>
+      </ol>
+    </li>
+
+    <li>
+      After completing a wiring installation, what should be done <span class="bold">before energizing</span> the circuit?
+      <ol class="alpha">
+        <li>Test all connections with a continuity tester and verify proper polarity</li>
+        <li>Immediately switch on the circuit breaker to check if it trips</li>
+        <li>Visually inspect only and proceed without testing</li>
+        <li>Ask someone else to hold the wires while you turn the breaker on</li>
+      </ol>
+    </li>
+
+  </ol>
+
+  <p class="note">— End of Part III: Post-Test —</p>
+</div>
+
+<!-- ============================================================
+     PART IV: ACCEPTABILITY / LIKERT EVALUATION
+     ============================================================ -->
+<div class="page page-break">
+
+  <p class="part-title">PART IV: LEVEL OF ACCEPTABILITY OF THE WIREVERSE APPLICATION</p>
+  <p class="direction">
+    Direction: Please rate WireVerse based on your experience using the application. Put a check mark (<span class="bold">✓</span>) in the column that best represents your level of agreement with each statement.
+  </p>
+
+  <div class="scale-legend">
+    <strong>Scale:</strong>
+    <span><strong>5</strong> – Strongly Agree (SA)</span>
+    <span><strong>4</strong> – Agree (A)</span>
+    <span><strong>3</strong> – Neutral (N)</span>
+    <span><strong>2</strong> – Disagree (D)</span>
+    <span><strong>1</strong> – Strongly Disagree (SD)</span>
+  </div>
+
+  <!-- A. Content and Accuracy -->
+  <p class="sub-title">A. Content and Accuracy</p>
+  <table class="likert-table">
+    <thead>
+      <tr>
+        <th style="width:0.35in;">No.</th>
+        <th class="item-text">Statement</th>
+        <th class="score-cell">SA<br/>(5)</th>
+        <th class="score-cell">A<br/>(4)</th>
+        <th class="score-cell">N<br/>(3)</th>
+        <th class="score-cell">D<br/>(2)</th>
+        <th class="score-cell">SD<br/>(1)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td class="item-text">The game presents accurate and correct information about electrical wiring.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>2</td><td class="item-text">The lessons are relevant to the TESDA NC II Electrical Installation and Maintenance competency standards.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>3</td><td class="item-text">The game covers essential topics needed by an electrician trainee.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>4</td><td class="item-text">The information provided in the game is clear and easy to understand.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>5</td><td class="item-text">The difficulty level of the content is appropriate for my skill level.</td><td></td><td></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- B. Instructional Design -->
+  <p class="sub-title">B. Instructional Design and Learning Effectiveness</p>
+  <table class="likert-table">
+    <thead>
+      <tr>
+        <th style="width:0.35in;">No.</th>
+        <th class="item-text">Statement</th>
+        <th class="score-cell">SA<br/>(5)</th>
+        <th class="score-cell">A<br/>(4)</th>
+        <th class="score-cell">N<br/>(3)</th>
+        <th class="score-cell">D<br/>(2)</th>
+        <th class="score-cell">SD<br/>(1)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>6</td><td class="item-text">The game effectively teaches electrical wiring concepts and skills.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>7</td><td class="item-text">The progression of lessons from basic to advanced topics is logical and well-structured.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>8</td><td class="item-text">The interactive activities and simulations help reinforce what I learned.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>9</td><td class="item-text">The feedback provided by the game after each activity is helpful and informative.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>10</td><td class="item-text">Using WireVerse motivated me to learn more about electrical wiring.</td><td></td><td></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- C. Usability -->
+  <p class="sub-title">C. Usability</p>
+  <table class="likert-table">
+    <thead>
+      <tr>
+        <th style="width:0.35in;">No.</th>
+        <th class="item-text">Statement</th>
+        <th class="score-cell">SA<br/>(5)</th>
+        <th class="score-cell">A<br/>(4)</th>
+        <th class="score-cell">N<br/>(3)</th>
+        <th class="score-cell">D<br/>(2)</th>
+        <th class="score-cell">SD<br/>(1)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>11</td><td class="item-text">The game is easy to navigate and operate.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>12</td><td class="item-text">The game controls are intuitive and responsive to touch input.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>13</td><td class="item-text">The loading time of the game is acceptable.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>14</td><td class="item-text">The game runs smoothly on my mobile device without major errors or crashes.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>15</td><td class="item-text">The instructions within the game are clear and understandable.</td><td></td><td></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- D. Visual Design -->
+  <p class="sub-title">D. Visual Design and User Interface</p>
+  <table class="likert-table">
+    <thead>
+      <tr>
+        <th style="width:0.35in;">No.</th>
+        <th class="item-text">Statement</th>
+        <th class="score-cell">SA<br/>(5)</th>
+        <th class="score-cell">A<br/>(4)</th>
+        <th class="score-cell">N<br/>(3)</th>
+        <th class="score-cell">D<br/>(2)</th>
+        <th class="score-cell">SD<br/>(1)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>16</td><td class="item-text">The graphics and 3D animations of the game are visually appealing.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>17</td><td class="item-text">The text in the game is readable and appropriately sized.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>18</td><td class="item-text">The color scheme of the game is pleasant and not distracting.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>19</td><td class="item-text">The icons, buttons, and interface elements are clearly identifiable.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>20</td><td class="item-text">The overall visual design of the game is professional and polished.</td><td></td><td></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- E. Engagement -->
+  <p class="sub-title">E. Engagement and Motivation</p>
+  <table class="likert-table">
+    <thead>
+      <tr>
+        <th style="width:0.35in;">No.</th>
+        <th class="item-text">Statement</th>
+        <th class="score-cell">SA<br/>(5)</th>
+        <th class="score-cell">A<br/>(4)</th>
+        <th class="score-cell">N<br/>(3)</th>
+        <th class="score-cell">D<br/>(2)</th>
+        <th class="score-cell">SD<br/>(1)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>21</td><td class="item-text">The game is interesting and engaging throughout the session.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>22</td><td class="item-text">The game made learning about electrical wiring enjoyable.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>23</td><td class="item-text">I would recommend WireVerse to other electrician trainees or students.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>24</td><td class="item-text">I would use this game again for review or self-study practice.</td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>25</td><td class="item-text">WireVerse can serve as an effective supplementary tool for TESDA NC II training.</td><td></td><td></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <p class="note">— End of Part IV: User Evaluation —</p>
+
+</div>
+
+<!-- ============================================================
+     PART V: EXPERT VALIDATION
+     ============================================================ -->
+<div class="page page-break">
+
+  <p class="part-title">PART V: EXPERT VALIDATION QUESTIONNAIRE</p>
+  <p style="text-align:center; font-style:italic; margin-bottom:6px;">
+    (To be answered by IT Experts and Electrical Subject Matter Experts only)
+  </p>
+  <p class="direction">
+    Direction: Please evaluate the WireVerse application based on each criterion. Put a check mark (<span class="bold">✓</span>) in the appropriate column.
+  </p>
+
+  <div class="scale-legend">
+    <strong>Scale:</strong>
+    <span><strong>4</strong> – Excellent</span>
+    <span><strong>3</strong> – Good</span>
+    <span><strong>2</strong> – Fair</span>
+    <span><strong>1</strong> – Poor</span>
+  </div>
+
+  <!-- A. Technical Functionality -->
+  <p class="sub-title">A. Technical Functionality <span style="font-weight:normal;">(IT Expert)</span></p>
+  <table class="likert-table">
+    <thead>
+      <tr>
+        <th style="width:0.35in;">No.</th>
+        <th class="item-text">Criterion</th>
+        <th class="score-cell">4<br/>Excellent</th>
+        <th class="score-cell">3<br/>Good</th>
+        <th class="score-cell">2<br/>Fair</th>
+        <th class="score-cell">1<br/>Poor</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td class="item-text">The system operates without major bugs, errors, or unexpected crashes.</td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>2</td><td class="item-text">The application is compatible and runs properly on Android mobile devices.</td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>3</td><td class="item-text">Response time, frame rate, and overall performance are acceptable.</td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>4</td><td class="item-text">User progress and game state are saved and retrieved reliably.</td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>5</td><td class="item-text">The application meets basic software quality and security standards.</td><td></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- B. Content Validity -->
+  <p class="sub-title">B. Content Validity <span style="font-weight:normal;">(Electrical Subject Matter Expert)</span></p>
+  <table class="likert-table">
+    <thead>
+      <tr>
+        <th style="width:0.35in;">No.</th>
+        <th class="item-text">Criterion</th>
+        <th class="score-cell">4<br/>Excellent</th>
+        <th class="score-cell">3<br/>Good</th>
+        <th class="score-cell">2<br/>Fair</th>
+        <th class="score-cell">1<br/>Poor</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>6</td><td class="item-text">The electrical wiring content and concepts presented are technically accurate.</td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>7</td><td class="item-text">The topics covered are well-aligned with TESDA NC II Electrical Installation and Maintenance competencies.</td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>8</td><td class="item-text">The sequence and organization of learning content follows a pedagogically sound order.</td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>9</td><td class="item-text">The difficulty level of the lessons and assessments is appropriate for the target learners.</td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>10</td><td class="item-text">The pre-test and post-test questions are valid measures of the intended learning outcomes.</td><td></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- C. Educational Value -->
+  <p class="sub-title">C. Educational Value and Practical Application</p>
+  <table class="likert-table">
+    <thead>
+      <tr>
+        <th style="width:0.35in;">No.</th>
+        <th class="item-text">Criterion</th>
+        <th class="score-cell">4<br/>Excellent</th>
+        <th class="score-cell">3<br/>Good</th>
+        <th class="score-cell">2<br/>Fair</th>
+        <th class="score-cell">1<br/>Poor</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>11</td><td class="item-text">The game can effectively supplement traditional classroom and workshop training for electrical wiring.</td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>12</td><td class="item-text">The 3D simulations realistically represent actual electrical wiring scenarios and procedures.</td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>13</td><td class="item-text">The game promotes awareness of electrical safety standards and practices.</td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>14</td><td class="item-text">The game encourages critical thinking and problem-solving skills in electrical tasks.</td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>15</td><td class="item-text">Overall, WireVerse has strong potential as a training and assessment tool for TESDA NC II aspirants.</td><td></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <br />
+  <p class="bold">Comments and Recommendations:</p>
+  <div style="border-bottom:1px solid #000; margin:6px 0; height:20px;"></div>
+  <div style="border-bottom:1px solid #000; margin:6px 0; height:20px;"></div>
+  <div style="border-bottom:1px solid #000; margin:6px 0; height:20px;"></div>
+  <div style="border-bottom:1px solid #000; margin:6px 0; height:20px;"></div>
+
+  <div class="signature-block">
+    <div class="sig-line">
+      <span class="sig-label">Signature over Printed Name:</span>
+      <span class="sig-blank"></span>
+    </div>
+    <div class="sig-line">
+      <span class="sig-label">Position / Designation:</span>
+      <span class="sig-blank"></span>
+    </div>
+    <div class="sig-line">
+      <span class="sig-label">Area of Expertise:</span>
+      <span class="sig-blank"></span>
+    </div>
+    <div class="sig-line">
+      <span class="sig-label">Institution / Company:</span>
+      <span class="sig-blank"></span>
+    </div>
+    <div class="sig-line">
+      <span class="sig-label">Date:</span>
+      <span class="sig-blank"></span>
+    </div>
+  </div>
+
+  <br />
+  <hr />
+  <p class="center note">
+    Thank you for your time and participation. Your responses are a valuable contribution to this research.<br/>
+    <em>WireVerse Capstone Research Team &mdash; [School Name] &mdash; A.Y. 2025&ndash;2026</em>
+  </p>
+
+</div><!-- end last page -->
+</body>
+</html>

@@ -1,18 +1,21 @@
 // Offline-first player database using localStorage
 const KEY = 'wv2_player';
 
+const XP_PER_LEVEL = 200;
+
 function defaults() {
   return {
     playerName: null,
-    coins: 150,
-    gems: 10,
-    energy: { current: 25, max: 25, lastRefill: Date.now() },
+    xp: 0,
+    level: 1,
     loginStreak: 0,
     lastLoginDate: null,
     learnProgress: { wireTypes: false, electricianTools: false, wireStripping: false },
-    learnStages: { electricianTools: false, outlet: false },
+    learnStages: { electricianTools: false, outlet: false, learnOutlet: false, ways: false, switchInstallation: false },
     exploreOutlets: {},
     exploreSwitches: {},
+    exploreBreakerFixed: false,
+    scenarioScores: {},
     settings: {
       masterVolume: 80,
       music: 70,
@@ -75,12 +78,12 @@ export class Database {
 
     const yesterday = new Date(Date.now() - 86_400_000).toDateString();
     const streak = data.lastLoginDate === yesterday ? data.loginStreak + 1 : 1;
-    const reward = 50 * Math.min(streak, 7);
+    const xpReward = 25 * Math.min(streak, 7);
 
     return this.patch({
       loginStreak: streak,
       lastLoginDate: today,
-      coins: data.coins + reward
+      xp: (data.xp || 0) + xpReward,
     });
   }
 
@@ -146,13 +149,54 @@ export class Database {
     };
   }
 
+  static xpForLevel(level) {
+    return (level - 1) * XP_PER_LEVEL;
+  }
+
+  static levelFromXP(xp) {
+    return Math.floor(xp / XP_PER_LEVEL) + 1;
+  }
+
+  static xpProgressInLevel(xp) {
+    return xp % XP_PER_LEVEL;
+  }
+
+  static addXP(amount) {
+    const data = this.load();
+    const newXP    = (data.xp || 0) + amount;
+    const newLevel = this.levelFromXP(newXP);
+    return this.patch({ xp: newXP, level: newLevel });
+  }
+
+  static saveScenarioScore(id, score) {
+    const data = this.load();
+    if (!data.scenarioScores) data.scenarioScores = {};
+    const prev = data.scenarioScores[id] || 0;
+    if (score > prev) {
+      data.scenarioScores[id] = score;
+      this.save(data);
+    }
+    return data;
+  }
+
+  static getScenarioScore(id) {
+    return this.load().scenarioScores?.[id] || 0;
+  }
+
+  static saveExploreBreaker() {
+    return this.patch({ exploreBreakerFixed: true });
+  }
+
   static getStats() {
     const d = this.load();
+    const xp    = d.xp    || 0;
+    const level = d.level || 1;
     return {
-      coins: d.coins,
-      gems: d.gems,
-      energy: d.energy,
-      loginStreak: d.loginStreak
+      xp,
+      level,
+      xpInLevel:   this.xpProgressInLevel(xp),
+      xpToNext:    XP_PER_LEVEL,
+      loginStreak: d.loginStreak,
     };
   }
 

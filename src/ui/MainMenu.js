@@ -2,8 +2,7 @@ import { Icons } from './Icons.js';
 import { Database } from '../systems/Database.js';
 
 const NAV = [
-  { id: 'play',         label: 'PLAY',         icon: Icons.play,         state: 'stagesHub',    primary: true  },
-  { id: 'learn',        label: 'LEARN',        icon: Icons.learn,        state: 'wireLearn'                    },
+  { id: 'learn',        label: 'LEARN',        icon: Icons.learn,        state: 'stagesHub',    primary: true  },
   { id: 'settings',     label: 'SETTINGS',     icon: Icons.settings,     state: 'settings'                     },
   { id: 'achievements', label: 'ACHIEVEMENTS', icon: Icons.achievements, state: 'achievements'                  },
   { id: 'tools',        label: 'TOOLS',        icon: Icons.tools,        state: 'tools'                        },
@@ -65,18 +64,38 @@ export class MainMenu {
   }
 
   onShow() {
-    const data = Database.load();
-    const name = data.playerName || 'Player';
+    const data  = Database.load();
+    const stats = Database.getStats();
+    const name  = data.playerName || 'Player';
+    const expPct = Math.round((stats.xpInLevel / stats.xpToNext) * 100);
+
+    const explore = Database.getExploreProgress();
+    const outletsDone  = explore.outletCount;
+    const switchesDone = explore.switchCount;
 
     this._el.querySelector('#mm-player-badge').innerHTML = `
       <span class="mm-player-icon">${Icons.user}</span>
-      <span class="mm-player-name">${name.toUpperCase()}</span>
+      <div class="mm-player-info">
+        <span class="mm-player-name">${name.toUpperCase()}</span>
+        <div class="mm-xp-bar-wrap">
+          <div class="mm-xp-bar" style="width:${expPct}%"></div>
+        </div>
+      </div>
+      <span class="mm-level-badge">LVL ${stats.level}</span>
     `;
 
     this._el.querySelector('#mm-stats').innerHTML = `
+      <div class="mm-stat mm-stat-coins">
+        <span class="mm-stat-icon">🪙</span>
+        <span class="mm-stat-val">${data.coins}</span>
+      </div>
       <div class="mm-stat mm-stat-gems">
         <span class="mm-stat-icon">${Icons.gem}</span>
         <span class="mm-stat-val">${data.gems}</span>
+      </div>
+      <div class="mm-stat mm-stat-explore">
+        <span class="mm-stat-icon">⚡</span>
+        <span class="mm-stat-val">${outletsDone + switchesDone}/8</span>
       </div>
     `;
   }

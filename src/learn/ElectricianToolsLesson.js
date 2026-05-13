@@ -34,183 +34,117 @@ const QUIZ = [
 ];
 
 const TOOL_DEFS = [
-  { id:'lineman',       name:"LINEMAN'S PLIERS",    col:0xcc2222, row:0, xi:0 },
-  { id:'dykes',         name:'DIAGONAL CUTTERS',    col:0x3355aa, row:0, xi:1 },
-  { id:'knife',         name:'UTILITY KNIFE',        col:0x555566, row:0, xi:2 },
-  { id:'longnose',      name:'LONG NOSE PLIERS',    col:0x888888, row:0, xi:3 },
-  { id:'conduitbender', name:'CONDUIT BENDER',      col:0x884400, row:0, xi:4 },
-  { id:'flathead',      name:'FLATHEAD SCREWDRIVER',col:0xffaa22, row:0, xi:5 },
-  { id:'phillips',      name:'PHILLIPS SCREWDRIVER',col:0xff8800, row:1, xi:0 },
-  { id:'tape',          name:'ELECTRICAL TAPE',     col:0x111111, row:1, xi:1 },
-  { id:'tester',        name:'VOLTAGE TESTER',      col:0xffee00, row:1, xi:2 },
-  { id:'multimeter',    name:'MULTIMETER',           col:0x333333, row:1, xi:3 },
-  { id:'fishtape',      name:'FISH TAPE',            col:0xff6600, row:1, xi:4 },
-  { id:'measuringtape', name:'MEASURING TAPE',      col:0xffcc00, row:1, xi:5 },
+  { id:'lineman',       name:"LINEMAN'S PLIERS",    col:0xcc2222, row:0, xi:0, displayRz:0         },
+  { id:'dykes',         name:'DIAGONAL CUTTERS',    col:0x3355aa, row:0, xi:1, displayRz:0         },
+  { id:'knife',         name:'UTILITY KNIFE',        col:0x555566, row:0, xi:2, displayRz:0         },
+  { id:'longnose',      name:'LONG NOSE PLIERS',    col:0x888888, row:0, xi:3, displayRz:0         },
+  { id:'conduitbender', name:'CONDUIT BENDER',      col:0x884400, row:0, xi:4, displayRz:0         },
+  { id:'flathead',      name:'FLATHEAD SCREWDRIVER',col:0xffaa22, row:0, xi:5, displayRz:Math.PI/2 },
+  { id:'phillips',      name:'PHILLIPS SCREWDRIVER',col:0xff8800, row:1, xi:0, displayRz:Math.PI/2 },
+  { id:'tape',          name:'ELECTRICAL TAPE',     col:0x111111, row:1, xi:1, displayRz:0         },
+  { id:'tester',        name:'VOLTAGE TESTER',      col:0xffee00, row:1, xi:2, displayRz:Math.PI/2 },
+  { id:'multimeter',    name:'MULTIMETER',           col:0x333333, row:1, xi:3, displayRz:0         },
+  { id:'fishtape',      name:'FISH TAPE',            col:0xff6600, row:1, xi:4, displayRz:0         },
+  { id:'measuringtape', name:'MEASURING TAPE',      col:0xffcc00, row:1, xi:5, displayRz:0         },
 ];
 
 const STEPS = [
   // ── Intro ──────────────────────────────────────────────────
-  { t:'info', scene:'bench_clean', cam:{p:[0,3,8],t:[0,0,0]},
-    chLbl:'TOOLS', title:"ELECTRICIAN'S TOOLS",
-    text:"Every professional electrician carries a core set of hand tools. Not any tools — the right tools. This lesson covers the 12 essential tools used in Philippine electrical work. What they do, when to use them, and how to stay safe.", btn:'NEXT' },
-  { t:'info', scene:'all_tools', cam:{p:[0,5,13],t:[0,0,0]},
-    chLbl:'TOOLS', title:'12 ESSENTIAL TOOLS',
-    text:"Six categories:\n✦ Cutting — for wire and conduit\n✦ Gripping — bending and holding\n✦ Fastening — terminals and fittings\n✦ Testing — safety and fault-finding\n✦ Measuring — accurate runs\n✦ Protection — electrical tape", btn:"LET'S START" },
+  { t:'info', scene:'bench_clean',
+    chLbl:'INTRO', title:"ELECTRICIAN'S TOOLS",
+    text:"Every professional electrician carries a core set of hand tools. Not any tools — the right tools. This lesson covers the 12 essential tools used in Philippine electrical work. What they do, how to use them, and how to stay safe.", btn:'START →' },
+  { t:'info', scene:'all_tools',
+    chLbl:'OVERVIEW', title:'12 ESSENTIAL TOOLS',
+    text:"Six categories:\n✦ Cutting — wire and conduit\n✦ Gripping — bending and holding\n✦ Fastening — terminals and fittings\n✦ Testing — safety and fault-finding\n✦ Measuring — accurate runs\n✦ Protection — electrical tape", btn:"LET'S START →" },
 
   // ── Ch1 Cutting ────────────────────────────────────────────
-  { t:'chap', scene:'cutting_group', cam:{p:[0,2.5,7],t:[0,0,0]},
-    ch:1, chLbl:'CH.1 CUTTING', title:'CUTTING TOOLS',
+  { t:'chap', scene:'cutting_group', ch:1, chLbl:'CH.1 CUTTING', title:'CUTTING TOOLS',
     text:'Three cutting tools. Each built for a different job. Using the wrong cutter damages the conductor and creates a hidden failure point.' },
-  { t:'info', scene:'show_lineman', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.1 CUTTING', title:"LINEMAN'S PLIERS",
-    text:"The workhorse of Philippine electrical work. Heavy-duty pliers with a flat gripping jaw and a cutter notch near the pivot. Twists wires together, cuts wire, and grips firmly enough to pull stubborn conductors through conduit.", btn:'NEXT' },
-  { t:'info', scene:'show_lineman', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.1 CUTTING', title:'WHEN TO USE',
-    text:"✦ Twisting conductors for wire nuts\n✦ Cutting thick wire (AWG 8–12)\n✦ Pulling wire through tight conduit bends\n✦ Tightening large wire nuts on multiway junctions", btn:'HOW TO USE' },
-  { t:'info', scene:'anim_lineman', cam:{p:[0,2.5,4.5],t:[0,0.5,0]},
-    chLbl:'CH.1 CUTTING', title:'HOW TO USE',
-    text:"Watch the powerful jaws grip and twist solid copper conductors. The long handles provide immense mechanical advantage.", btn:'NEXT' },
-  { t:'info', scene:'show_dykes', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.1 CUTTING', title:'DIAGONAL CUTTERS',
-    text:"Also called dykes. A smaller cutter with angled jaws that come to a diagonal edge — designed to cut flush against a surface. Where lineman's pliers leave a stub, diagonal cutters can cut wire right at the terminal.", btn:'NEXT' },
-  { t:'info', scene:'show_dykes', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.1 CUTTING', title:'WHEN TO USE',
-    text:"✦ Trimming excess wire at terminals\n✦ Cutting zip ties flush\n✦ Snipping small-gauge wires (AWG 14–22)\n✦ Working in tight junction boxes where lineman's won't fit", btn:'HOW TO USE' },
-  { t:'info', scene:'anim_dykes', cam:{p:[0,2.5,4.5],t:[0,0.5,0]},
-    chLbl:'CH.1 CUTTING', title:'HOW TO USE',
-    text:"The angled jaws snip wires cleanly. The sharp cutting edge easily shears through copper.", btn:'NEXT' },
-  { t:'info', scene:'show_knife', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.1 CUTTING', title:'UTILITY KNIFE',
-    text:"Standard box cutter — used for scoring cable jackets, not individual conductors. Always score LENGTHWISE along the jacket. A lengthwise score cannot reach the conductors below. A circular score almost always nicks one.", btn:'NEXT' },
-  { t:'info', scene:'show_knife', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.1 CUTTING', title:'WHEN TO USE',
-    text:"✦ Opening NM-B (Romex) outer jacket\n✦ Slitting BX or UF-B cable sheath\n✗ Never use to strip individual conductors — nick risk is too high for most skill levels", btn:'HOW TO USE' },
-  { t:'info', scene:'anim_knife', cam:{p:[0,2.5,4.5],t:[0,0.5,0]},
-    chLbl:'CH.1 CUTTING', title:'HOW TO USE',
-    text:"The blade extends to score the outer jacket. Always cut away from your body.", btn:'NEXT CHAPTER' },
+  { t:'tool', scene:'show_lineman', chLbl:'CH.1 CUTTING', toolName:"LINEMAN'S PLIERS",
+    about:"The workhorse of Philippine electrical work. Heavy-duty jaws with a cutter notch near the pivot — twists wires, cuts conductors, and pulls stubborn wire through conduit.",
+    features:[['✂','Cuts AWG 8–12'],['⟳','Wire Twisting'],['🛡','VDE 1000V']],
+    howTo:['Grip the wire firmly in the serrated jaw.','Twist both handles together to join conductors.','Use the cutter notch near the pivot to shear thick wire.'],
+    tip:'Always twist clockwise when joining conductors — it creates a tighter, more secure splice.' },
+  { t:'tool', scene:'show_dykes', chLbl:'CH.1 CUTTING', toolName:'DIAGONAL CUTTERS',
+    about:"Angled jaws cut flush against a surface. Where lineman's leave a stub, diagonal cutters snip right at the terminal — essential for clean, professional finishes.",
+    features:[['→','Flush Cut'],['🎯','Tight Spaces'],['✂','AWG 14–22']],
+    howTo:['Position the angled jaw flat against the work surface.','Squeeze handles firmly to shear the wire.','Trim zip ties by cutting at the base for a clean finish.'],
+    tip:'The diagonal edge cuts cleaner than straight jaws — less fraying, less chance of a resistance hot spot.' },
+  { t:'tool', scene:'show_knife', chLbl:'CH.1 CUTTING', toolName:'UTILITY KNIFE',
+    about:"For scoring cable jackets only — not individual conductors. Score LENGTHWISE along the jacket. A circular score almost always nicks a conductor inside.",
+    features:[['|','Score Only'],['↩','Retractable'],['⚠','Away From Body']],
+    howTo:['Extend the blade to a safe scoring length.','Score lengthwise along the outer jacket only.','Bend the cable to open the score and peel the jacket back.'],
+    tip:'Never score in a ring around the cable — the blade will nick conductors below the jacket surface.' },
 
   // ── Ch2 Gripping ───────────────────────────────────────────
-  { t:'chap', scene:'gripping_group', cam:{p:[0,2.5,7],t:[0,0,0]},
-    ch:2, chLbl:'CH.2 GRIPPING', title:'GRIPPING TOOLS',
-    text:'Two specialized gripping tools. One is for detail work in tight spaces. The other bends rigid metal conduit into precise angles — something no other hand tool can do.' },
-  { t:'info', scene:'show_longnose', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.2 GRIPPING', title:'LONG NOSE PLIERS',
-    text:"Long tapered jaws that reach into tight spaces where lineman's pliers cannot fit. Bends terminal hooks at wire ends, holds components during soldering, and positions wires in crowded junction boxes.", btn:'NEXT' },
-  { t:'info', scene:'show_longnose', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.2 GRIPPING', title:'WHEN TO USE',
-    text:"✦ Bending a J-hook or loop at a wire end for a screw terminal\n✦ Reaching into deep junction boxes\n✦ Holding small connectors during installation\n✦ Straightening bent conductor ends", btn:'HOW TO USE' },
-  { t:'info', scene:'anim_longnose', cam:{p:[0,2.5,4.5],t:[0,0.5,0]},
-    chLbl:'CH.2 GRIPPING', title:'HOW TO USE',
-    text:"The long, tapered jaws easily reach into tight spaces to bend wire into precise hooks for screw terminals.", btn:'NEXT' },
-  { t:'info', scene:'show_conduitbender', cam:{p:[0,2,5.5],t:[0,0,0]},
-    chLbl:'CH.2 GRIPPING', title:'CONDUIT BENDER',
-    text:"A specialized tool for bending rigid EMT or PVC conduit into accurate angles. The curved metal head hooks over the conduit. Angle markings (22.5°, 45°, 90°) guide every bend. The foot step lets you apply consistent downward pressure.", btn:'NEXT' },
-  { t:'info', scene:'show_conduitbender', cam:{p:[0,2,5.5],t:[0,0,0]},
-    chLbl:'CH.2 GRIPPING', title:'WHEN TO USE',
-    text:"✦ Bending conduit at corners (90° offset)\n✦ Saddle bends around obstacles\n✦ Angled drops from panel to floor\n✗ Never hand-force a bend — kinking restricts wire pull-through and weakens the conduit", btn:'HOW TO USE' },
-  { t:'info', scene:'anim_conduitbender', cam:{p:[0,2.5,5.5],t:[0,0.5,0]},
-    chLbl:'CH.2 GRIPPING', title:'HOW TO USE',
-    text:"Applying smooth downward pressure on the foot step bends the rigid pipe cleanly without kinking.", btn:'NEXT CHAPTER' },
+  { t:'chap', scene:'gripping_group', ch:2, chLbl:'CH.2 GRIPPING', title:'GRIPPING TOOLS',
+    text:'Two specialized gripping tools — one for precision detail work, one for bending rigid conduit into precise angles.' },
+  { t:'tool', scene:'show_longnose', chLbl:'CH.2 GRIPPING', toolName:'LONG NOSE PLIERS',
+    about:"Long tapered jaws reach into tight spaces lineman's cannot. Bends terminal hooks at wire ends and positions wires in crowded junction boxes.",
+    features:[['↔','Tight Reach'],['⌒','Hook Bending'],['◆','Precise Grip']],
+    howTo:['Grip the wire near the end using the tapered jaws.','Bend slowly and steadily to the desired angle.','Form a J-hook for screw terminal connections.'],
+    tip:'Use smooth, controlled movements — the narrow jaws can crimp soft copper if you force it.' },
+  { t:'tool', scene:'show_conduitbender', chLbl:'CH.2 GRIPPING', toolName:'CONDUIT BENDER',
+    about:"Bends rigid EMT conduit to accurate angles. Angle markers (22.5°, 45°, 90°) guide every bend. The foot step applies consistent downward pressure without kinking.",
+    features:[['📐','Angle Marks'],['⚙','No Kinks'],['⬇','Foot Step']],
+    howTo:['Hook the head over the conduit at the bend mark.','Apply firm, steady pressure on the foot step.','Watch the angle markers — release exactly at your target.'],
+    tip:'Never force a bend by hand — kinking creates a stress point and restricts wire pull-through permanently.' },
 
   // ── Ch3 Fastening ──────────────────────────────────────────
-  { t:'chap', scene:'fastening_group', cam:{p:[0,2.5,7],t:[0,0,0]},
-    ch:3, chLbl:'CH.3 FASTENING', title:'FASTENING TOOLS',
-    text:'Screwdrivers do more than turn screws. In electrical work they tighten terminal lugs, secure outlet screws, and adjust panel breakers. The right tip type protects both the screw head and your safety.' },
-  { t:'info', scene:'show_flathead', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.3 FASTENING', title:'FLATHEAD SCREWDRIVER',
-    text:"Single flat blade. Most electrical terminal screws in Philippine outlets, switches, and circuit breakers are slotted (flathead). The tip must fit the slot width exactly — too narrow and it slips, damaging the screw head and risking an arc.", btn:'NEXT' },
-  { t:'info', scene:'show_flathead', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.3 FASTENING', title:'WHEN TO USE',
-    text:"✦ Tightening terminal lug screws in panels\n✦ Securing outlet and switch wire terminals\n✦ Adjusting breaker screws\n✗ Never use a worn or wrong-size tip — a slipping screwdriver can cause an arc", btn:'HOW TO USE' },
-  { t:'info', scene:'anim_flathead', cam:{p:[0,2.5,4.5],t:[0,0.5,0]},
-    chLbl:'CH.3 FASTENING', title:'HOW TO USE',
-    text:"The flat blade locks into the slotted terminal. Firm downward pressure while twisting ensures a tight, secure electrical connection.", btn:'NEXT' },
-  { t:'info', scene:'show_phillips', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.3 FASTENING', title:'PHILLIPS SCREWDRIVER',
-    text:"Cross-shaped tip for Phillips screws. Common on electrical boxes, fixture mounting hardware, and cover plates. The cross tip self-centers — it does not slip off as easily as a flathead, making it safer near live parts.", btn:'NEXT' },
-  { t:'info', scene:'show_phillips', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.3 FASTENING', title:'WHEN TO USE',
-    text:"✦ Mounting electrical boxes to studs\n✦ Attaching fixture and plate covers\n✦ Securing conduit clamps and panel doors\n✦ Match tip size to screw head (#1, #2, #3) — wrong size damages the head", btn:'HOW TO USE' },
-  { t:'info', scene:'anim_phillips', cam:{p:[0,2.5,4.5],t:[0,0.5,0]},
-    chLbl:'CH.3 FASTENING', title:'HOW TO USE',
-    text:"The cross shape self-centers perfectly, preventing slip-offs when driving screws into device boxes.", btn:'NEXT CHAPTER' },
+  { t:'chap', scene:'fastening_group', ch:3, chLbl:'CH.3 FASTENING', title:'FASTENING TOOLS',
+    text:'Screwdrivers tighten terminal lugs, secure outlet screws, and adjust panel breakers. The right tip type protects both the screw head and your safety.' },
+  { t:'tool', scene:'show_flathead', chLbl:'CH.3 FASTENING', toolName:'FLATHEAD SCREWDRIVER',
+    about:"Most electrical terminal screws in Philippine outlets, switches, and circuit breakers are slotted. The tip must fit exactly — too narrow and it slips, risking a dangerous arc flash.",
+    features:[['—','Slotted Tip'],['⚡','Panel Ready'],['🛡','VDE Handle']],
+    howTo:['Match the tip width exactly to the slot — no wider, no narrower.','Apply firm downward pressure while turning.','Tighten until snug — overtightening cracks plastic terminals.'],
+    tip:'A slipping screwdriver causes arc flash. Always match tip width to the slot before applying torque.' },
+  { t:'tool', scene:'show_phillips', chLbl:'CH.3 FASTENING', toolName:'PHILLIPS SCREWDRIVER',
+    about:"Cross-shaped tip for Phillips screws common on boxes, fixtures, and cover plates. Self-centers on the head — safer near live parts than a flathead.",
+    features:[['✚','Cross Tip'],['🎯','Self-Centers'],['📦','Box Mount']],
+    howTo:['Align the cross tip with the screw head — it will seat automatically.','Apply downward pressure and rotate.','Match tip size (#1, #2, #3) to the screw head size.'],
+    tip:'Wrong tip size damages the head. If the tip feels loose in the cross, switch to the correct size immediately.' },
 
   // ── Ch4 Testing & Measuring ────────────────────────────────
-  { t:'chap', scene:'testing_group', cam:{p:[0,3,9],t:[0,0,0]},
-    ch:4, chLbl:'CH.4 TESTING', title:'TESTING & MEASURING',
-    text:'Testing and measuring tools separate a safe electrician from a dangerous one. Every professional touches these tools before touching any conductor.' },
-  { t:'info', scene:'show_tester', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.4 TESTING', title:'VOLTAGE TESTER',
-    text:"A non-contact voltage tester (NCV tester) detects AC voltage through insulation without touching bare wire. Hold the tip near a wire or outlet — an LED and beep indicate voltage is present. The most critical safety tool in any kit.", btn:'NEXT' },
-  { t:'info', scene:'show_tester', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.4 TESTING', title:'WHEN TO USE',
-    text:"✦ Before touching ANY conductor — verify it is dead\n✦ Checking which wire in a bundle is hot\n✦ Confirming a breaker has actually cut power\n✦ Rule: if your tester is not working, stop work until it is fixed", btn:'HOW TO USE' },
-  { t:'info', scene:'anim_tester', cam:{p:[0,2.5,4.5],t:[0,0.5,0]},
-    chLbl:'CH.4 TESTING', title:'HOW TO USE',
-    text:"Bring the tip near a conductor. If voltage is present, it glows red and beeps. It detects AC fields without physical contact.", btn:'NEXT' },
-  { t:'info', scene:'show_multimeter', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.4 TESTING', title:'MULTIMETER',
-    text:"Measures voltage, current, and resistance. Most-used functions: AC voltage (checking outlet voltage), continuity (confirming a wire is unbroken), and resistance (checking motor windings and connections).", btn:'NEXT' },
-  { t:'info', scene:'show_multimeter', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.4 TESTING', title:'WHEN TO USE',
-    text:"✦ Measuring outlet voltage (should be 220V ± 10%)\n✦ Continuity test — beep means wire is unbroken\n✦ Finding intermittent faults in switches\n✦ Always connect the BLACK probe first in voltage mode", btn:'HOW TO USE' },
-  { t:'info', scene:'anim_multimeter', cam:{p:[0,2.5,4.5],t:[0,0.5,0]},
-    chLbl:'CH.4 TESTING', title:'HOW TO USE',
-    text:"Turn the dial to the correct setting, then touch the probes to the terminals. The screen displays an accurate digital reading.", btn:'NEXT' },
-  { t:'info', scene:'show_fishtape', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.4 TESTING', title:'FISH TAPE',
-    text:"A long flexible steel or fiberglass tape coiled on a reel. Pushed through installed conduit first — navigating bends — then wire is attached to the end and pulled back through. Without fish tape, wiring through installed conduit is nearly impossible.", btn:'NEXT' },
-  { t:'info', scene:'show_fishtape', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.4 TESTING', title:'WHEN TO USE',
-    text:"✦ Pulling wire through conduit already mounted in place\n✦ Fishing wire through walls and ceilings\n✦ Use wire pulling lubricant on long runs — reduces friction and conductor damage", btn:'HOW TO USE' },
-  { t:'info', scene:'anim_fishtape', cam:{p:[0,2.5,4.5],t:[0,0.5,0]},
-    chLbl:'CH.4 TESTING', title:'HOW TO USE',
-    text:"The rigid steel tape extends endlessly from the reel, navigating conduit bends. Wires are attached to the hook, then pulled back.", btn:'NEXT' },
-  { t:'info', scene:'show_measuringtape', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.4 TESTING', title:'MEASURING TAPE',
-    text:"Standard tape measure for planning conduit runs, locating junction boxes, and cutting wire to length. Always add 15–20% extra wire length — a too-short wire means splicing inside a wall, which is a code violation.", btn:'NEXT' },
-  { t:'info', scene:'show_measuringtape', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.4 TESTING', title:'WHEN TO USE',
-    text:"✦ Measuring conduit runs and cutting to length\n✦ Locating stud positions for box mounting\n✦ Planning wire routing paths\n✦ Always measure in straight lines, then add extra for routing bends", btn:'HOW TO USE' },
-  { t:'info', scene:'anim_measuringtape', cam:{p:[0,2.5,4.5],t:[0,0.5,0]},
-    chLbl:'CH.4 TESTING', title:'HOW TO USE',
-    text:"The metal blade extends and locks for accurate measurements of walls, wire, and conduit.", btn:'NEXT CHAPTER' },
+  { t:'chap', scene:'testing_group', ch:4, chLbl:'CH.4 TESTING', title:'TESTING & MEASURING',
+    text:'Testing tools separate a safe electrician from a dangerous one. Touch these before touching any conductor.' },
+  { t:'tool', scene:'show_tester', chLbl:'CH.4 TESTING', toolName:'VOLTAGE TESTER',
+    about:"Non-contact voltage tester — detects AC voltage through insulation without touching bare wire. The LED and beep fire the moment it senses a live field. The most critical safety tool in any kit.",
+    features:[['🔴','NCV Sensor'],['🔔','Beep Alert'],['🛡','No Contact']],
+    howTo:['Hold the tip near the wire or outlet without touching.','A beep + red LED means voltage is present — do not touch.','Always test every wire, even after the breaker is confirmed off.'],
+    tip:'Test on a known live outlet first to confirm the tester works. A dead tester is a silent danger.' },
+  { t:'tool', scene:'show_multimeter', chLbl:'CH.4 TESTING', toolName:'MULTIMETER',
+    about:"Measures voltage, current, and resistance. Most-used: AC voltage (220V outlets), continuity (unbroken wire), and resistance (motor windings and loose connections).",
+    features:[['V','Voltage'],['~','Continuity'],['Ω','Resistance']],
+    howTo:['Turn the dial to the correct function (V, continuity, Ω).','Connect probes: BLACK to COM, RED to measurement port.','Read the display — a beep in continuity mode means unbroken circuit.'],
+    tip:'In voltage mode, connect the BLACK probe first to avoid a short circuit on first contact.' },
+  { t:'tool', scene:'show_fishtape', chLbl:'CH.4 TESTING', toolName:'FISH TAPE',
+    about:"Long flexible steel tape coiled on a reel. Pushed through installed conduit first — navigating bends — then wire is hooked to the end and pulled back through.",
+    features:[['🌀','Reel Feed'],['↩','Hook End'],['💧','Lube Compatible']],
+    howTo:['Push the tape into the conduit, navigate bends from the far end.','Attach wire to the hooked end at the far opening.','Wind the reel handle to pull the wire back through.'],
+    tip:'Apply wire pulling lubricant on runs over 5m — it prevents conductor jacket damage from friction heat.' },
+  { t:'tool', scene:'show_measuringtape', chLbl:'CH.4 TESTING', toolName:'MEASURING TAPE',
+    about:"For planning conduit runs, locating boxes, and cutting wire to length. Always add 15–20% extra — a too-short wire means splicing inside a wall, which is a code violation.",
+    features:[['📏','Accurate'],['📌','Box Locate'],['➕','Add 15–20%']],
+    howTo:['Extend and lock the blade at the required measurement.','Mark the conduit or wire at the cut length.','Add 15–20% extra for routing bends and terminal tails.'],
+    tip:'Measure in straight lines, then add for every bend. Short wire in conduit cannot be extended — ever.' },
 
   // ── Ch5 Protection ─────────────────────────────────────────
-  { t:'chap', scene:'show_tape', cam:{p:[0,2,5.5],t:[0,0,0]},
-    ch:5, chLbl:'CH.5 PROTECTION', title:'ELECTRICAL TAPE',
-    text:'The final protection layer. Used in almost every connection to ensure nothing remains exposed.' },
-  { t:'info', scene:'show_tape', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.5 PROTECTION', title:'ELECTRICAL TAPE',
-    text:"Vinyl insulating tape — black is most common in the Philippines. Rated for 600V and 80°C. Stretchy so it conforms to wire shapes and connector contours without gaps. Overlap half the tape width on each wrap — no gaps, no exposed copper.", btn:'NEXT' },
-  { t:'info', scene:'show_tape', cam:{p:[0,1.8,4.5],t:[0,0,0]},
-    chLbl:'CH.5 PROTECTION', title:'WHEN TO USE',
-    text:"✦ Insulating wire nut connections (tape over the nut)\n✦ Temporary insulation on exposed conductors\n✦ Color-coding phase wires (red, black, yellow bands)\n✗ Not a substitute for proper connectors — tape alone cannot hold a live connection", btn:'HOW TO USE' },
-  { t:'info', scene:'anim_tape', cam:{p:[0,2.5,4.5],t:[0,0.5,0]},
-    chLbl:'CH.5 PROTECTION', title:'HOW TO USE',
-    text:"The tape is stretched as it's wrapped around connections. This stretching ensures a tight, gap-free insulating layer.", btn:'NEXT CHAPTER' },
+  { t:'chap', scene:'show_tape', ch:5, chLbl:'CH.5 PROTECTION', title:'ELECTRICAL TAPE',
+    text:'The final protection layer — used in almost every connection to ensure nothing remains exposed.' },
+  { t:'tool', scene:'show_tape', chLbl:'CH.5 PROTECTION', toolName:'ELECTRICAL TAPE',
+    about:"Vinyl insulating tape rated 600V and 80°C. Stretchy enough to conform to wire shapes without gaps. Overlap half the tape width on each wrap — no gaps, no exposed copper.",
+    features:[['⚡','600V Rated'],['🌡','80°C Max'],['🔄','Self-Sealing']],
+    howTo:['Stretch the tape as you wrap — tension creates a tight, self-sealing layer.','Overlap each wrap by half the tape width, no gaps.','Extend 10mm past the bare area on each side.'],
+    tip:'Tape is not a connector substitute — it cannot hold a live splice long-term. Use proper wire nuts first.' },
 
   // ── Ch6 Safety ─────────────────────────────────────────────
-  { t:'chap', scene:'all_tools', cam:{p:[0,5,13],t:[0,0,0]},
-    ch:6, chLbl:'CH.6 SAFETY', title:'TOOL SAFETY',
+  { t:'chap', scene:'all_tools', ch:6, chLbl:'CH.6 SAFETY', title:'TOOL SAFETY',
     text:'Four rules every licensed electrician follows without exception. Skip one and a tool becomes a hazard.' },
-  { t:'info', scene:'all_tools', cam:{p:[0,5,13],t:[0,0,0]},
-    chLbl:'CH.6 SAFETY', title:'INSPECT BEFORE USE',
-    text:"Before every job: inspect each tool for cracked handles, broken insulation, and damaged jaws. A cracked screwdriver handle means no electrical insulation between your hand and the live conductor. Replace damaged tools immediately — never tape a cracked handle.", btn:'NEXT' },
-  { t:'info', scene:'all_tools', cam:{p:[0,5,13],t:[0,0,0]},
-    chLbl:'CH.6 SAFETY', title:'USE THE RIGHT TOOL',
-    text:"Most dangerous misuse on Philippine job sites: using lineman's pliers as a hammer, or a flathead screwdriver as a pry bar. Every tool is rated for a specific load. Exceeding it causes sudden failure — and if you are working live, that failure becomes a fault.", btn:'NEXT' },
-  { t:'info', scene:'all_tools', cam:{p:[0,5,13],t:[0,0,0]},
-    chLbl:'CH.6 SAFETY', title:'INSULATED HANDLES',
-    text:"All electrician's tools must have VDE-rated insulated handles — 1000V AC minimum. Look for the VDE symbol (double triangle) on the handle. Tools without VDE rating are for general construction, not electrical work.", btn:'NEXT' },
-  { t:'info', scene:'all_tools', cam:{p:[0,5,13],t:[0,0,0]},
-    chLbl:'CH.6 SAFETY', title:'STORE PROPERLY',
-    text:"Tools stored loose in a bag chip and dull against each other. Nicked cutting jaws leave rough wire cuts that create resistance hot spots. Store each tool in a designated pocket or hanging rack. Keep cutting edges away from metal-on-metal contact.", btn:'NEXT CHAPTER' },
+  { t:'info', scene:'all_tools',
+    chLbl:'CH.6 SAFETY', title:'RULES FOR SAFE TOOL USE',
+    text:"1. INSPECT — Check for cracked handles, broken insulation, and damaged jaws before every job.\n2. RIGHT TOOL — Never use pliers as a hammer or a screwdriver as a pry bar.\n3. VDE RATED — All handles must be VDE 1000V AC rated. Look for the double triangle symbol.\n4. STORE PROPERLY — Keep tools in separate pockets. Nicked cutting jaws create resistance hot spots.", btn:'START QUIZ →' },
 
   // ── Quiz ───────────────────────────────────────────────────
-  { t:'qintro', scene:'all_tools', cam:{p:[0,5,13],t:[0,0,0]},
-    chLbl:'QUIZ', title:'TOOL KNOWLEDGE CHECK',
-    text:"6 scenario-based questions. Think about what you just learned — when each tool is used, why it matters, and what happens when you choose the wrong one.", btn:'START QUIZ' },
   { t:'quiz', qi:0, scene:'quiz', chLbl:'QUIZ' },
   { t:'quiz', qi:1, scene:'quiz', chLbl:'QUIZ' },
   { t:'quiz', qi:2, scene:'quiz', chLbl:'QUIZ' },
@@ -227,37 +161,173 @@ const STEPS = [
 // ══════════════════════════════════════════════════════════════════
 
 const CSS = `
-.etl{position:absolute;inset:0;display:flex;flex-direction:column;background:#07101f;font-family:'Exo 2',sans-serif;overflow:hidden;}
-.etl-top{height:52px;background:rgba(4,8,18,.98);border-bottom:1px solid rgba(0,212,255,.15);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;}
-.etl-back{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.22);color:#00d4ff;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;padding:7px 13px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
-.etl-chlbl{flex:1;text-align:center;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.5);}
-.etl-prog{font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(0,212,255,.6);white-space:nowrap;}
+/* ── LESSON WRAPPER ─────────────────────────────────────── */
+.etl{position:absolute;inset:0;display:flex;flex-direction:column;background:#060a14;font-family:'Barlow Condensed',sans-serif;overflow:hidden;}
 
-.etl-scene{height:44vh;min-height:200px;max-height:320px;position:relative;flex-shrink:0;background:#07101f;overflow:hidden;}
-.etl-canvas{display:block;}
+/* ── TOP BAR ────────────────────────────────────────────── */
+.etl-top{
+  height:50px;flex-shrink:0;
+  background:linear-gradient(180deg,rgba(2,5,14,.98) 0%,rgba(4,8,20,.9) 100%);
+  border-bottom:1px solid rgba(0,212,255,.14);
+  box-shadow:0 2px 16px rgba(0,0,0,.6);
+  display:flex;align-items:center;padding:0 12px;gap:8px;
+  z-index:5;
+}
+.etl-back{
+  background:linear-gradient(135deg,rgba(0,212,255,.1),rgba(0,150,200,.06));
+  border:1px solid rgba(0,212,255,.35);color:#00d4ff;
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1.5px;
+  padding:9px 16px;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  box-shadow:0 0 10px rgba(0,212,255,.12);transition:all .18s;min-width:72px;text-align:center;
+  touch-action:manipulation;
+}
+.etl-back:active{transform:scale(.93);background:rgba(0,212,255,.2);}
+.etl-chlbl{
+  flex:1;text-align:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:4px;
+  color:rgba(255,255,255,.75);text-transform:uppercase;
+}
+.etl-prog{
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;
+  color:rgba(0,212,255,.6);letter-spacing:1px;white-space:nowrap;
+  background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.18);
+  padding:4px 9px;border-radius:6px;
+}
 
-.etl-dialog{background:rgba(4,8,18,.97);border-top:1px solid rgba(0,212,255,.12);padding:14px 16px 18px;display:flex;flex-direction:column;gap:9px;flex:1;overflow-y:auto;min-height:0;}
-.etl-dlg-title{font-size:13px;font-weight:900;letter-spacing:2px;color:#00d4ff;}
-.etl-dlg-body{font-size:12px;color:rgba(255,255,255,.75);line-height:1.65;white-space:pre-line;}
-.etl-dlg-btn{align-self:flex-end;padding:11px 26px;background:linear-gradient(135deg,#00d4ff,#2dc653);color:#000;border:none;border-radius:10px;font-family:'Exo 2',sans-serif;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;-webkit-tap-highlight-color:transparent;margin-top:2px;}
+/* ── 3D SCENE ────────────────────────────────────────────── */
+.etl-scene{
+  height:42vh;min-height:190px;max-height:300px;
+  position:relative;flex-shrink:0;background:#060a14;overflow:hidden;
+  transition:height .25s ease,min-height .25s ease;
+}
+.etl-canvas{display:block;width:100%;height:100%;}
 
-.etl-chap-wrap{display:flex;flex-direction:column;align-items:center;gap:5px;padding:4px 0;}
-.etl-chap-num{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:4px;color:rgba(0,212,255,.6);}
-.etl-chap-title{font-size:20px;font-weight:900;letter-spacing:3px;color:#fff;}
-.etl-chap-body{font-size:12px;color:rgba(255,255,255,.6);line-height:1.5;text-align:center;}
+/* Quiz mode: collapse 3D scene, give full height to quiz panel */
+.etl--quiz .etl-scene{height:0;min-height:0;max-height:0;overflow:hidden;}
 
-.etl-quiz-q{font-size:13px;font-weight:700;color:#fff;line-height:1.5;}
-.etl-quiz-opts{display:flex;flex-direction:column;gap:6px;}
-.etl-quiz-opt{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 14px;font-size:12px;color:rgba(255,255,255,.8);font-family:'Exo 2',sans-serif;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .12s,border-color .12s;}
-.etl-quiz-opt:active{background:rgba(0,212,255,.15);}
-.etl-quiz-opt.correct{background:rgba(45,198,83,.2);border-color:#2dc653;color:#2dc653;}
-.etl-quiz-opt.wrong{background:rgba(255,68,68,.15);border-color:#ff4444;color:#ff4444;}
-.etl-quiz-hint{font-size:11px;color:rgba(255,255,255,.5);line-height:1.5;font-style:italic;}
-.etl-quiz-next{align-self:flex-end;padding:10px 22px;background:linear-gradient(135deg,#00d4ff,#2dc653);color:#000;border:none;border-radius:10px;font-family:'Exo 2',sans-serif;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
-.etl-quiz-prog{display:flex;gap:5px;align-self:center;}
-.etl-quiz-pip{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);}
+/* Scene vignette overlay for depth */
+.etl-scene::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(2,5,14,.45) 0%,transparent 25%,transparent 70%,rgba(2,5,14,.55) 100%),
+    radial-gradient(ellipse 70% 80% at 50% 50%,transparent 40%,rgba(2,5,14,.25) 100%);
+}
+
+/* Tool name overlay on 3D canvas */
+.etl-tool-overlay{
+  position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  background:rgba(2,5,14,.82);border:1px solid rgba(0,212,255,.3);
+  border-radius:8px;padding:5px 14px;
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:3px;color:#00d4ff;text-transform:uppercase;
+  pointer-events:none;opacity:0;transition:opacity .3s;z-index:3;
+  white-space:nowrap;
+}
+.etl-tool-overlay.show{opacity:1;}
+
+/* ── DIALOG PANEL ────────────────────────────────────────── */
+.etl-dialog{
+  background:linear-gradient(180deg,rgba(4,8,20,.98) 0%,rgba(6,10,24,.98) 100%);
+  border-top:1px solid rgba(0,212,255,.14);
+  padding:14px 16px 16px;
+  display:flex;flex-direction:column;gap:10px;
+  flex:1;overflow-y:auto;min-height:0;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+.etl-dialog::-webkit-scrollbar{display:none;}
+
+.etl-dlg-title{
+  font-size:16px;font-weight:900;letter-spacing:2.5px;
+  color:#00d4ff;text-transform:uppercase;
+  text-shadow:0 0 16px rgba(0,212,255,.3);
+}
+.etl-dlg-body{
+  font-size:13px;color:rgba(255,255,255,.78);
+  line-height:1.68;white-space:pre-line;
+}
+.etl-dlg-btn{
+  align-self:flex-end;
+  padding:12px 28px;
+  background:linear-gradient(135deg,#00d4ff,#2dc653);color:#000;
+  border:none;border-radius:11px;
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:900;letter-spacing:1.5px;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;margin-top:4px;
+  box-shadow:0 0 16px rgba(0,212,255,.25),0 4px 12px rgba(0,0,0,.35);
+  transition:all .18s;touch-action:manipulation;
+}
+.etl-dlg-btn:active{transform:scale(.94);}
+
+/* ── CHAPTER CARD ────────────────────────────────────────── */
+.etl-chap-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 0;}
+.etl-chap-num{font-size:10px;font-weight:700;letter-spacing:5px;color:rgba(0,212,255,.55);text-transform:uppercase;}
+.etl-chap-title{font-size:22px;font-weight:900;letter-spacing:3px;color:#fff;text-align:center;}
+.etl-chap-body{font-size:13px;color:rgba(255,255,255,.6);line-height:1.6;text-align:center;}
+
+/* ── QUIZ ────────────────────────────────────────────────── */
+.etl-quiz-header{
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.18);
+  border-radius:10px;padding:10px 14px;flex-shrink:0;
+}
+.etl-quiz-hd-label{font-size:10px;font-weight:800;letter-spacing:3px;color:#00d4ff;text-transform:uppercase;}
+.etl-quiz-hd-score{font-size:13px;font-weight:700;color:rgba(255,255,255,.5);}
+.etl-quiz-q{font-size:15px;font-weight:700;color:#fff;line-height:1.55;flex-shrink:0;}
+.etl-quiz-opts{display:flex;flex-direction:column;gap:8px;}
+.etl-quiz-opt{
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;padding:14px 16px;
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;color:rgba(255,255,255,.82);
+  text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background .14s,border-color .14s;touch-action:manipulation;
+  line-height:1.4;min-height:48px;
+}
+.etl-quiz-opt:active{background:rgba(0,212,255,.14);}
+.etl-quiz-opt.correct{background:rgba(45,198,83,.18);border-color:#2dc653;color:#2dc653;}
+.etl-quiz-opt.wrong{background:rgba(255,68,68,.14);border-color:#ff4444;color:#ff4444;}
+.etl-quiz-hint{
+  font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;
+  background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);
+  border-radius:9px;padding:10px 12px;flex-shrink:0;
+}
+.etl-quiz-next{
+  align-self:stretch;padding:14px 24px;
+  background:linear-gradient(135deg,#00d4ff,#2dc653);color:#000;
+  border:none;border-radius:12px;
+  font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;letter-spacing:1px;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  box-shadow:0 0 16px rgba(0,212,255,.3);transition:all .18s;flex-shrink:0;
+}
+.etl-quiz-next:active{transform:scale(.97);}
+.etl-quiz-prog{display:flex;gap:6px;align-self:center;flex-shrink:0;}
+.etl-quiz-pip{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.12);}
 .etl-quiz-pip.done{background:#2dc653;}
-.etl-quiz-pip.active{background:#00d4ff;}
+.etl-quiz-pip.active{background:#00d4ff;box-shadow:0 0 8px #00d4ff;}
+
+/* ── RICH TOOL PANEL ─────────────────────────────────────── */
+.etl-rich{display:grid;grid-template-columns:1fr 1fr 120px;gap:10px;padding:10px 14px 0;}
+.etl-rich-col{display:flex;flex-direction:column;gap:7px;}
+.etl-rich-hd{font-size:9px;font-weight:800;letter-spacing:2.5px;color:#00d4ff;display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.etl-rich-hd-icon{width:16px;height:16px;border-radius:50%;border:1.5px solid rgba(0,212,255,.6);display:flex;align-items:center;justify-content:center;font-size:8px;flex-shrink:0;}
+.etl-about-text{font-size:11.5px;color:rgba(255,255,255,.72);line-height:1.58;flex:1;}
+.etl-feat-row{display:flex;flex-direction:column;gap:5px;margin-top:auto;}
+.etl-feat-item{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:7px;padding:5px 8px;}
+.etl-feat-icon{font-size:13px;flex-shrink:0;width:20px;text-align:center;}
+.etl-feat-label{font-size:10px;font-weight:700;color:rgba(255,255,255,.55);letter-spacing:.3px;}
+.etl-howto-steps{display:flex;flex-direction:column;gap:6px;}
+.etl-step{display:flex;align-items:flex-start;gap:7px;}
+.etl-step-num{width:19px;height:19px;border-radius:6px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#00d4ff;flex-shrink:0;margin-top:1px;}
+.etl-step-text{font-size:11px;color:rgba(255,255,255,.68);line-height:1.52;}
+.etl-tip-box{background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.15);border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:5px;}
+.etl-tip-head{font-size:9px;font-weight:800;letter-spacing:2px;color:#00d4ff;display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.etl-tip-text{font-size:10.5px;color:rgba(255,255,255,.55);line-height:1.55;}
+
+/* ── NAV BAR (PREV / NEXT) ───────────────────────────────── */
+.etl-nav{display:flex;align-items:center;justify-content:space-between;padding:8px 14px 10px;border-top:1px solid rgba(0,212,255,.08);flex-shrink:0;gap:6px;margin-top:auto;}
+.etl-nav-lesson{display:flex;align-items:center;gap:5px;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:7px 11px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:rgba(0,212,255,.65);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.etl-nav-prev{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 14px;font-size:11px;font-weight:700;color:rgba(255,255,255,.45);cursor:pointer;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;-webkit-tap-highlight-color:transparent;transition:all .15s;touch-action:manipulation;}
+.etl-nav-prev:active{transform:scale(.93);}
+.etl-nav-next{background:linear-gradient(135deg,#00d4ff,#2dc653);border:none;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:900;color:#000;cursor:pointer;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;box-shadow:0 0 12px rgba(0,212,255,.2);transition:all .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.etl-nav-next:active{transform:scale(.93);}
 `;
 
 function injectCSS() {
@@ -297,10 +367,16 @@ export class ElectricianToolsLesson {
           <span class="etl-chlbl" id="etl-chlbl">TOOLS</span>
           <span class="etl-prog" id="etl-prog"></span>
         </header>
-        <div class="etl-scene" id="etl-scene"><canvas id="etl-canvas" class="etl-canvas"></canvas></div>
+        <div class="etl-scene" id="etl-scene">
+          <canvas id="etl-canvas" class="etl-canvas"></canvas>
+          <div class="etl-tool-overlay" id="etl-tool-overlay"></div>
+        </div>
         <div class="etl-dialog" id="etl-dialog"></div>
       </div>`;
-    el.querySelector('.etl-back').addEventListener('click', () => this.state.setState('stagesHub'));
+    const backBtn = el.querySelector('.etl-back');
+    const goBack = () => this.state.setState('stagesHub');
+    backBtn.addEventListener('click', goBack);
+    backBtn.addEventListener('touchend', e => { e.preventDefault(); goBack(); });
     this._el = el;
     return el;
   }
@@ -314,29 +390,47 @@ export class ElectricianToolsLesson {
     const w = sceneEl.offsetWidth, h = sceneEl.offsetHeight;
     if (!w || !h) { setTimeout(() => this._initThree(), 60); return; }
 
-    this._renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    this._renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     this._renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this._renderer.setSize(w, h);
-    this._renderer.setClearColor(0x0a0e18);
+    this._renderer.setClearColor(0x060a14);
     this._renderer.shadowMap.enabled = true;
     this._renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this._renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this._renderer.toneMappingExposure = 1.1;
+    this._renderer.toneMappingExposure = 1.3;
 
     this._scene  = new THREE.Scene();
-    this._scene.background = new THREE.Color(0x0a0e18);
-    this._scene.fog = new THREE.FogExp2(0x0a0e18, 0.022);
-    this._camera = new THREE.PerspectiveCamera(55, w / h, 0.1, 100);
+    this._scene.background = new THREE.Color(0x060a14);
+    this._scene.fog = new THREE.FogExp2(0x060a14, 0.018);
+    this._camera = new THREE.PerspectiveCamera(52, w / h, 0.1, 100);
 
-    const c0 = STEPS[0].cam;
+    const c0 = STEPS[0].cam ?? { p: [0, 3, 8], t: [0, 0, 0] };
     this._camera.position.set(...c0.p);
     this._camTarget.set(...c0.t);
     this._camera.lookAt(this._camTarget);
     this._targetCam = c0;
 
-    // Lighting + realistic workbench (benchY=0 to match tool positioning)
+    // Lighting + realistic workbench
     buildLightingRig(this._scene);
     buildWorkbench(this._scene, { benchY: -0.07, benchW: 15, benchD: 5 });
+
+    // Extra cinematic tool spotlight — aimed at center bench for solo showcases
+    this._toolSpot = new THREE.SpotLight(0xffeedd, 5.5);
+    this._toolSpot.position.set(1.8, 4.5, 2.2);
+    this._toolSpot.target.position.set(0, 0.1, 0);
+    this._toolSpot.angle    = 0.38;
+    this._toolSpot.penumbra = 0.55;
+    this._toolSpot.decay    = 1.4;
+    this._toolSpot.castShadow = true;
+    this._toolSpot.shadow.mapSize.set(1024, 1024);
+    this._toolSpot.shadow.bias = -0.002;
+    this._scene.add(this._toolSpot);
+    this._scene.add(this._toolSpot.target);
+
+    // Cool rim light from behind-left for separation
+    this._rimLight = new THREE.DirectionalLight(0x3366ff, 0.55);
+    this._rimLight.position.set(-3, 3, -4);
+    this._scene.add(this._rimLight);
 
     // Build all 12 tool groups upfront
     for (const def of TOOL_DEFS) {
@@ -347,6 +441,7 @@ export class ElectricianToolsLesson {
       group.userData.baseY     = group.position.y;
       group.userData.baseRx    = group.rotation.x;
       group.userData.baseScale = group.scale.x;
+      group.userData.displayRz = def.displayRz ?? 0;
     }
 
     this._resizeObs = new ResizeObserver(() => {
@@ -359,6 +454,10 @@ export class ElectricianToolsLesson {
     this._resizeObs.observe(sceneEl);
 
     this._tick();
+    // Re-apply current scene now that all tool meshes are built
+    if (STEPS[this._step]) {
+      this._applyScene(STEPS[this._step].scene, STEPS[this._step]);
+    }
   }
 
   // ── MATERIAL HELPER ──────────────────────────────────────────
@@ -906,54 +1005,103 @@ export class ElectricianToolsLesson {
       this._animProps = null;
     }
 
-    if (sceneName.startsWith('show_') || sceneName.startsWith('anim_')) {
-      const id = sceneName.split('_')[1];
-      const m = this._toolMeshes[id];
+    // Spotlight on for solo show/anim scenes, off for group scenes
+    const isSolo = sceneName.startsWith('show_') || sceneName.startsWith('anim_') || sceneName === 'quiz';
+    if (this._toolSpot) this._toolSpot.intensity = isSolo ? 5.5 : 0;
+    if (this._rimLight) this._rimLight.intensity = isSolo ? 0.55 : 0.18;
+
+    // Cinematic close-up camera for solo display — overrides the step's cam
+    if (sceneName.startsWith('show_') || sceneName === 'quiz') {
+      this._targetCam = { p: [0.35, 1.5, 2.8], t: [0, 1.0, 0] };
+    } else if (sceneName.startsWith('anim_')) {
+      this._targetCam = { p: [0, 1.5, 3.0], t: [0, 1.0, 0] };
+    }
+
+    if (isSolo) {
+      const id = sceneName === 'quiz'
+        ? (QUIZ[step?.qi]?.vis ?? null)
+        : sceneName.split('_')[1];
+
+      const m = id ? this._toolMeshes[id] : null;
       if (m) {
-        const by = m.userData.baseY ?? 0;
         m.visible = true;
-        m.position.set(0, by + 0.7, 0);
-        m.rotation.set(m.userData.baseRx ?? 0, 0.4, 0);
-        m.scale.setScalar((m.userData.baseScale ?? 1) * 2.0);
+        const S = (m.userData.baseScale ?? 1) * 2.0;
+        m.scale.setScalar(S);
+        const tDef = TOOL_DEFS.find(d => d.id === id);
+        const displayRz = tDef?.displayRz ?? 0;
+        m.rotation.set(m.userData.baseRx ?? 0, 0.42, displayRz);
+
+        // Auto-seat: place high, compute world bounding box, drop to bench surface
+        m.position.set(0, 100, 0.1);
+        m.updateMatrixWorld(true);
+        const box = new THREE.Box3().setFromObject(m);
+        const seatedY = 100.02 - box.min.y;
+        m.position.y = seatedY;
+        m.userData.displayY = seatedY;
+
+        // Aim spotlight at tool center and reposition it above
+        if (this._toolSpot) {
+          const dy = seatedY - 100;
+          const toolCenterY = (box.min.y + box.max.y) * 0.5 + dy;
+          const toolTopY    = box.max.y + dy;
+          this._toolSpot.target.position.set(0.1, toolCenterY, 0.1);
+          this._toolSpot.target.updateMatrixWorld();
+          this._toolSpot.position.set(1.6, toolTopY + 3.2, 2.0);
+        }
       }
-      
+
+      // Update tool name overlay
+      const overlay = this._el?.querySelector('#etl-tool-overlay');
+      if (overlay && m && id) {
+        const def = TOOL_DEFS.find(d => d.id === id);
+        overlay.textContent = def?.name ?? '';
+        overlay.classList.toggle('show', !!def && sceneName !== 'quiz');
+      } else if (overlay) {
+        overlay.classList.remove('show');
+      }
+
       if (sceneName.startsWith('anim_')) {
         this._animProps = new THREE.Group();
-        this._animProps.position.set(0, 0.7, 0);
+        this._animProps.position.set(0, m?.userData.displayY ?? 0.2, 0.1);
         this._scene.add(this._animProps);
-        
+
         if (id === 'lineman' || id === 'dykes') {
-          const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.5, 12), this._mat(0xcc3333, 0.1, 0.7));
+          const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 1.6, 12),
+            this._mat(0xcc3333, 0.1, 0.7));
           wire.rotation.z = Math.PI / 2;
-          wire.position.set(0, 0.25, 0);
+          wire.position.set(0.1, 0.18, 0);
           this._animProps.add(wire);
+          // Copper end
+          const end = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.12, 8),
+            this._mat(0xd97845, 0.1, 0.85));
+          end.rotation.z = Math.PI / 2;
+          end.position.set(0.82, 0.18, 0);
+          this._animProps.add(end);
         } else if (id === 'flathead' || id === 'phillips') {
-          const screw = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.4, 16), this._mat(0x888888, 0.8, 0.2));
-          screw.position.set(0, -0.4, 0);
-          this._animProps.add(screw);
+          const head = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.12, 12),
+            this._mat(0x888888, 0.8, 0.3));
+          head.position.set(0, -0.22, 0);
+          this._animProps.add(head);
+          const body = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.6, 12),
+            this._mat(0x555555, 0.5, 0.5));
+          body.position.set(0, -0.58, 0);
+          this._animProps.add(body);
         } else if (id === 'tester') {
-          const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.5, 12), this._mat(0x111111, 0.1, 0.7));
+          const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 1.6, 12),
+            this._mat(0x111111, 0.1, 0.7));
           wire.rotation.z = Math.PI / 2;
-          wire.position.set(0, -0.5, 0);
+          wire.position.set(0.2, -0.3, 0);
           this._animProps.add(wire);
         }
+      } else {
+        // For show_ scenes, clear overlay after a moment so it fades during hover rotate
       }
       return;
     }
 
-    if (sceneName === 'quiz') {
-      const q = step?.qi != null ? QUIZ[step.qi] : null;
-      if (q?.vis) {
-        const m = this._toolMeshes[q.vis];
-        if (m) {
-          const by = m.userData.baseY ?? 0;
-          m.visible = true;
-          m.position.set(0, by + 0.7, 0);
-          m.rotation.set(m.userData.baseRx ?? 0, 0.4, 0);
-          m.scale.setScalar((m.userData.baseScale ?? 1) * 2.0);
-        }
-      }
-    }
+    // Clear overlay for non-solo scenes
+    const overlay = this._el?.querySelector('#etl-tool-overlay');
+    if (overlay) overlay.classList.remove('show');
   }
 
   // ── STEP SYSTEM ──────────────────────────────────────────────
@@ -964,6 +1112,7 @@ export class ElectricianToolsLesson {
     const step = STEPS[i];
     this._el.querySelector('#etl-chlbl').textContent = step.chLbl ?? 'TOOLS';
     this._el.querySelector('#etl-prog').textContent  = `${i + 1}/${STEPS.length}`;
+    this._el.querySelector('.etl').classList.toggle('etl--quiz', step.t === 'quiz');
     this._applyScene(step.scene, step);
     this._renderDialog(step);
   }
@@ -990,6 +1139,10 @@ export class ElectricianToolsLesson {
         return `<div class="etl-quiz-pip ${cls}"></div>`;
       }).join('');
       dlg.innerHTML = `
+        <div class="etl-quiz-header">
+          <span class="etl-quiz-hd-label">Question ${step.qi + 1} / ${QUIZ.length}</span>
+          <span class="etl-quiz-hd-score">${this._quizScore} correct</span>
+        </div>
         <div class="etl-quiz-prog">${pips}</div>
         <div class="etl-quiz-q">${q.q}</div>
         <div class="etl-quiz-opts">
@@ -1005,30 +1158,80 @@ export class ElectricianToolsLesson {
       const scoreColor = this._quizScore >= 5 ? '#2dc653' : this._quizScore >= 3 ? '#ffaa22' : '#ff4444';
       dlg.innerHTML = `
         <div class="etl-dlg-title">${step.title}</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:${scoreColor}">QUIZ: ${this._quizScore}/${QUIZ.length} CORRECT</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:${scoreColor};letter-spacing:2px;">QUIZ: ${this._quizScore}/${QUIZ.length} CORRECT</div>
         <div class="etl-dlg-body">${step.text}</div>
         <button class="etl-dlg-btn" id="etl-btn" style="background:linear-gradient(135deg,#2dc653,#00d4ff)">${step.btn}</button>`;
       dlg.querySelector('#etl-btn').addEventListener('click', () => this._onNext());
       return;
     }
 
-    // info / qintro
+    if (step.t === 'tool') {
+      const featsHTML = step.features.map(([icon, label]) => `
+        <div class="etl-feat-item">
+          <span class="etl-feat-icon">${icon}</span>
+          <span class="etl-feat-label">${label}</span>
+        </div>`).join('');
+      const stepsHTML = step.howTo.map((s, i) => `
+        <div class="etl-step">
+          <div class="etl-step-num">${i + 1}</div>
+          <div class="etl-step-text">${s}</div>
+        </div>`).join('');
+      dlg.innerHTML = `
+        <div class="etl-rich">
+          <div class="etl-rich-col">
+            <div class="etl-rich-hd"><div class="etl-rich-hd-icon">i</div> ABOUT THE TOOL</div>
+            <div class="etl-about-text">${step.about}</div>
+            <div class="etl-feat-row">${featsHTML}</div>
+          </div>
+          <div class="etl-rich-col">
+            <div class="etl-rich-hd">HOW TO USE</div>
+            <div class="etl-howto-steps">${stepsHTML}</div>
+          </div>
+          <div class="etl-tip-box">
+            <div class="etl-tip-head">💡 TIP</div>
+            <div class="etl-tip-text">${step.tip}</div>
+          </div>
+        </div>
+        <div class="etl-nav">
+          <button class="etl-nav-lesson">📖 OVERVIEW</button>
+          <div style="display:flex;gap:7px;">
+            <button class="etl-nav-prev" id="etl-prev">← PREV</button>
+            <button class="etl-nav-next" id="etl-next">NEXT →</button>
+          </div>
+        </div>`;
+      dlg.querySelector('#etl-prev').addEventListener('click', () => this._onPrev());
+      dlg.querySelector('#etl-next').addEventListener('click', () => this._onNext());
+      dlg.querySelector('.etl-nav-lesson').addEventListener('click', () => this._gotoStep(0));
+      return;
+    }
+
+    // info / qintro / chap fallback
     dlg.innerHTML = `
       ${step.title ? `<div class="etl-dlg-title">${step.title}</div>` : ''}
-      <div class="etl-dlg-body">${step.text}</div>
-      <button class="etl-dlg-btn" id="etl-btn">${step.btn ?? 'NEXT →'}</button>`;
-    dlg.querySelector('#etl-btn').addEventListener('click', () => this._onNext());
+      <div class="etl-dlg-body">${step.text ?? ''}</div>
+      <div class="etl-nav" style="border-top:none;padding:0;margin-top:auto;">
+        ${this._step > 0 ? `<button class="etl-nav-prev" id="etl-prev">← PREV</button>` : '<div></div>'}
+        <button class="etl-nav-next" id="etl-next">${step.btn ?? 'NEXT →'}</button>
+      </div>`;
+    dlg.querySelector('#etl-next')?.addEventListener('click', () => this._onNext());
+    dlg.querySelector('#etl-prev')?.addEventListener('click', () => this._onPrev());
   }
 
   _onNext() {
     const step = STEPS[this._step];
     if (step.t === 'done') {
+      const alreadyDone = Database.getLessonProgress().electricianTools;
       Database.completeLesson('electricianTools');
       Database.saveLearnStage('electricianTools');
+      if (!alreadyDone) Database.addXP(100 + this._quizScore * 25);
       this.state.setState('stagesHub');
       return;
     }
     if (this._step < STEPS.length - 1) this._gotoStep(this._step + 1);
+  }
+
+  _onPrev() {
+    if (this._step > 0) this._gotoStep(this._step - 1);
   }
 
   _onQuizAnswer(idx) {
@@ -1078,56 +1281,56 @@ export class ElectricianToolsLesson {
       this._camera.lookAt(this._camTarget);
     }
 
-    // Float + rotate visible tools in show/quiz scenes
+    // Animate visible tools
     const step = STEPS[this._step];
-    const isAnim = step?.scene?.startsWith('anim_');
-    const floating = step?.scene?.startsWith('show_') || step?.scene === 'quiz';
-    
-    if (floating) {
+    const isAnim   = step?.scene?.startsWith('anim_');
+    const isShow   = step?.scene?.startsWith('show_') || step?.scene === 'quiz';
+
+    if (isShow) {
       for (const m of Object.values(this._toolMeshes)) {
-        if (m.visible) {
-          const by = m.userData.baseY ?? 0;
-          m.rotation.y = Math.sin(t * 0.5) * 0.7;
-          m.position.y += (by + 0.45 + Math.sin(t * 0.9) * 0.1 - m.position.y) * 0.04;
-        }
+        if (!m.visible) continue;
+        const baseRz = m.userData.displayRz ?? 0;
+        m.rotation.y = 0.42 + Math.sin(t * 0.32) * 0.5;
+        m.rotation.z = baseRz + Math.sin(t * 0.20) * 0.025;
+        const dY = m.userData.displayY ?? 0.2;
+        m.position.y = dY + Math.sin(t * 0.52) * 0.018;
+      }
+      if (this._toolSpot) {
+        this._toolSpot.intensity = 5.2 + Math.sin(t * 0.7) * 0.4;
       }
     } else if (isAnim) {
       const id = step.scene.split('_')[1];
       const m = this._toolMeshes[id];
       if (m) {
-        const by = m.userData.baseY ?? 0;
-        // Fix position in view
-        m.position.y += (by + 0.7 - m.position.y) * 0.1;
-        m.rotation.y += (0.4 - m.rotation.y) * 0.1;
-        
-        // Tool-specific animations
-        const animT = t * 3.0; // speed multiplier
+        const animT = t * 2.8;
+        const dY = m.userData.displayY ?? 0.2;
+        m.position.y = dY + Math.sin(t * 0.52) * 0.016;
+
         if (id === 'lineman' || id === 'dykes' || id === 'longnose') {
-          // Jaws open and close
-          const angle = (Math.sin(animT) * 0.5 + 0.5) * 0.2; // 0 to 0.2 rads
-          if (m.userData.armA) m.userData.armA.rotation.z = angle;
-          if (m.userData.armB) m.userData.armB.rotation.z = -angle;
-        } else if (id === 'knife') {
-          m.position.z = Math.sin(animT) * 0.2;
+          m.rotation.y = 0.55 + Math.sin(t * 0.3) * 0.3;
+          const jawAngle = (Math.sin(animT) * 0.5 + 0.5) * 0.22;
+          if (m.userData.armA) m.userData.armA.rotation.z =  jawAngle;
+          if (m.userData.armB) m.userData.armB.rotation.z = -jawAngle;
         } else if (id === 'flathead' || id === 'phillips') {
-          m.rotation.y = t * 2.0; // continuous spin
-          m.position.y = by + 0.6 + Math.sin(animT) * 0.05; // slight up/down
+          m.rotation.y = t * 1.8;
+          m.rotation.z = 0.12 + Math.sin(animT * 0.5) * 0.06;
+        } else if (id === 'knife') {
+          m.rotation.y = 0.55 + Math.sin(t * 0.4) * 0.5;
+          m.rotation.z = 0.12 + Math.sin(animT * 0.5) * 0.18;
         } else if (id === 'tester') {
-          m.position.y = by + 0.7 + Math.sin(animT * 0.5) * 0.3; // move toward wire
-          m.rotation.x = Math.PI / 4;
-          // Emissive flash when close
-          const led = m.children.find(c => c.geometry.type === 'SphereGeometry');
-          if (led && led.material.emissive) {
-            led.material.emissiveIntensity = m.position.y < (by + 0.5) ? (Math.sin(t * 20) > 0 ? 2 : 0) : 0;
-          }
+          m.rotation.y = 0.55 + Math.sin(t * 0.3) * 0.35;
+          const led = m.children.find(c => c.material?.emissive);
+          if (led) led.material.emissiveIntensity = 0.8 + Math.sin(t * 14) * 0.8;
         } else if (id === 'conduitbender') {
-          m.rotation.z = Math.sin(animT * 0.5) * 0.4; // rock back and forth
+          m.rotation.y = 0.55;
+          m.rotation.z = 0.12 + Math.sin(animT * 0.45) * 0.28;
         } else if (id === 'tape') {
-          m.rotation.z = -t * 3.0; // unroll tape
+          m.rotation.y = t * 1.4;
         } else {
-          // Default gentle float for others
-          m.rotation.y += Math.sin(t) * 0.005;
+          m.rotation.y = 0.55 + Math.sin(t * 0.3) * 0.5;
         }
+
+        if (this._toolSpot) this._toolSpot.intensity = 5.2 + Math.sin(t * 0.7) * 0.4;
       }
     }
 
@@ -1152,6 +1355,9 @@ export class ElectricianToolsLesson {
       this._scene      = null;
       this._camera     = null;
       this._toolMeshes = {};
+      this._toolSpot   = null;
+      this._rimLight   = null;
+      this._animProps  = null;
     }
   }
 }

@@ -20,7 +20,32 @@
       "Bash(node -e ' *)",
       "Bash(Get-ChildItem -Path \"c:\\\\MyProjects\" -Directory)",
       "Bash(Select-Object Name)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(grep -n \"topbar\\\\|timer\\\\|money\\\\|coins\\\\|₱\\\\|\\\\$698\\\\|04:52\\\\|LEVEL\\\\|level.*badge\\\\|#tb-\" learn-outlet.html)",
+      "Bash(grep -n \"topbar\\\\|BACK\\\\|btn-back\\\\|tb-title\\\\|tb-stats\\\\|ELECTRICAL REPAIR\\\\|04:49\\\\|\\\\$698\\\\|LEVEL\" learn-outlet.html)",
+      "Bash(ls dist/*.html)",
+      "Bash(ls dist/learn-outlet*.html)",
+      "Bash(cat vite.config.js)",
+      "Bash(cat vite.config.ts)",
+      "Bash(cat capacitor.config.json)",
+      "Bash(cat capacitor.config.ts)",
+      "Bash(ls js/)",
+      "Bash(ls public/js/)",
+      "Bash(npx cap *)",
+      "Bash(.\\\\gradlew.bat assembleDebug)",
+      "PowerShell(Copy-Item \"c:\\\\MyProjects\\\\WireVerse V2\\\\android\\\\app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk\" \"c:\\\\MyProjects\\\\WireVerse V2\\\\app-debug.apk\" -Force)",
+      "Bash(Move-Item \"c:\\\\MyProjects\\\\WireVerse V2\\\\thesis\\\\questionnaire.html\" \"c:\\\\MyProjects\\\\WireVerse V2\\\\public\\\\questionnaire.html\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\MyProjects\\\\WireVerse V2\" -Filter \"*.html\" -File)",
+      "Bash(Select-Object FullName)",
+      "Bash(copy \"c:\\\\MyProjects\\\\WireVerse V2\\\\learn-outlet.html\" \"c:\\\\MyProjects\\\\WireVerse V2\\\\public\\\\learn-outlet.html\")",
+      "Bash(copy \"c:\\\\MyProjects\\\\WireVerse V2\\\\switch_installation.html\" \"c:\\\\MyProjects\\\\WireVerse V2\\\\public\\\\switch_installation.html\")",
+      "PowerShell(Copy-Item \"c:\\\\MyProjects\\\\WireVerse V2\\\\learn-outlet.html\" \"c:\\\\MyProjects\\\\WireVerse V2\\\\public\\\\learn-outlet.html\" -Force)",
+      "PowerShell(Copy-Item \"c:\\\\MyProjects\\\\WireVerse V2\\\\switch_installation.html\" \"c:\\\\MyProjects\\\\WireVerse V2\\\\public\\\\switch_installation.html\" -Force)",
+      "PowerShell(Copy-Item \"c:\\\\MyProjects\\\\WireVerse V2\\\\stages.html\" \"c:\\\\MyProjects\\\\WireVerse V2\\\\public\\\\stages.html\" -Force)",
+      "WebSearch",
+      "WebFetch(domain:unsplash.com)",
+      "WebFetch(domain:www.pexels.com)",
+      "PowerShell(Copy-Item \"c:\\\\MyProjects\\\\WireVerse V2\\\\android\\\\app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk\" \"c:\\\\MyProjects\\\\WireVerse V2\\\\Wireverse.apk\" -Force; Get-Item \"c:\\\\MyProjects\\\\WireVerse V2\\\\Wireverse.apk\" | Select-Object Name, @{N='Size MB';E={[math]::Round\\($_.Length/1MB,2\\)}})"
     ]
   }
 }

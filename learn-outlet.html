@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fix The Faults — Outlet Repair</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:wght@400;500&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    :root {
+      --yellow: #00d4ff;
+      --dark: #060a14;
+      --panel: rgba(4, 8, 20, 0.92);
+      --border: rgba(0, 212, 255, 0.25);
+      --green: #22c55e;
+      --red: #ef4444;
+      --blue: #3b82f6;
+    }
+
+    body {
+      background: #060a14;
+      font-family: 'Barlow', sans-serif;
+      color: #fff;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw
+    }
+
+    #c {
+      display: block;
+      width: 100vw;
+      height: 100vh
+    }
+
+    #hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10
+    }
+
+
+    #mission-panel {
+      position: absolute;
+      top: 16px;
+      left: 18px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      min-width: 230px;
+      pointer-events: auto
+    }
+
+    .mp-header {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      color: var(--yellow);
+      text-transform: uppercase;
+      margin-bottom: 10px
+    }
+
+    .mp-task {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 12px;
+      margin-bottom: 6px;
+      color: rgba(255, 255, 255, 0.45)
+    }
+
+    .mp-task.active {
+      color: #fff
+    }
+
+    .mp-task.done {
+      color: var(--green);
+      text-decoration: line-through
+    }
+
+    .mp-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      flex-shrink: 0
+    }
+
+    .mp-task.done .mp-dot {
+      background: var(--green);
+      border-color: var(--green)
+    }
+
+    .mp-task.active .mp-dot {
+      background: var(--yellow);
+      border-color: var(--yellow);
+      animation: pulse 1s infinite
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .4
+      }
+    }
+
+    #progress-wrap {
+      position: absolute;
+      top: 16px;
+      right: 18px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      min-width: 130px
+    }
+
+    .pw-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      color: var(--yellow);
+      text-transform: uppercase;
+      margin-bottom: 8px
+    }
+
+    .pw-bar-bg {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 99px;
+      overflow: hidden
+    }
+
+    .pw-bar {
+      height: 100%;
+      background: var(--yellow);
+      border-radius: 99px;
+      transition: width .5s ease;
+      width: 0%
+    }
+
+    .pw-pct {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 22px;
+      font-weight: 900;
+      margin-top: 4px
+    }
+
+    #instruction {
+      position: absolute;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+      pointer-events: none;
+      max-width: 480px;
+      transition: opacity .3s;
+      line-height: 1.6
+    }
+
+    #instruction span {
+      color: var(--yellow)
+    }
+
+    #instruction .snum {
+      display: inline-block;
+      background: var(--yellow);
+      color: #000;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900;
+      font-size: 11px;
+      padding: 1px 7px;
+      border-radius: 4px;
+      margin-right: 5px;
+      letter-spacing: .06em
+    }
+
+    #toolbar {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 8px;
+      pointer-events: auto
+    }
+
+    .tool-slot {
+      width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .2s;
+      gap: 2px;
+      position: relative
+    }
+    .tool-slot svg {
+      width: 22px;
+      height: 22px;
+      stroke: rgba(255, 255, 255, 0.7);
+      fill: none;
+      stroke-width: 1.8
+    }
+    .tool-slot.active svg {
+      stroke: var(--yellow)
+    }
+    #mission-panel {
+      overflow: hidden;
+      transition: max-height 0.25s ease, opacity 0.25s ease
+    }
+    #mission-panel.collapsed {
+      max-height: 38px;
+      opacity: 0.5
+    }
+
+    .tool-slot:hover {
+      border-color: var(--yellow);
+      background: rgba(0, 212, 255, 0.1)
+    }
+
+    .tool-slot.active {
+      border-color: var(--yellow);
+      background: rgba(0, 212, 255, 0.18);
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.3)
+    }
+
+    .tool-slot.disabled {
+      opacity: .25;
+      pointer-events: none
+    }
+
+    .tool-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      color: rgba(255, 255, 255, 0.6)
+    }
+
+    .tool-slot.active .tool-name {
+      color: var(--yellow)
+    }
+
+    #wire-panel {
+      position: absolute;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 24px;
+      display: none;
+      pointer-events: auto;
+      min-width: 360px;
+      transition: box-shadow .4s, border-color .4s
+    }
+
+    #wire-panel.hi {
+      box-shadow: 0 0 28px rgba(0, 212, 255, 0.55);
+      border-color: rgba(0, 212, 255, 0.85);
+      animation: wire-panel-glow 1.8s ease-in-out infinite
+    }
+
+    @keyframes wire-panel-glow {
+
+      0%,
+      100% {
+        box-shadow: 0 0 14px rgba(0, 212, 255, .35)
+      }
+
+      50% {
+        box-shadow: 0 0 32px rgba(0, 212, 255, .7)
+      }
+    }
+
+    .wp-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      color: var(--yellow);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      text-align: center
+    }
+
+    .wire-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 10px
+    }
+
+    .wire-row-ui {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .wire-draggable {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: grab;
+      color: #fff;
+      user-select: none;
+      transition: all .2s;
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+      min-width: 80px;
+      text-align: center
+    }
+
+    .wire-draggable:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.2)
+    }
+
+    .wire-draggable.used {
+      opacity: .3;
+      pointer-events: none
+    }
+
+    .wire-line-ui {
+      flex: 1;
+      height: 3px;
+      border-radius: 2px
+    }
+
+    .wire-terminal {
+      width: 44px;
+      height: 30px;
+      border-radius: 6px;
+      border: 2px dashed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .25s
+    }
+
+    .wire-terminal.connected {
+      border-style: solid
+    }
+
+    .wire-terminal.reject {
+      animation: shake .3s
+    }
+
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0)
+      }
+
+      25% {
+        transform: translateX(-6px)
+      }
+
+      75% {
+        transform: translateX(6px)
+      }
+    }
+
+    #toast {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 9px 20px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none;
+      white-space: nowrap
+    }
+
+    #toast.show {
+      opacity: 1
+    }
+
+    #toast.ok {
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid #22c55e;
+      color: #22c55e
+    }
+
+    #toast.err {
+      background: rgba(239, 68, 68, 0.18);
+      border: 1px solid #ef4444;
+      color: #ef4444
+    }
+
+    #toast.info {
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid #3b82f6;
+      color: #3b82f6
+    }
+
+    #tgt-ring {
+      position: absolute;
+      pointer-events: none;
+      z-index: 25;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 3px solid var(--yellow);
+      transform: translate(-50%, -50%);
+      display: none;
+      box-shadow: 0 0 18px rgba(0, 212, 255, 0.55)
+    }
+
+    #tgt-pulse {
+      position: absolute;
+      pointer-events: none;
+      z-index: 24;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 212, 255, 0.55);
+      transform: translate(-50%, -50%);
+      animation: ring-pulse 1.3s ease-out infinite;
+      display: none
+    }
+
+    @keyframes ring-pulse {
+      0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: .85
+      }
+
+      100% {
+        transform: translate(-50%, -50%) scale(2.1);
+        opacity: 0
+      }
+    }
+
+    #tgt-label {
+      position: absolute;
+      pointer-events: none;
+      z-index: 26;
+      background: rgba(0, 0, 0, 0.82);
+      border: 1px solid var(--yellow);
+      color: var(--yellow);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      padding: 3px 11px;
+      border-radius: 4px;
+      transform: translateX(-50%);
+      display: none;
+      white-space: nowrap;
+      animation: tap-bounce .7s ease-in-out infinite alternate
+    }
+
+    @keyframes tap-bounce {
+      from {
+        transform: translateX(-50%) translateY(0)
+      }
+
+      to {
+        transform: translateX(-50%) translateY(8px)
+      }
+    }
+
+    #breaker-tip {
+      position: absolute;
+      pointer-events: none;
+      z-index: 27;
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(0, 212, 255, 0.5);
+      color: rgba(255, 255, 255, 0.9);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      padding: 4px 10px;
+      border-radius: 5px;
+      transform: translateX(-50%);
+      display: none;
+      white-space: nowrap
+    }
+
+    #reading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(5, 20, 10, 0.95);
+      border: 2px solid var(--green);
+      border-radius: 14px;
+      padding: 22px 36px;
+      text-align: center;
+      display: none;
+      z-index: 30;
+      pointer-events: none;
+      min-width: 200px
+    }
+
+    #reading.show {
+      display: block
+    }
+
+    .rd-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 10px;
+      letter-spacing: .2em;
+      color: rgba(255, 255, 255, 0.45);
+      text-transform: uppercase;
+      margin-bottom: 10px
+    }
+
+    .rd-val {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 58px;
+      font-weight: 900;
+      color: #22c55e;
+      line-height: 1;
+      font-variant-numeric: tabular-nums
+    }
+
+    .rd-unit {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 6px
+    }
+
+    #cam-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--yellow);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 14px;
+      color: var(--yellow);
+      opacity: 0;
+      transition: opacity .4s;
+      pointer-events: none;
+      letter-spacing: .05em
+    }
+
+    #cam-hint.show {
+      opacity: 1
+    }
+
+    #success-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      pointer-events: auto
+    }
+
+    #success-overlay.show {
+      display: flex
+    }
+
+    .so-big {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 80px;
+      font-weight: 900;
+      color: var(--green);
+      line-height: 1
+    }
+
+    .so-sub {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.7)
+    }
+
+    .so-score {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--yellow)
+    }
+
+    .so-btn {
+      margin-top: 10px;
+      padding: 12px 32px;
+      border-radius: 8px;
+      background: var(--yellow);
+      color: #000;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      border: none;
+      cursor: pointer;
+      transition: transform .15s
+    }
+
+    .so-btn:hover {
+      transform: scale(1.04)
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="c"></canvas>
+  <div id="hud">
+
+    <div id="mission-panel">
+      <div class="mp-header"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> Broken Electrical Outlet</div>
+      <div class="mp-task active" id="t1">
+        <div class="mp-dot"></div>Turn OFF breaker
+      </div>
+      <div class="mp-task" id="t2">
+        <div class="mp-dot"></div>Remove cover screw
+      </div>
+      <div class="mp-task" id="t3">
+        <div class="mp-dot"></div>Open outlet cover
+      </div>
+      <div class="mp-task" id="t4">
+        <div class="mp-dot"></div>Inspect wires
+      </div>
+      <div class="mp-task" id="t5">
+        <div class="mp-dot"></div>Reconnect wires
+      </div>
+      <div class="mp-task" id="t6">
+        <div class="mp-dot"></div>Close outlet
+      </div>
+      <div class="mp-task" id="t7">
+        <div class="mp-dot"></div>Turn ON breaker
+      </div>
+      <div class="mp-task" id="t8">
+        <div class="mp-dot"></div>Test with multimeter
+      </div>
+      <div
+        style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1);font-size:11px;color:rgba(255,255,255,0.4)">
+        Steps: <span id="done-count">0</span>/8</div>
+    </div>
+
+    <div id="progress-wrap">
+      <div class="pw-label">Progress</div>
+      <div class="pw-bar-bg">
+        <div class="pw-bar" id="pw-bar"></div>
+      </div>
+      <div class="pw-pct"><span id="pw-pct">0</span>%</div>
+    </div>
+
+    <div id="instruction"><span class="snum">STEP 1</span>Find the <span>breaker panel</span> on the left wall — tap
+      to switch it <span>OFF</span> before working</div>
+
+    <div id="wire-panel">
+      <div class="wp-title">Connect Wires — PH Standard (PEC 2017)</div>
+      <div class="wire-rows">
+        <div class="wire-row-ui">
+          <div class="wire-draggable" id="wd-red" style="background:#7f1d1d;border-color:#ef4444" draggable="true"
+            ondragstart="wireDragStart(event,'red')">RED (L)</div>
+          <div class="wire-line-ui" style="background:#ef4444;opacity:.5"></div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);min-width:36px;text-align:right">Line</div>
+          <div class="wire-terminal" id="wt-red" style="border-color:#ef4444;color:#ef4444"
+            ondragover="event.preventDefault()" ondrop="wireDrop(event,'red')">L</div>
+        </div>
+        <div class="wire-row-ui">
+          <div class="wire-draggable" id="wd-blue" style="background:#1d4ed8;border-color:#3b82f6" draggable="true"
+            ondragstart="wireDragStart(event,'blue')">BLUE (N)</div>
+          <div class="wire-line-ui" style="background:#3b82f6;opacity:.5"></div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);min-width:36px;text-align:right">Neutral
+          </div>
+          <div class="wire-terminal" id="wt-blue" style="border-color:#3b82f6;color:#3b82f6"
+            ondragover="event.preventDefault()" ondrop="wireDrop(event,'blue')">N</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="toolbar">
+      <div class="tool-slot disabled" id="tool-screwdriver" onclick="selectTool('screwdriver')">
+        <svg viewBox="0 0 24 24"><path d="M3 21l5-5 11-11-2-2L6 14l-3 7z"/><path d="M15 5l4 4"/></svg>
+        <div class="tool-name">SCREWDRIVER</div>
+      </div>
+      <div class="tool-slot disabled" id="tool-pliers" onclick="selectTool('pliers')">
+        <svg viewBox="0 0 24 24"><path d="M4 4l6 6M20 4l-6 6M10 10l4 4M14 14l2 6M10 10l-2 6"/></svg>
+        <div class="tool-name">PLIERS</div>
+      </div>
+      <div class="tool-slot disabled" id="tool-multimeter" onclick="selectTool('multimeter')">
+        <svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 11h4M12 14v4"/><circle cx="12" cy="16" r="1.5" stroke="none" fill="currentColor"/></svg>
+        <div class="tool-name">MULTIMETER</div>
+      </div>
+    </div>
+
+    <div id="toast"></div>
+    <div id="cam-hint"></div>
+
+    <div id="tgt-ring"></div>
+    <div id="tgt-pulse"></div>
+    <div id="tgt-label">TAP HERE</div>
+    <div id="breaker-tip"></div>
+
+    <div id="reading">
+      <div class="rd-label">Voltage Reading</div>
+      <div class="rd-val" id="rd-val">---</div>
+      <div class="rd-unit">Volts AC</div>
+    </div>
+
+    <div id="success-overlay">
+      <div class="so-big"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="so-sub">Outlet repaired and tested successfully.</div>
+      <div class="so-score" id="so-score">Score: 0 pts</div>
+      <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <button class="so-btn" onclick="resetAll()">PLAY AGAIN</button>
+        <button class="so-btn" style="background:#22c55e;color:#000;" onclick="if(window.parent!==window)window.parent.postMessage({type:'back'},'*');">✓ BACK TO STAGES</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // ─── RENDERER ────────────────────────────────────────────────────────────
+    const canvas = document.getElementById('c');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setSize(innerWidth, innerHeight);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x060a14);
+    scene.fog = new THREE.Fog(0x1a1814, 10, 22);
+
+    const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(1.2, 0.8, 6.5);
+    camera.lookAt(0, 0, 0);
+
+    // ─── LIGHTING ────────────────────────────────────────────────────────────
+    scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+    const spot = new THREE.SpotLight(0xfff4e0, 2.8, 22, Math.PI * 0.16, 0.25);
+    spot.position.set(1, 7, 6); spot.castShadow = true;
+    scene.add(spot); scene.add(spot.target);
+    const rim = new THREE.DirectionalLight(0x4488ff, 0.25);
+    rim.position.set(-4, 2, -3); scene.add(rim);
+    const fill = new THREE.DirectionalLight(0xffddaa, 0.15);
+    fill.position.set(3, -2, 4); scene.add(fill);
+    const leftLight = new THREE.DirectionalLight(0xffffff, 0.45);
+    leftLight.position.set(-6, 3, 5); scene.add(leftLight);
+
+    // Damage glow light — pulsing red/orange near wires when exposed
+    const damageLight = new THREE.PointLight(0xff4400, 0, 2.5);
+    damageLight.position.set(0.0, -0.35, 0.25);
+    scene.add(damageLight);
+
+    // ─── HELPERS ─────────────────────────────────────────────────────────────
+    function mkBox(w, h, d, color, rough = 0.7, metal = 0.1) {
+      return new THREE.Mesh(new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal }));
+    }
+    function mkCyl(rt, rb, h, segs, color, rough = 0.5, metal = 0.3) {
+      return new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, segs),
+        new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal }));
+    }
+
+    // ─── WALL ────────────────────────────────────────────────────────────────
+    const wallMesh = new THREE.Mesh(new THREE.PlaneGeometry(14, 9),
+      new THREE.MeshLambertMaterial({ color: 0x2a2620 }));
+    wallMesh.position.z = -1.2; wallMesh.receiveShadow = true;
+    scene.add(wallMesh);
+    for (let i = -4; i <= 4; i++) {
+      const ln = mkBox(12, 0.008, 0.01, 0x333028, 1, 0);
+      ln.position.set(0, i * 0.9, -1.18); scene.add(ln);
+    }
+
+    // ─── OUTLET GROUP ────────────────────────────────────────────────────────
+    const outletRoot = new THREE.Group();
+    scene.add(outletRoot);
+
+    const boxDepth = 0.7;
+    const jBox = mkBox(2.4, 2.4, boxDepth, 0x5a4020, 0.9, 0.05);
+    jBox.position.z = -1.2 + boxDepth / 2 - 0.05;
+    outletRoot.add(jBox);
+
+    const interior = mkBox(2.1, 2.1, 0.05, 0x1a1008, 0.95, 0);
+    interior.position.z = -1.2 + boxDepth - 0.03;
+    outletRoot.add(interior);
+
+    const flangeGeo = new THREE.BoxGeometry(2.6, 2.6, 0.06);
+    const flangeMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.4, metalness: 0.6 });
+    const flange = new THREE.Mesh(flangeGeo, flangeMat);
+    flange.position.z = -1.2 + boxDepth;
+    outletRoot.add(flange);
+
+    [-0.7, 0.7].forEach(x => {
+      const ko = mkBox(0.22, 0.14, 0.08, 0x666666, 0.5, 0.5);
+      ko.position.set(x, 0.95, -1.2 + boxDepth + 0.02);
+      outletRoot.add(ko);
+    });
+
+    const faceGroup = new THREE.Group();
+    faceGroup.position.set(0, -0.9, 0);
+    outletRoot.add(faceGroup);
+
+    const facePlate = mkBox(2.0, 1.85, 0.14, 0xd5d0c6, 0.65, 0.05);
+    facePlate.position.set(0, 0.925, 0);
+    facePlate.castShadow = true; facePlate.receiveShadow = true;
+    faceGroup.add(facePlate);
+
+    [-0.65, 0.65].forEach(x => {
+      [-0.7, 0.7].forEach(y => {
+        const sh = mkCyl(0.055, 0.055, 0.16, 12, 0xaaaaaa, 0.3, 0.5);
+        sh.rotation.x = Math.PI / 2;
+        sh.position.set(x, y + 0.925, 0.07);
+        faceGroup.add(sh);
+      });
+    });
+
+    const slotMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+    [-0.32, 0.32].forEach(x => {
+      const s = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.35, 0.18), slotMat);
+      s.position.set(x, 1.08, 0.07); faceGroup.add(s);
+    });
+    const earthSlot = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.18, 20), slotMat);
+    earthSlot.rotation.x = Math.PI / 2;
+    earthSlot.position.set(0, 0.72, 0.07);
+    faceGroup.add(earthSlot);
+
+    const screwGroup = new THREE.Group();
+    screwGroup.position.set(0, 0.925, 0);
+    faceGroup.add(screwGroup);
+
+    const screwHead = mkCyl(0.115, 0.095, 0.07, 24, 0xb0b0b0, 0.2, 0.7);
+    screwHead.rotation.x = Math.PI / 2; screwHead.position.z = 0.11;
+    screwGroup.add(screwHead);
+
+    const washer = mkCyl(0.13, 0.13, 0.015, 24, 0x888888, 0.4, 0.5);
+    washer.rotation.x = Math.PI / 2; washer.position.z = 0.075;
+    screwGroup.add(washer);
+
+    const phMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 });
+    for (let i = 0; i < 2; i++) {
+      const sl = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.025, 0.03), phMat);
+      sl.rotation.z = i * Math.PI / 2; sl.position.z = 0.15;
+      screwGroup.add(sl);
+    }
+    const screwShaft = mkCyl(0.045, 0.05, 0.5, 12, 0x999999, 0.3, 0.6);
+    screwShaft.rotation.x = Math.PI / 2; screwShaft.position.z = -0.18;
+    screwGroup.add(screwShaft);
+
+    // Internal terminal block
+    const internalGroup = new THREE.Group();
+    internalGroup.visible = false;
+    outletRoot.add(internalGroup);
+
+    const mBar = mkBox(2.0, 0.22, 0.12, 0x555555, 0.7, 0.3);
+    mBar.position.set(0, 0, -0.52); internalGroup.add(mBar);
+    const termBody = mkBox(1.7, 0.55, 0.18, 0x3a3a3a, 0.85, 0.1);
+    termBody.position.set(0, 0, -0.45); internalGroup.add(termBody);
+
+    const termData = [
+      { x: -0.35, color: 0xef4444 },
+      { x: 0.35, color: 0x3b82f6 }
+    ];
+    const terminalMeshes = [];
+    termData.forEach(({ x, color }) => {
+      const tb = mkBox(0.28, 0.42, 0.22, color, 0.6, 0.2);
+      tb.position.set(x, 0, -0.38); internalGroup.add(tb);
+      const ts = mkCyl(0.08, 0.08, 0.06, 16, 0xaaaaaa, 0.2, 0.7);
+      ts.rotation.x = Math.PI / 2; ts.position.set(x, 0, -0.27);
+      internalGroup.add(ts);
+      const tslot = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.02, 0.03),
+        new THREE.MeshStandardMaterial({ color: 0x222222 }));
+      tslot.position.set(x, 0, -0.24); internalGroup.add(tslot);
+      const wHole = mkBox(0.08, 0.28, 0.1, 0x111111, 1, 0);
+      wHole.position.set(x, -0.06, -0.27); internalGroup.add(wHole);
+      const glow = mkBox(0.26, 0.04, 0.02, 0x222222, 1, 0);
+      glow.position.set(x, 0.22, -0.37);
+      glow.userData.isGlow = true; internalGroup.add(glow);
+      terminalMeshes.push({ x, color, glowMesh: glow });
+    });
+    [-0.35, 0.35].forEach(x => {
+      const clip = mkBox(0.18, 0.08, 0.12, 0x666666, 0.7, 0.2);
+      clip.position.set(x, -0.35, -0.46); internalGroup.add(clip);
+    });
+
+    // ─── WIRE HELPERS ─────────────────────────────────────────────────────────
+    const wireColors3D = [0xef4444, 0x3b82f6];
+    const wireNames = ['red', 'blue'];
+    const wireMeshes = []; // holds THREE.Group per wire (loose or connected)
+
+    function makeWireTube(color, pts, radius = 0.038) {
+      const curve = new THREE.CatmullRomCurve3(pts);
+      return new THREE.Mesh(
+        new THREE.TubeGeometry(curve, 32, radius, 8, false),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05 })
+      );
+    }
+
+    // ── DAMAGED WIRE GROUP ──────────────────────────────────────────────────
+    // Builds a realistic damaged wire: insulated body + burnt char section + 
+    // stripped copper tip with fanned individual strands + black ash blobs
+    function makeDamagedWireGroup(insColor, pts) {
+      const group = new THREE.Group();
+
+      // 1. Main insulated body (full path, thick)
+      const mainCurve = new THREE.CatmullRomCurve3(pts);
+      const mainTube = new THREE.Mesh(
+        new THREE.TubeGeometry(mainCurve, 40, 0.042, 8, false),
+        new THREE.MeshStandardMaterial({ color: insColor, roughness: 0.62, metalness: 0.04 })
+      );
+      group.add(mainTube);
+
+      // 2. Char / burn section — a slightly thicker darker segment 40-60% along the path
+      const charPts = [];
+      for (let t = 0.30; t <= 0.58; t += 0.04) {
+        charPts.push(mainCurve.getPoint(t));
+      }
+      if (charPts.length >= 2) {
+        const charCurve = new THREE.CatmullRomCurve3(charPts);
+        const charMesh = new THREE.Mesh(
+          new THREE.TubeGeometry(charCurve, 16, 0.055, 8, false),
+          new THREE.MeshStandardMaterial({ color: 0x1a0800, roughness: 0.98, metalness: 0.0 })
+        );
+        group.add(charMesh);
+
+        // Subtle burnt orange layer on top of char
+        const burnMesh = new THREE.Mesh(
+          new THREE.TubeGeometry(charCurve, 16, 0.048, 8, false),
+          new THREE.MeshStandardMaterial({
+            color: 0x5a1500, roughness: 0.92, metalness: 0.0,
+            emissive: new THREE.Color(0x2a0800), emissiveIntensity: 0.4
+          })
+        );
+        group.add(burnMesh);
+
+        // Small black ash blobs along burn zone
+        for (let b = 0; b < 5; b++) {
+          const t = 0.33 + b * 0.05;
+          const bPos = mainCurve.getPoint(t);
+          const offset = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.06,
+            (Math.random() - 0.5) * 0.06,
+            (Math.random() - 0.5) * 0.04
+          );
+          bPos.add(offset);
+          const blobR = 0.025 + Math.random() * 0.025;
+          const blob = new THREE.Mesh(
+            new THREE.SphereGeometry(blobR, 6, 5),
+            new THREE.MeshStandardMaterial({ color: 0x0d0500, roughness: 1.0, metalness: 0.0 })
+          );
+          blob.position.copy(bPos);
+          group.add(blob);
+        }
+      }
+
+      // 3. Stripped section near tip — exposed copper (last 20% of path)
+      const copperPts = [];
+      for (let t = 0.80; t <= 1.0; t += 0.04) {
+        copperPts.push(mainCurve.getPoint(t));
+      }
+      if (copperPts.length >= 2) {
+        const copperCurve = new THREE.CatmullRomCurve3(copperPts);
+        // Bare copper — metallic warm gold
+        const copperTube = new THREE.Mesh(
+          new THREE.TubeGeometry(copperCurve, 12, 0.030, 8, false),
+          new THREE.MeshStandardMaterial({
+            color: 0xb87333, roughness: 0.22, metalness: 0.88,
+            emissive: new THREE.Color(0x331100), emissiveIntensity: 0.18
+          })
+        );
+        group.add(copperTube);
+      }
+
+      // 4. Frayed copper strands at the very tip (fanning out from endpoint)
+      const tipPos = mainCurve.getPoint(1.0);
+      const tipTangent = mainCurve.getTangent(1.0).normalize();
+      const strandCount = 7;
+      const strandMat = new THREE.MeshStandardMaterial({
+        color: 0xd4955a, roughness: 0.18, metalness: 0.92,
+        emissive: new THREE.Color(0x220800), emissiveIntensity: 0.1
+      });
+      for (let s = 0; s < strandCount; s++) {
+        const angle = (s / strandCount) * Math.PI * 2;
+        const spread = 0.05 + Math.random() * 0.03;
+        const length = 0.09 + Math.random() * 0.06;
+        // Each strand fans outward from tip
+        const perp1 = new THREE.Vector3(1, 0, 0);
+        if (Math.abs(tipTangent.dot(perp1)) > 0.9) perp1.set(0, 1, 0);
+        const right = new THREE.Vector3().crossVectors(tipTangent, perp1).normalize();
+        const up2 = new THREE.Vector3().crossVectors(right, tipTangent).normalize();
+        const dir = new THREE.Vector3()
+          .addScaledVector(right, Math.cos(angle) * spread)
+          .addScaledVector(up2, Math.sin(angle) * spread)
+          .addScaledVector(tipTangent, 0.04)
+          .normalize();
+        const strandEnd = new THREE.Vector3().copy(tipPos).addScaledVector(dir, length);
+        const midPt = new THREE.Vector3().lerpVectors(tipPos, strandEnd, 0.5);
+        midPt.addScaledVector(dir.clone().cross(tipTangent).normalize(), (Math.random() - 0.5) * 0.02);
+        const sCurve = new THREE.CatmullRomCurve3([tipPos.clone(), midPt, strandEnd]);
+        const strand = new THREE.Mesh(
+          new THREE.TubeGeometry(sCurve, 6, 0.006 + Math.random() * 0.004, 5, false),
+          strandMat
+        );
+        group.add(strand);
+
+        // Tiny ball at strand tip
+        const ball = new THREE.Mesh(
+          new THREE.SphereGeometry(0.009, 4, 4),
+          new THREE.MeshStandardMaterial({ color: 0xc8803a, roughness: 0.15, metalness: 0.95 })
+        );
+        ball.position.copy(strandEnd);
+        group.add(ball);
+      }
+
+      // 5. Torn insulation collar at strip point — dark jagged ring
+      const tearPos = mainCurve.getPoint(0.79);
+      const tearTangent = mainCurve.getTangent(0.79).normalize();
+      for (let j = 0; j < 8; j++) {
+        const a = (j / 8) * Math.PI * 2;
+        const r = 0.044 + (Math.random() - 0.5) * 0.012;
+        const perp = new THREE.Vector3(0, 1, 0);
+        if (Math.abs(tearTangent.dot(perp)) > 0.9) perp.set(1, 0, 0);
+        const right = new THREE.Vector3().crossVectors(tearTangent, perp).normalize();
+        const up2 = new THREE.Vector3().crossVectors(right, tearTangent).normalize();
+        const flap = new THREE.Mesh(
+          new THREE.BoxGeometry(0.015, 0.008, 0.02 + Math.random() * 0.015),
+          new THREE.MeshStandardMaterial({ color: insColor, roughness: 0.8 })
+        );
+        flap.position.copy(tearPos)
+          .addScaledVector(right, Math.cos(a) * r)
+          .addScaledVector(up2, Math.sin(a) * r);
+        flap.lookAt(flap.position.clone().add(tearTangent));
+        flap.rotation.z += a;
+        group.add(flap);
+      }
+
+      return group;
+    }
+
+    // Loose (disconnected) wire paths — PH standard: Red=Line, Blue=Neutral
+    const looseWirePts = [
+      [new THREE.Vector3(-0.35, 0, -0.42), new THREE.Vector3(-0.5, -0.3, -0.1), new THREE.Vector3(-0.7, -0.85, 0.2), new THREE.Vector3(-0.5, -1.35, 0.05)],
+      [new THREE.Vector3(0.35, 0, -0.42), new THREE.Vector3(0.5, -0.28, -0.1), new THREE.Vector3(0.65, -0.88, 0.2), new THREE.Vector3(0.5, -1.3, 0.04)]
+    ];
+
+    // Build damaged loose wire groups
+    wireColors3D.forEach((c, i) => {
+      const wg = makeDamagedWireGroup(c, looseWirePts[i]);
+      wg.visible = false;
+      outletRoot.add(wg);
+      wireMeshes.push(wg);
+    });
+
+    // ─── BREAKER BOX ─────────────────────────────────────────────────────────
+    const BX = -3.05, BY = 0.28, BZ = -1.06;
+
+    const bkHousing = mkBox(1.02, 1.65, 0.22, 0x424242, 0.72, 0.38);
+    bkHousing.position.set(BX, BY, BZ + 0.11); scene.add(bkHousing);
+    const bkFace = mkBox(0.84, 1.44, 0.04, 0x2c2c2c, 0.88, 0.05);
+    bkFace.position.set(BX, BY, BZ + 0.235); scene.add(bkFace);
+    const bkStripe = mkBox(0.84, 0.055, 0.05, 0xF5C518, 0.65, 0.1);
+    bkStripe.position.set(BX, BY + 0.72, BZ + 0.24); scene.add(bkStripe);
+    const bkLabel = mkBox(0.56, 0.05, 0.03, 0xcccccc, 0.8, 0);
+    bkLabel.position.set(BX, BY + 0.58, BZ + 0.255); scene.add(bkLabel);
+    const bkSlot = mkBox(0.34, 0.64, 0.03, 0x181818, 0.9, 0);
+    bkSlot.position.set(BX, BY, BZ + 0.256); scene.add(bkSlot);
+
+    const bkHandleMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.42, metalness: 0.28 });
+    const bkHandle = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.30, 0.16), bkHandleMat);
+    const HANDLE_ON_Y = BY + 0.16;
+    const HANDLE_OFF_Y = BY - 0.16;
+    bkHandle.position.set(BX, HANDLE_ON_Y, BZ + 0.31); scene.add(bkHandle);
+
+    const bkLEDMat = new THREE.MeshStandardMaterial({
+      color: 0x22c55e, roughness: 0.28, metalness: 0.5,
+      emissive: new THREE.Color(0x22c55e), emissiveIntensity: 1.0
+    });
+    const bkLED = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.055, 12), bkLEDMat);
+    bkLED.rotation.x = Math.PI / 2;
+    bkLED.position.set(BX + 0.27, BY + 0.54, BZ + 0.245); scene.add(bkLED);
+
+    const bkConduit = mkCyl(0.1, 0.1, 0.55, 10, 0x555555, 0.8, 0.3);
+    bkConduit.position.set(BX, BY - 1.08, BZ + 0.11); scene.add(bkConduit);
+
+    // ─── RAYCASTER ───────────────────────────────────────────────────────────
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const clickScrewObjs = [screwHead, washer];
+    const clickBreakerObjs = [bkHandle];
+
+    // ─── GAME STATE ──────────────────────────────────────────────────────────
+    let gameState = 'breaker_off';
+    let selectedTool = null;
+    let wiresState = { red: false, blue: false };
+    let completedTasks = 0;
+    let timerVal = 300;
+    let timerRunning = true;
+    let damageLightT = 0; // for pulsing damage light
+
+    // ─── TUTORIAL ────────────────────────────────────────────────────────────
+    const tgtRing = document.getElementById('tgt-ring');
+    const tgtPulse = document.getElementById('tgt-pulse');
+    const tgtLabel = document.getElementById('tgt-label');
+    const bkTip = document.getElementById('breaker-tip');
+    let tutTarget3D = bkHandle;
+
+    function setTut(obj3D, label = 'TAP HERE') {
+      tutTarget3D = obj3D;
+      tgtLabel.textContent = label;
+    }
+
+    function updateTutorial() {
+      const showable = tutTarget3D !== null
+        && gameState !== 'animating'
+        && gameState !== 'inspect'
+        && gameState !== 'wires'
+        && gameState !== 'done';
+
+      const mp = document.getElementById('mission-panel');
+      if (!showable) {
+        tgtRing.style.display = 'none';
+        tgtPulse.style.display = 'none';
+        tgtLabel.style.display = 'none';
+        bkTip.style.display = 'none';
+        mp.classList.remove('collapsed');
+        return;
+      }
+
+      const wp = new THREE.Vector3();
+      tutTarget3D.getWorldPosition(wp);
+      const v = wp.clone().project(camera);
+      if (v.z > 1) {
+        tgtRing.style.display = 'none';
+        tgtPulse.style.display = 'none';
+        tgtLabel.style.display = 'none';
+        bkTip.style.display = 'none';
+        return;
+      }
+
+      const sx = (v.x + 1) / 2 * innerWidth;
+      const sy = (-v.y + 1) / 2 * innerHeight;
+
+      // Collapse mission panel if the tap target sits behind it
+      const mpRect = mp.getBoundingClientRect();
+      const overlaps = sx >= mpRect.left - 50 && sx <= mpRect.right + 50 &&
+                       sy >= mpRect.top - 50 && sy <= mpRect.bottom + 50;
+      mp.classList.toggle('collapsed', overlaps);
+
+      [tgtRing, tgtPulse].forEach(el => {
+        el.style.display = 'block';
+        el.style.left = sx + 'px';
+        el.style.top = sy + 'px';
+      });
+      tgtLabel.style.display = 'block';
+      tgtLabel.style.left = sx + 'px';
+      tgtLabel.style.top = (sy + 48) + 'px';
+
+      if (gameState === 'breaker_off' || gameState === 'breaker_on') {
+        bkTip.style.display = 'block';
+        bkTip.style.left = sx + 'px';
+        bkTip.style.top = (sy - 60) + 'px';
+        bkTip.textContent = gameState === 'breaker_off'
+          ? 'BREAKER PANEL  ·  SWITCH OFF' : 'BREAKER PANEL  ·  SWITCH ON';
+      } else {
+        bkTip.style.display = 'none';
+      }
+    }
+
+    // ─── ANIMATION STATE ─────────────────────────────────────────────────────
+    let screwRemoving = false, screwSpinT = 0;
+    let screwReattaching = false, screwReattachT = 0;
+    let coverOpening = false, coverOpenT = 0;
+    let coverClosing = false, coverCloseT = 0;
+    let camFrom = new THREE.Vector3(), camTo = new THREE.Vector3();
+    let camLookFrom = new THREE.Vector3(), camLookTo = new THREE.Vector3();
+    let camTweening = false, camT = 0, camDur = 0, camCB = null;
+    let idleT = 0;
+    const clock = new THREE.Clock();
+    let bkAnimating = false, bkAnimT = 0, bkGoingOff = false, bkCB = null;
+    let inspecting = false, inspectT = 0;
+
+    // ─── CAMERA TWEEN ────────────────────────────────────────────────────────
+    function animateCam(toPos, toLook, dur, cb) {
+      camFrom.copy(camera.position);
+      camTo.copy(toPos);
+      const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+      camLookFrom.copy(camera.position).addScaledVector(dir, 5);
+      camLookTo.copy(toLook);
+      camT = 0; camDur = dur; camCB = cb; camTweening = true;
+    }
+    function eio3(t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+
+    // ─── CLICK ───────────────────────────────────────────────────────────────
+    canvas.addEventListener('click', e => {
+      if (gameState === 'animating' || gameState === 'inspect' || gameState === 'done') return;
+      mouse.x = (e.clientX / innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+
+      if (gameState === 'breaker_off') {
+        if (raycaster.intersectObjects(clickBreakerObjs, true).length) doBreaker(true);
+        else showToast('Find the breaker panel on the left and tap it!', 'err');
+
+      } else if (gameState === 'screw') {
+        const hits = raycaster.intersectObjects(clickScrewObjs, true);
+        if (hits.length) {
+          if (selectedTool !== 'screwdriver') { showToast('Select the Screwdriver first!', 'err'); return; }
+          doRemoveScrew();
+        } else showToast('Click the screw at the center of the outlet!', 'err');
+
+      } else if (gameState === 'open') {
+        if (raycaster.intersectObject(facePlate, false).length) doOpenCover();
+        else showToast('Click the outlet cover plate to open it', 'err');
+
+      } else if (gameState === 'rescrew') {
+        doCloseCover();
+
+      } else if (gameState === 'breaker_on') {
+        if (raycaster.intersectObjects(clickBreakerObjs, true).length) doBreaker(false);
+        else showToast('Tap the breaker panel to switch it back ON!', 'err');
+
+      } else if (gameState === 'test') {
+        if (selectedTool !== 'multimeter') { showToast('Select the Multimeter tool first!', 'err'); return; }
+        if (raycaster.intersectObject(facePlate, false).length) doTest();
+        else showToast('Point the multimeter at the outlet and tap', 'err');
+      }
+    });
+
+    canvas.addEventListener('mousemove', e => {
+      mouse.x = (e.clientX / innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      let cur = 'default';
+      if ((gameState === 'breaker_off' || gameState === 'breaker_on') && raycaster.intersectObjects(clickBreakerObjs, true).length) cur = 'pointer';
+      else if (gameState === 'screw' && raycaster.intersectObjects(clickScrewObjs, true).length) cur = 'pointer';
+      else if ((gameState === 'open' || gameState === 'test') && raycaster.intersectObject(facePlate, false).length) cur = 'pointer';
+      else if (gameState === 'rescrew') cur = 'pointer';
+      canvas.style.cursor = cur;
+    });
+
+    // ─── GAME ACTIONS ────────────────────────────────────────────────────────
+    function doBreaker(goingOff) {
+      gameState = 'animating';
+      showToast(goingOff ? 'Switching breaker OFF...' : 'Switching breaker back ON...', 'ok');
+      showCamHint('Panning to breaker');
+      setTut(null);
+      animateCam(new THREE.Vector3(-1.4, 0.55, 5.6), new THREE.Vector3(BX, BY, 0), 900, () => {
+        bkGoingOff = goingOff; bkAnimT = 0; bkAnimating = true;
+        bkCB = goingOff ? afterBreakerOff : afterBreakerOn;
+      });
+    }
+
+    function afterBreakerOff() {
+      completeTask(1, 12);
+      showToast('Breaker OFF — Safe to work! Now remove the cover screw.', 'ok');
+      setInstr('<span class="snum">STEP 2</span>Select <span>Screwdriver</span> then tap the center <span>screw</span> on the outlet');
+      enableTool('screwdriver'); selectTool('screwdriver');
+      setTut(screwHead, 'TAP SCREW');
+      animateCam(new THREE.Vector3(1.2, 0.8, 6.5), new THREE.Vector3(0, 0, 0), 800, () => {
+        gameState = 'screw';
+      });
+    }
+
+    function afterBreakerOn() {
+      completeTask(7, 88);
+      showToast('Breaker ON! Test the outlet with the multimeter.', 'ok');
+      setInstr('<span class="snum">STEP 8</span>Select <span>Multimeter</span> then tap the <span>outlet</span> to test voltage');
+      enableTool('multimeter'); selectTool('multimeter');
+      setTut(facePlate, 'TAP OUTLET');
+      animateCam(new THREE.Vector3(1.2, 0.8, 6.5), new THREE.Vector3(0, 0, 0), 800, () => {
+        gameState = 'test';
+      });
+    }
+
+    function doRemoveScrew() {
+      gameState = 'animating'; setTut(null);
+      showToast('Removing cover screw...', 'ok');
+      showCamHint('Zooming in on screw');
+      animateCam(new THREE.Vector3(0.3, 1.1, 3.2), new THREE.Vector3(0, 0.92, 0), 900, () => {
+        screwRemoving = true; screwSpinT = 0;
+      });
+    }
+
+    function doOpenCover() {
+      gameState = 'animating'; setTut(null);
+      showToast('Opening outlet cover...', 'ok');
+      showCamHint('Side angle view');
+      animateCam(new THREE.Vector3(-3.5, 2.2, 4.0), new THREE.Vector3(0, 0.2, 0), 1100, () => {
+        coverOpening = true; coverOpenT = 0;
+      });
+    }
+
+    function doCloseCover() {
+      gameState = 'animating'; setTut(null);
+      showToast('Closing outlet cover...', 'ok');
+      showCamHint('Watching cover close');
+      animateCam(new THREE.Vector3(-2.8, 1.8, 4.2), new THREE.Vector3(0, 0.3, 0), 900, () => {
+        coverClosing = true; coverCloseT = 0;
+      });
+    }
+
+    function doTest() {
+      gameState = 'animating'; setTut(null);
+      showCamHint('Testing outlet');
+      animateCam(new THREE.Vector3(0.3, 0.3, 3.5), new THREE.Vector3(0, 0.2, 0), 700, () => {
+        const ro = document.getElementById('reading');
+        const rv = document.getElementById('rd-val');
+        ro.classList.add('show');
+        rv.textContent = '---'; rv.style.color = '#22c55e';
+        const steps = ['---', '12V', '85V', '154V', '199V', '216V', '220V'];
+        let ri = 0;
+        const iv = setInterval(() => {
+          if (ri < steps.length) { rv.textContent = steps[ri]; ri++; }
+          if (ri >= steps.length) {
+            clearInterval(iv);
+            setTimeout(() => {
+              ro.classList.remove('show');
+              completeTask(8, 100);
+              gameState = 'done'; timerRunning = false;
+              showToast('220V AC — Outlet working perfectly!', 'ok');
+              animateCam(new THREE.Vector3(1.2, 0.8, 6.5), new THREE.Vector3(0, 0, 0), 1200, () => {
+                setTimeout(() => {
+                  const finalScore = Math.floor(Math.max(0, 100 - (300 - timerVal) * 0.1));
+                  document.getElementById('so-score').textContent = `Score: ${finalScore} pts`;
+                  document.getElementById('success-overlay').classList.add('show');
+                  if(window.parent!==window) window.parent.postMessage({type:'complete'},'*');
+                }, 800);
+              });
+            }, 700);
+          }
+        }, 220);
+      });
+    }
+
+    // ─── WIRE SYSTEM ─────────────────────────────────────────────────────────
+    function wireDragStart(e, color) { e.dataTransfer.setData('text/plain', color); }
+    function wireDrop(e, termColor) {
+      e.preventDefault();
+      const wc = e.dataTransfer.getData('text/plain');
+      if (wc === termColor) connectWire(wc);
+      else {
+        document.getElementById('wt-' + termColor).classList.add('reject');
+        setTimeout(() => document.getElementById('wt-' + termColor).classList.remove('reject'), 400);
+        showToast('Wrong terminal! Match the wire color to the terminal.', 'err');
+      }
+    }
+
+    function connectWire(color) {
+      if (wiresState[color]) return;
+      wiresState[color] = true;
+      document.getElementById('wd-' + color).classList.add('used');
+      const term = document.getElementById('wt-' + color);
+      const bgMap = { red: '#7f1d1d', blue: '#1d4ed8' };
+      term.style.background = bgMap[color];
+      term.style.color = '#fff'; term.style.borderStyle = 'solid';
+      term.textContent = '✓';
+
+      const idx = wireNames.indexOf(color);
+      const termX = terminalMeshes[idx].x;
+
+      outletRoot.remove(wireMeshes[idx]);
+      const connPts = [
+        new THREE.Vector3(termX, 0, -0.42),
+        new THREE.Vector3(termX, -0.25, -0.2),
+        new THREE.Vector3(termX + (Math.random() - .5) * .3, -0.7, 0.05),
+        new THREE.Vector3(termX + (Math.random() - .5) * .2, -1.2, 0.0)
+      ];
+      const cw = makeWireTube(wireColors3D[idx], connPts);
+      outletRoot.add(cw); wireMeshes[idx] = cw;
+      terminalMeshes[idx].glowMesh.material.color.setHex(wireColors3D[idx]);
+      terminalMeshes[idx].glowMesh.material.emissive = new THREE.Color(wireColors3D[idx]);
+      terminalMeshes[idx].glowMesh.material.emissiveIntensity = 0.8;
+
+      const pctMap = { red: 57, blue: 66 };
+      showToast(`${color.charAt(0).toUpperCase() + color.slice(1)} wire connected ✓`, 'ok');
+      setPct(pctMap[color]);
+
+      const connectedCount = Object.values(wiresState).filter(Boolean).length;
+      damageLight.intensity = Math.max(0, 0.9 - connectedCount * 0.45);
+
+      if (wiresState.red && wiresState.blue) {
+        damageLight.intensity = 0;
+        setTimeout(() => {
+          completedTasks++;
+          const t5 = document.getElementById('t5');
+          t5.classList.remove('active'); t5.classList.add('done');
+          document.getElementById('t6').classList.add('active');
+          document.getElementById('done-count').textContent = completedTasks;
+          setPct(75);
+
+          document.getElementById('wire-panel').style.display = 'none';
+          document.getElementById('wire-panel').classList.remove('hi');
+          setInstr('<span class="snum">STEP 6</span>Both wires connected! Tap the <span>outlet area</span> to close the cover');
+          document.getElementById('instruction').style.display = 'block';
+          setTut(jBox, 'TAP TO CLOSE');
+          gameState = 'rescrew';
+          animateCam(new THREE.Vector3(0.8, 0.4, 5.5), new THREE.Vector3(0, 0.2, 0), 700, () => { });
+        }, 900);
+      }
+    }
+
+    // ─── PROGRESS HELPERS ────────────────────────────────────────────────────
+    function completeTask(n, pct) {
+      completedTasks++;
+      const el = document.getElementById('t' + n);
+      if (el) { el.classList.remove('active'); el.classList.add('done'); }
+      const nx = document.getElementById('t' + (n + 1));
+      if (nx) nx.classList.add('active');
+      document.getElementById('done-count').textContent = completedTasks;
+      setPct(pct);
+    }
+    function setPct(p) {
+      document.getElementById('pw-bar').style.width = p + '%';
+      document.getElementById('pw-pct').textContent = p;
+    }
+    function selectTool(t) {
+      selectedTool = t;
+      document.querySelectorAll('.tool-slot').forEach(el => el.classList.remove('active'));
+      const s = document.getElementById('tool-' + t);
+      if (s) s.classList.add('active');
+    }
+    function enableTool(t) {
+      const s = document.getElementById('tool-' + t);
+      s.classList.remove('disabled');
+    }
+    function setInstr(html) {
+      const el = document.getElementById('instruction');
+      el.style.display = 'block'; el.innerHTML = html;
+    }
+
+    setInterval(() => {
+      if (!timerRunning) return;
+      timerVal = Math.max(0, timerVal - 1);
+      timerVal = Math.max(0, timerVal - 1);
+    }, 1000);
+
+    let toastTimer;
+    function showToast(msg, type) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.className = 'show ' + type;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+    }
+    let camHintTimer;
+    function showCamHint(msg) {
+      const h = document.getElementById('cam-hint');
+      h.textContent = msg; h.classList.add('show');
+      clearTimeout(camHintTimer);
+      camHintTimer = setTimeout(() => h.classList.remove('show'), 2000);
+    }
+
+    // ─── MAIN LOOP ────────────────────────────────────────────────────────────
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
+      idleT += dt;
+
+      outletRoot.position.y = Math.sin(idleT * 0.55) * 0.035;
+      outletRoot.rotation.z = Math.sin(idleT * 0.35) * 0.006;
+      outletRoot.rotation.x = Math.sin(idleT * 0.28) * 0.005 + 0.04;
+
+      // Pulse the damage light when wires are exposed
+      if (internalGroup.visible && damageLight.intensity > 0) {
+        damageLightT += dt;
+        const pulse = 0.5 + 0.5 * Math.sin(damageLightT * 3.5);
+        damageLight.intensity = 0.9 * pulse;
+        // Shift color between red-orange and deep orange
+        damageLight.color.setHSL(0.06 - pulse * 0.04, 1.0, 0.5);
+      }
+
+      // Camera tween
+      if (camTweening) {
+        camT += dt * 1000;
+        const p = eio3(Math.min(camT / camDur, 1));
+        camera.position.lerpVectors(camFrom, camTo, p);
+        camera.lookAt(new THREE.Vector3().lerpVectors(camLookFrom, camLookTo, p));
+        if (camT >= camDur) { camTweening = false; if (camCB) { const cb = camCB; camCB = null; cb(); } }
+      }
+
+      // Breaker toggle
+      if (bkAnimating) {
+        bkAnimT += dt * 2.8;
+        const p = eio3(Math.min(bkAnimT, 1));
+        const fromY = bkGoingOff ? HANDLE_ON_Y : HANDLE_OFF_Y;
+        const toY = bkGoingOff ? HANDLE_OFF_Y : HANDLE_ON_Y;
+        bkHandle.position.y = fromY + (toY - fromY) * p;
+        if (bkAnimT >= 1) {
+          bkAnimating = false;
+          bkHandle.position.y = toY;
+          if (bkGoingOff) {
+            bkHandleMat.color.setHex(0xef4444);
+            bkLEDMat.color.setHex(0xef4444);
+            bkLEDMat.emissive.setHex(0x881111);
+            bkLEDMat.emissiveIntensity = 0.55;
+          } else {
+            bkHandleMat.color.setHex(0x22c55e);
+            bkLEDMat.color.setHex(0x22c55e);
+            bkLEDMat.emissive.setHex(0x22c55e);
+            bkLEDMat.emissiveIntensity = 1.0;
+          }
+          if (bkCB) { const cb = bkCB; bkCB = null; cb(); }
+        }
+      }
+
+      // Screw removal
+      if (screwRemoving) {
+        screwSpinT += dt * 5.5;
+        screwGroup.rotation.z = screwSpinT;
+        screwGroup.position.z = screwSpinT * 0.09;
+        screwGroup.position.y = screwSpinT * 0.03;
+        if (screwSpinT > Math.PI * 5) {
+          screwRemoving = false;
+          screwGroup.visible = false;
+          completeTask(2, 24);
+          showToast('Screw removed! Now tap the outlet cover to open it.', 'ok');
+          setInstr('<span class="snum">STEP 3</span>Tap the <span>outlet cover</span> to open it');
+          setTut(facePlate, 'TAP COVER');
+          animateCam(new THREE.Vector3(-1.8, 1.4, 5.2), new THREE.Vector3(0, 0.4, 0), 700, () => {
+            gameState = 'open';
+          });
+        }
+      }
+
+      // Cover opening
+      if (coverOpening) {
+        coverOpenT += dt * 1.4;
+        const p = Math.min(coverOpenT, 1);
+        faceGroup.rotation.x = eio3(p) * 1.95;
+        if (coverOpenT >= 1) {
+          coverOpening = false;
+          faceGroup.visible = false;
+          internalGroup.visible = true;
+          wireMeshes.forEach(w => w.visible = true);
+          // Activate damage light
+          damageLight.intensity = 0.9;
+          damageLightT = 0;
+          completeTask(3, 36);
+          showToast('Cover open! Inspecting wiring...', 'ok');
+          setInstr('<span class="snum">STEP 4</span>Inspecting wires — connections are <span>damaged</span>');
+          setTut(null);
+          inspecting = true; inspectT = 0;
+          // Swoop camera close to wires for detailed inspection
+          animateCam(new THREE.Vector3(0.2, 0.5, 3.6), new THREE.Vector3(0, -0.25, 0), 1000, () => { });
+        }
+      }
+
+      // Inspect auto-advance — zoom in tight on wires before showing panel
+      if (inspecting) {
+        inspectT += dt;
+        // After 0.8s, push even closer to show wire detail
+        if (inspectT > 0.8 && inspectT < 0.82) {
+          animateCam(
+            new THREE.Vector3(-0.1, -0.4, 2.6),
+            new THREE.Vector3(0, -0.5, 0),
+            900,
+            () => { }
+          );
+        }
+        if (inspectT >= 2.5) {
+          inspecting = false;
+          completeTask(4, 48);
+          showToast('Wires disconnected — drag each wire to its matching terminal.', 'info');
+          document.getElementById('wire-panel').style.display = 'block';
+          document.getElementById('wire-panel').classList.add('hi');
+          document.getElementById('instruction').style.display = 'none';
+          gameState = 'wires';
+          animateCam(new THREE.Vector3(0.3, 2.2, 5.0), new THREE.Vector3(0, -0.1, 0), 900, () => { });
+        }
+      }
+
+      // Cover closing
+      if (coverClosing) {
+        coverCloseT += dt * 1.2;
+        const p = Math.min(coverCloseT, 1);
+        faceGroup.visible = true;
+        faceGroup.rotation.x = (1 - eio3(p)) * 1.95;
+        if (coverCloseT >= 1) {
+          coverClosing = false;
+          faceGroup.rotation.x = 0;
+          faceGroup.position.set(0, -0.9, 0);
+          internalGroup.visible = false;
+          wireMeshes.forEach(w => w.visible = false);
+          damageLight.intensity = 0;
+          screwGroup.visible = true;
+          screwGroup.position.set(0, 0.925, 0.6);
+          screwGroup.rotation.z = Math.PI * 9;
+          screwReattaching = true; screwReattachT = 0;
+          animateCam(new THREE.Vector3(0.2, 0.95, 3.0), new THREE.Vector3(0, 0.92, 0), 600, () => { });
+        }
+      }
+
+      // Screw reattach
+      if (screwReattaching) {
+        screwReattachT += dt * 4;
+        const prog = Math.min(screwReattachT / 3.5, 1);
+        screwGroup.rotation.z = (1 - eio3(prog)) * Math.PI * 9;
+        screwGroup.position.z = (1 - eio3(prog)) * 0.6;
+        screwGroup.position.y = 0.925;
+        if (screwReattachT >= 3.5) {
+          screwReattaching = false;
+          screwGroup.rotation.z = 0;
+          screwGroup.position.set(0, 0.925, 0);
+          completeTask(6, 82);
+          showToast('Outlet closed! Turn the breaker back ON.', 'ok');
+          setInstr('<span class="snum">STEP 7</span>Find the <span>breaker panel</span> on the left — switch it back <span>ON</span>');
+          setTut(bkHandle, 'TAP BREAKER');
+          animateCam(new THREE.Vector3(1.2, 0.8, 6.5), new THREE.Vector3(0, 0, 0), 1200, () => {
+            gameState = 'breaker_on';
+          });
+        }
+      }
+
+      updateTutorial();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // ─── RESET ───────────────────────────────────────────────────────────────
+    function resetAll() {
+      document.getElementById('success-overlay').classList.remove('show');
+      window.location.reload();
+    }
+
+    function goBack() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('from') === 'workshop') {
+        window.location.href = 'workshop.html';
+      } else {
+        window.location.href = 'index.html';
+      }
+    }
+
+    function hideOverlays() {
+      document.getElementById('reading').classList.remove('show');
+      document.getElementById('rd-val').textContent = '---';
+
+      gameState = 'breaker_off'; selectedTool = null;
+      wiresState = { red: false, blue: false };
+      completedTasks = 0; timerVal = 300; timerRunning = true;
+      screwRemoving = false; screwSpinT = 0;
+      screwReattaching = false; screwReattachT = 0;
+      coverOpening = false; coverOpenT = 0;
+      coverClosing = false; coverCloseT = 0;
+      inspecting = false; inspectT = 0;
+      bkAnimating = false; bkAnimT = 0;
+      damageLightT = 0; damageLight.intensity = 0;
+
+      bkHandle.position.y = HANDLE_ON_Y;
+      bkHandleMat.color.setHex(0x22c55e);
+      bkLEDMat.color.setHex(0x22c55e);
+      bkLEDMat.emissive.setHex(0x22c55e);
+      bkLEDMat.emissiveIntensity = 1.0;
+
+      faceGroup.visible = true; faceGroup.rotation.x = 0;
+      faceGroup.position.set(0, -0.9, 0);
+      screwGroup.visible = true; screwGroup.rotation.z = 0;
+      screwGroup.position.set(0, 0.925, 0);
+      internalGroup.visible = false;
+      terminalMeshes.forEach(t => {
+        t.glowMesh.material.color.setHex(0x222222);
+        t.glowMesh.material.emissiveIntensity = 0;
+      });
+
+      // Rebuild damaged wire groups
+      wireNames.forEach((name, i) => {
+        outletRoot.remove(wireMeshes[i]);
+        const wg = makeDamagedWireGroup(wireColors3D[i], looseWirePts[i]);
+        wg.visible = false;
+        outletRoot.add(wg);
+        wireMeshes[i] = wg;
+      });
+
+      animateCam(new THREE.Vector3(1.2, 0.8, 6.5), new THREE.Vector3(0, 0, 0), 800, () => { });
+
+      setPct(0);
+      document.getElementById('done-count').textContent = '0';
+      for (let i = 1; i <= 8; i++) {
+        const el = document.getElementById('t' + i);
+        el.classList.remove('done', 'active');
+        if (i === 1) el.classList.add('active');
+      }
+      document.getElementById('wire-panel').style.display = 'none';
+      document.getElementById('wire-panel').classList.remove('hi');
+      setInstr('<span class="snum">STEP 1</span>Find the <span>breaker panel</span> on the left wall — tap to switch it <span>OFF</span> before working');
+
+      ['red', 'blue'].forEach(c => {
+        document.getElementById('wd-' + c).classList.remove('used');
+        const t = document.getElementById('wt-' + c);
+        const lbl = { red: 'L', blue: 'N' };
+        const col = { red: '#ef4444', blue: '#3b82f6' };
+        t.style.background = ''; t.style.color = col[c];
+        t.style.borderStyle = 'dashed'; t.textContent = lbl[c];
+      });
+
+      ['screwdriver', 'pliers', 'multimeter'].forEach(t => {
+        const s = document.getElementById('tool-' + t);
+        s.classList.add('disabled'); s.classList.remove('active');
+      });
+
+      setTut(bkHandle, 'TAP HERE');
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  </script>
+</body>
+
+</html>

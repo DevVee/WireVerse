@@ -1,5 +1,6 @@
 import { Icons, logoHTML } from './Icons.js';
-import { Database } from '../systems/Database.js';
+import { Database }     from '../systems/Database.js';
+import { SoundManager } from '../systems/SoundManager.js';
 
 const TABS = [
   { id: 'profile',  label: 'PROFILE',  icon: Icons.user     },
@@ -136,6 +137,7 @@ export class Settings {
         this._data[key] = Number(input.value);
         valEl.textContent = `${input.value}%`;
         Database.saveSettings(this._data);
+        SoundManager.applySettings();
       });
     });
 
@@ -148,6 +150,7 @@ export class Settings {
         btn.className = `stg-toggle ${next ? 'stg-toggle--on' : 'stg-toggle--off'}`;
         btn.textContent = next ? 'ON' : 'OFF';
         Database.saveSettings(this._data);
+        SoundManager.applySettings();
       });
     });
   }

@@ -121,12 +121,14 @@ input {
   opacity: 0;
   transform: scale(.96);
   pointer-events: none;
+  visibility: hidden;
 }
 
 .screen-visible {
   opacity: 1;
   transform: scale(1);
   pointer-events: all;
+  visibility: visible;
 }
 
 .screen-exit {
@@ -811,11 +813,45 @@ input {
   height: 13px;
 }
 
+.mm-player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
 .mm-player-name {
   font-size: 11px;
   font-weight: 800;
   letter-spacing: .08em;
   color: var(--text);
+}
+
+.mm-xp-bar-wrap {
+  width: 72px;
+  height: 4px;
+  background: rgba(255,255,255,.1);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.mm-xp-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #00d4ff, #2dc653);
+  border-radius: 99px;
+  transition: width .6s ease;
+  min-width: 4px;
+}
+
+.mm-level-badge {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  color: #00d4ff;
+  background: rgba(0,212,255,.12);
+  border: 1px solid rgba(0,212,255,.35);
+  border-radius: 8px;
+  padding: 2px 7px;
+  white-space: nowrap;
 }
 
 /* Stats pills */
@@ -861,6 +897,16 @@ input {
 .mm-stat-gems .mm-stat-icon,
 .mm-stat-gems .mm-stat-val {
   color: var(--c-gems);
+}
+
+.mm-stat-coins .mm-stat-icon,
+.mm-stat-coins .mm-stat-val {
+  color: var(--c-coins);
+}
+
+.mm-stat-explore .mm-stat-icon,
+.mm-stat-explore .mm-stat-val {
+  color: #00d4ff;
 }
 
 .mm-stat-sub {
