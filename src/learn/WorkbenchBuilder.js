@@ -368,9 +368,11 @@ export function buildWorkbench(scene, opts = {}) {
 // ═══════════════════════════════════════════════════════
 
 export function buildLightingRig(scene) {
-  scene.add(new THREE.HemisphereLight(0x2233aa, 0x1a0e04, 0.55));
+  // Bright cool-white ambient — matches Tools.html look
+  scene.add(new THREE.AmbientLight(0xc8d8ff, 0.65));
 
-  const sun = new THREE.DirectionalLight(0xfff6e0, 2.0);
+  // Main sun — warm key light from upper right
+  const sun = new THREE.DirectionalLight(0xfff6e0, 2.2);
   sun.position.set(5, 12, 6);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -379,9 +381,20 @@ export function buildLightingRig(scene) {
   sun.shadow.bias = -0.001;
   scene.add(sun);
 
-  const rim = new THREE.DirectionalLight(0x3366ff, 0.30);
-  rim.position.set(-7, 4, -5);
+  // Cyan rim from back-left
+  const rim = new THREE.DirectionalLight(0x0099cc, 0.85);
+  rim.position.set(-6, 4, -3);
   scene.add(rim);
 
-  return { sun, rim };
+  // White fill from front
+  const fill = new THREE.DirectionalLight(0xffffff, 0.40);
+  fill.position.set(1, 5, 9);
+  scene.add(fill);
+
+  // Soft blue bottom bounce — lifts dark undersides
+  const bot = new THREE.DirectionalLight(0x112244, 0.30);
+  bot.position.set(0, -5, 2);
+  scene.add(bot);
+
+  return { sun, rim, fill, bot };
 }

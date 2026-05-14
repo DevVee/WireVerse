@@ -136,14 +136,17 @@ const CSS = `
 .wtl{position:absolute;inset:0;display:flex;flex-direction:column;background:#07101f;font-family:'Exo 2',sans-serif;overflow:hidden;}
 
 /* TOP BAR */
-.wtl-top{height:48px;background:rgba(4,8,18,.98);border-bottom:1px solid rgba(0,212,255,.15);display:flex;align-items:center;padding:0 12px;gap:10px;flex-shrink:0;}
+.wtl-top{height:calc(48px + env(safe-area-inset-top));background:rgba(4,8,18,.98);border-bottom:1px solid rgba(0,212,255,.15);display:flex;align-items:flex-end;padding:env(safe-area-inset-top) 12px 8px;gap:10px;flex-shrink:0;}
 .wtl-back{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.22);color:#00d4ff;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;padding:6px 12px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .wtl-top-center{flex:1;text-align:center;}
 .wtl-ch-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:#00d4ff;display:block;}
 .wtl-ch-step{font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(255,255,255,.35);}
 
+/* MAIN SPLIT LAYOUT */
+.wtl-main{flex:1;display:flex;flex-direction:row;min-height:0;overflow:hidden;}
+
 /* 3D SCENE */
-.wtl-scene{height:44vh;min-height:200px;max-height:340px;position:relative;flex-shrink:0;background:#07101f;overflow:hidden;}
+.wtl-scene{flex:1;position:relative;background:#07101f;overflow:hidden;}
 .wtl-canvas{display:block;}
 .wtl-tap-hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(0,212,255,.85);letter-spacing:2px;pointer-events:none;animation:wtlPulse 1.2s ease-in-out infinite;background:rgba(4,10,24,.75);padding:5px 14px;border-radius:20px;border:1px solid rgba(0,212,255,.3);white-space:nowrap;}
 @keyframes wtlPulse{0%,100%{opacity:.45;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.03)}}
@@ -179,7 +182,9 @@ const CSS = `
 .wtl-cquiz-pip.active{background:#00d4ff;}
 
 /* DIALOG AREA */
-.wtl-dialog{flex:1;display:flex;flex-direction:column;padding:8px 12px;gap:6px;overflow:hidden;min-height:0;}
+@keyframes wtlDialogIn{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}
+.wtl-dialog{width:38%;flex-shrink:0;display:flex;flex-direction:column;padding:8px 12px;gap:6px;overflow:hidden;border-right:1px solid rgba(0,212,255,.1);}
+.wtl-bubble{animation:wtlDialogIn .3s cubic-bezier(.25,.46,.45,.94) both;}
 .wtl-bubble{background:rgba(8,18,42,.98);border:1px solid rgba(0,212,255,.18);border-radius:14px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start;flex:1;overflow:hidden;}
 .wtl-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid rgba(0,212,255,.35);flex-shrink:0;
   transform:translateX(60px);opacity:0;transition:transform .55s cubic-bezier(.25,.46,.45,.94),opacity .55s;}
@@ -211,7 +216,7 @@ const CSS = `
 .wtl-prog-pct{font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(255,255,255,.35);}
 
 /* BOTTOM BAR */
-.wtl-bottom{height:62px;background:rgba(4,8,18,.98);border-top:1px solid rgba(0,212,255,.1);display:flex;align-items:center;justify-content:space-between;padding:0 12px;gap:10px;flex-shrink:0;}
+.wtl-bottom{height:calc(62px + env(safe-area-inset-bottom));background:rgba(4,8,18,.98);border-top:1px solid rgba(0,212,255,.1);display:flex;align-items:center;justify-content:space-between;padding:0 12px env(safe-area-inset-bottom);gap:10px;flex-shrink:0;}
 .wtl-dots{display:flex;gap:4px;align-items:center;flex:1;justify-content:center;overflow:hidden;}
 .wtl-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.1);transition:all .3s;flex-shrink:0;}
 .wtl-dot.done{background:#2dc653;}
@@ -355,49 +360,50 @@ export class WireTypesLesson {
           <span class="wtl-ch-step" id="wtl-step-num">1/${STEPS.length}</span>
         </header>
 
-        <div class="wtl-scene" id="wtl-scene">
-          <canvas class="wtl-canvas" id="wtl-canvas"></canvas>
-
-          <!-- Cross-section overlay -->
-          <div class="wtl-cross-overlay" id="wtl-cross-overlay">
-            <div class="wtl-cross-wrap">
-              <canvas id="wtl-cross-canvas" width="220" height="220"></canvas>
-              <div class="wtl-cross-labels" id="wtl-cross-labels"></div>
-            </div>
-          </div>
-
-          <!-- Wire type badge -->
-          <div class="wtl-wt-badge" id="wtl-wt-badge">
-            <div class="wtl-wt-badge-name" id="wtl-wt-name"></div>
-            <div class="wtl-wt-badge-tag"  id="wtl-wt-tag"></div>
-          </div>
-
-          <!-- Color quiz prompt -->
-          <div class="wtl-cquiz-prompt" id="wtl-cquiz-prompt">
-            <div class="wtl-cquiz-role" id="wtl-cquiz-role"></div>
-            <div class="wtl-cquiz-sub">TAP THE CORRECT WIRE</div>
-            <div class="wtl-cquiz-prog" id="wtl-cquiz-prog"></div>
-          </div>
-
-          <div class="wtl-tap-hint" id="wtl-tap-hint" style="display:none">👆 TAP THE CORRECT WIRE</div>
-          <div class="wtl-feedback" id="wtl-feedback"><div class="wtl-fb" id="wtl-fb"></div></div>
-        </div>
-
-        <div class="wtl-dialog" id="wtl-dialog">
-          <!-- swapped between bubble-mode and quiz-mode -->
-          <div class="wtl-bubble" id="wtl-bubble">
-            <img src="/Mascot.png" class="wtl-avatar" id="wtl-avatar" alt="Electro"/>
-            <div class="wtl-bubble-content">
-              <div class="wtl-bubble-name">ELECTRO
-                <div class="wtl-wave"><span></span><span></span><span></span></div>
+        <div class="wtl-main">
+          <div class="wtl-dialog" id="wtl-dialog">
+            <!-- swapped between bubble-mode and quiz-mode -->
+            <div class="wtl-bubble" id="wtl-bubble">
+              <div class="wtl-bubble-content">
+                <div class="wtl-bubble-name">ELECTRO
+                  <div class="wtl-wave"><span></span><span></span><span></span></div>
+                </div>
+                <p class="wtl-bubble-text" id="wtl-text"></p>
+                <div class="wtl-bubble-tap" id="wtl-bubble-tap">TAP TO CONTINUE »</div>
               </div>
-              <p class="wtl-bubble-text" id="wtl-text"></p>
-              <div class="wtl-bubble-tap" id="wtl-bubble-tap">TAP TO CONTINUE »</div>
+            </div>
+            <div class="wtl-progress-row">
+              <div class="wtl-prog-bar"><div class="wtl-prog-fill" id="wtl-prog"></div></div>
+              <span class="wtl-prog-pct" id="wtl-pct"></span>
             </div>
           </div>
-          <div class="wtl-progress-row">
-            <div class="wtl-prog-bar"><div class="wtl-prog-fill" id="wtl-prog"></div></div>
-            <span class="wtl-prog-pct" id="wtl-pct"></span>
+
+          <div class="wtl-scene" id="wtl-scene">
+            <canvas class="wtl-canvas" id="wtl-canvas"></canvas>
+
+            <!-- Cross-section overlay -->
+            <div class="wtl-cross-overlay" id="wtl-cross-overlay">
+              <div class="wtl-cross-wrap">
+                <canvas id="wtl-cross-canvas" width="220" height="220"></canvas>
+                <div class="wtl-cross-labels" id="wtl-cross-labels"></div>
+              </div>
+            </div>
+
+            <!-- Wire type badge -->
+            <div class="wtl-wt-badge" id="wtl-wt-badge">
+              <div class="wtl-wt-badge-name" id="wtl-wt-name"></div>
+              <div class="wtl-wt-badge-tag"  id="wtl-wt-tag"></div>
+            </div>
+
+            <!-- Color quiz prompt -->
+            <div class="wtl-cquiz-prompt" id="wtl-cquiz-prompt">
+              <div class="wtl-cquiz-role" id="wtl-cquiz-role"></div>
+              <div class="wtl-cquiz-sub">TAP THE CORRECT WIRE</div>
+              <div class="wtl-cquiz-prog" id="wtl-cquiz-prog"></div>
+            </div>
+
+            <div class="wtl-tap-hint" id="wtl-tap-hint" style="display:none">👆 TAP THE CORRECT WIRE</div>
+            <div class="wtl-feedback" id="wtl-feedback"><div class="wtl-fb" id="wtl-fb"></div></div>
           </div>
         </div>
 
@@ -408,7 +414,7 @@ export class WireTypesLesson {
         </div>
       </div>`;
 
-    el.querySelector('.wtl-back').addEventListener('click',  () => this.state.setState('menu'));
+    el.querySelector('.wtl-back').addEventListener('click',  () => this.state.setState('stagesHub'));
     el.querySelector('#wtl-next').addEventListener('click',  () => this._onNext());
     el.querySelector('#wtl-prev').addEventListener('click',  () => this._onPrev());
     el.querySelector('#wtl-bubble-tap').addEventListener('click', () => this._onNext());
@@ -1134,7 +1140,6 @@ export class WireTypesLesson {
       if (!this._el.querySelector('#wtl-bubble')) {
         this._el.querySelector('#wtl-dialog').innerHTML = `
           <div class="wtl-bubble" id="wtl-bubble">
-            <img src="/Mascot.png" class="wtl-avatar" id="wtl-avatar" alt="Electro"/>
             <div class="wtl-bubble-content">
               <div class="wtl-bubble-name">ELECTRO
                 <div class="wtl-wave"><span></span><span></span><span></span></div>
@@ -1186,7 +1191,14 @@ export class WireTypesLesson {
 
   _onNext() {
     const step = STEPS[this._step];
-    if (step.t === 'done') { Database.completeLesson('wireTypes'); this.state.setState('wireLearn'); return; }
+    if (step.t === 'done') {
+      const alreadyDone = Database.getLearnStage('wireTypes');
+      Database.completeLesson('wireTypes');
+      Database.saveLearnStage('wireTypes');
+      if (!alreadyDone) Database.addXP(100);
+      this.state.setState('stagesHub');
+      return;
+    }
     if (this._step < STEPS.length - 1) this._gotoStep(this._step + 1);
   }
 

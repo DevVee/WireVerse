@@ -85,14 +85,6 @@ export class MainMenu {
     `;
 
     this._el.querySelector('#mm-stats').innerHTML = `
-      <div class="mm-stat mm-stat-coins">
-        <span class="mm-stat-icon">🪙</span>
-        <span class="mm-stat-val">${data.coins}</span>
-      </div>
-      <div class="mm-stat mm-stat-gems">
-        <span class="mm-stat-icon">${Icons.gem}</span>
-        <span class="mm-stat-val">${data.gems}</span>
-      </div>
       <div class="mm-stat mm-stat-explore">
         <span class="mm-stat-icon">⚡</span>
         <span class="mm-stat-val">${outletsDone + switchesDone}/8</span>

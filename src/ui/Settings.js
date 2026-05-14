@@ -3,11 +3,8 @@ import { Database }     from '../systems/Database.js';
 import { SoundManager } from '../systems/SoundManager.js';
 
 const TABS = [
-  { id: 'profile',  label: 'PROFILE',  icon: Icons.user     },
-  { id: 'audio',    label: 'AUDIO',    icon: Icons.audio    },
-  { id: 'graphics', label: 'GRAPHICS', icon: Icons.graphics },
-  { id: 'controls', label: 'CONTROLS', icon: Icons.controls },
-  { id: 'language', label: 'LANGUAGE', icon: Icons.language },
+  { id: 'profile', label: 'PROFILE', icon: Icons.user  },
+  { id: 'audio',   label: 'AUDIO',   icon: Icons.audio },
 ];
 
 export class Settings {
@@ -75,11 +72,6 @@ export class Settings {
     const name = Database.getPlayerName();
     root.innerHTML = `
       <div class="stg-profile">
-        <div class="stg-avatar-wrap">
-          <img src="/Mascot.png" class="stg-avatar-img" alt="Avatar" />
-          <div class="stg-avatar-glow"></div>
-        </div>
-
         <div class="stg-profile-card">
           <div class="stg-profile-title">PLAYER PROFILE</div>
 

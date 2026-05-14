@@ -134,13 +134,14 @@ const STEPS = [
 const CSS = `
 .wsl{position:absolute;inset:0;display:flex;flex-direction:column;background:#07101f;font-family:'Exo 2',sans-serif;overflow:hidden;}
 
-.wsl-top{height:48px;background:rgba(4,8,18,.98);border-bottom:1px solid rgba(255,165,0,.15);display:flex;align-items:center;padding:0 12px;gap:10px;flex-shrink:0;}
+.wsl-top{height:calc(48px + env(safe-area-inset-top));background:rgba(4,8,18,.98);border-bottom:1px solid rgba(255,165,0,.15);display:flex;align-items:flex-end;padding:env(safe-area-inset-top) 12px 8px;gap:10px;flex-shrink:0;}
 .wsl-back{background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.28);color:#ffaa00;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;padding:6px 12px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .wsl-top-center{flex:1;text-align:center;}
 .wsl-ch-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:#ffaa00;display:block;}
 .wsl-ch-step{font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(255,255,255,.35);}
 
-.wsl-scene{height:44vh;min-height:200px;max-height:340px;position:relative;flex-shrink:0;background:#07101f;overflow:hidden;}
+.wsl-main{flex:1;display:flex;flex-direction:row;min-height:0;overflow:hidden;}
+.wsl-scene{flex:1;position:relative;background:#07101f;overflow:hidden;}
 .wsl-canvas{display:block;}
 
 .wsl-tap-hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(255,170,0,.9);letter-spacing:2px;pointer-events:none;animation:wslPulse 1.2s ease-in-out infinite;background:rgba(4,10,24,.8);padding:5px 14px;border-radius:20px;border:1px solid rgba(255,170,0,.3);white-space:nowrap;}
@@ -160,8 +161,9 @@ const CSS = `
 .wsl-quality-badge.fail{display:block;background:rgba(255,68,68,.18);border:1px solid #ff4444;color:#ff4444;}
 .wsl-quality-badge.pass{display:block;background:rgba(45,198,83,.18);border:1px solid #2dc653;color:#2dc653;}
 
-.wsl-dialog{flex:1;display:flex;flex-direction:column;padding:8px 12px;gap:6px;overflow:hidden;min-height:0;}
-.wsl-bubble{background:rgba(8,18,42,.98);border:1px solid rgba(255,170,0,.18);border-radius:14px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start;flex:1;overflow:hidden;}
+@keyframes wslDialogIn{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}
+.wsl-dialog{width:38%;flex-shrink:0;display:flex;flex-direction:column;padding:8px 12px;gap:6px;overflow:hidden;border-right:1px solid rgba(255,170,0,.1);}
+.wsl-bubble{background:rgba(8,18,42,.98);border:1px solid rgba(255,170,0,.18);border-radius:14px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start;flex:1;overflow:hidden;animation:wslDialogIn .3s cubic-bezier(.25,.46,.45,.94) both;}
 .wsl-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,170,0,.35);flex-shrink:0;transform:translateX(60px);opacity:0;transition:transform .55s cubic-bezier(.25,.46,.45,.94),opacity .55s;}
 .wsl-avatar.entered{transform:translateX(0);opacity:1;}
 .wsl-bubble-content{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
@@ -196,7 +198,7 @@ const CSS = `
 .wsl-prog-fill{height:100%;background:linear-gradient(90deg,#ffaa00,#2dc653);border-radius:2px;transition:width .4s;}
 .wsl-prog-pct{font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(255,255,255,.35);}
 
-.wsl-bottom{height:62px;background:rgba(4,8,18,.98);border-top:1px solid rgba(255,170,0,.1);display:flex;align-items:center;justify-content:space-between;padding:0 12px;gap:10px;flex-shrink:0;}
+.wsl-bottom{height:calc(62px + env(safe-area-inset-bottom));background:rgba(4,8,18,.98);border-top:1px solid rgba(255,170,0,.1);display:flex;align-items:center;justify-content:space-between;padding:0 12px env(safe-area-inset-bottom);gap:10px;flex-shrink:0;}
 .wsl-dots{display:flex;gap:4px;align-items:center;flex:1;justify-content:center;overflow:hidden;}
 .wsl-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.1);transition:all .3s;flex-shrink:0;}
 .wsl-dot.done{background:#2dc653;}
@@ -279,31 +281,32 @@ export class WireStrippingLesson {
           <span class="wsl-ch-step" id="wsl-step-num">1/${STEPS.length}</span>
         </header>
 
-        <div class="wsl-scene" id="wsl-scene">
-          <canvas class="wsl-canvas" id="wsl-canvas"></canvas>
-          <div class="wsl-tool-badge" id="wsl-tool-badge">
-            <div class="wsl-tool-badge-name" id="wsl-badge-name"></div>
-            <div class="wsl-tool-badge-tag"  id="wsl-badge-tag"></div>
-          </div>
-          <div class="wsl-quality-badge" id="wsl-quality-badge"></div>
-          <div class="wsl-tap-hint" id="wsl-tap-hint" style="display:none">👆 TAP THE CORRECT TOOL</div>
-          <div class="wsl-feedback" id="wsl-feedback"><div class="wsl-fb" id="wsl-fb"></div></div>
-        </div>
-
-        <div class="wsl-dialog" id="wsl-dialog">
-          <div class="wsl-bubble" id="wsl-bubble">
-            <img src="/Mascot.png" class="wsl-avatar" id="wsl-avatar" alt="Volt"/>
-            <div class="wsl-bubble-content">
-              <div class="wsl-bubble-name">VOLT
-                <div class="wsl-wave"><span></span><span></span><span></span></div>
+        <div class="wsl-main">
+          <div class="wsl-dialog" id="wsl-dialog">
+            <div class="wsl-bubble" id="wsl-bubble">
+              <div class="wsl-bubble-content">
+                <div class="wsl-bubble-name">VOLT
+                  <div class="wsl-wave"><span></span><span></span><span></span></div>
+                </div>
+                <p class="wsl-bubble-text" id="wsl-text"></p>
+                <div class="wsl-bubble-tap" id="wsl-bubble-tap">TAP TO CONTINUE »</div>
               </div>
-              <p class="wsl-bubble-text" id="wsl-text"></p>
-              <div class="wsl-bubble-tap" id="wsl-bubble-tap">TAP TO CONTINUE »</div>
+            </div>
+            <div class="wsl-progress-row">
+              <div class="wsl-prog-bar"><div class="wsl-prog-fill" id="wsl-prog"></div></div>
+              <span class="wsl-prog-pct" id="wsl-pct"></span>
             </div>
           </div>
-          <div class="wsl-progress-row">
-            <div class="wsl-prog-bar"><div class="wsl-prog-fill" id="wsl-prog"></div></div>
-            <span class="wsl-prog-pct" id="wsl-pct"></span>
+
+          <div class="wsl-scene" id="wsl-scene">
+            <canvas class="wsl-canvas" id="wsl-canvas"></canvas>
+            <div class="wsl-tool-badge" id="wsl-tool-badge">
+              <div class="wsl-tool-badge-name" id="wsl-badge-name"></div>
+              <div class="wsl-tool-badge-tag"  id="wsl-badge-tag"></div>
+            </div>
+            <div class="wsl-quality-badge" id="wsl-quality-badge"></div>
+            <div class="wsl-tap-hint" id="wsl-tap-hint" style="display:none">👆 TAP THE CORRECT TOOL</div>
+            <div class="wsl-feedback" id="wsl-feedback"><div class="wsl-fb" id="wsl-fb"></div></div>
           </div>
         </div>
 
@@ -314,7 +317,7 @@ export class WireStrippingLesson {
         </div>
       </div>`;
 
-    el.querySelector('.wsl-back').addEventListener('click', () => this.state.setState('wireLearn'));
+    el.querySelector('.wsl-back').addEventListener('click', () => this.state.setState('stagesHub'));
     el.querySelector('#wsl-next').addEventListener('click', () => this._onNext());
     el.querySelector('#wsl-prev').addEventListener('click', () => this._onPrev());
     el.querySelector('#wsl-bubble-tap').addEventListener('click', () => this._onNext());
@@ -1377,7 +1380,6 @@ export class WireStrippingLesson {
     if (!this._el.querySelector('#wsl-bubble')) {
       this._el.querySelector('#wsl-dialog').innerHTML = `
         <div class="wsl-bubble" id="wsl-bubble">
-          <img src="/Mascot.png" class="wsl-avatar" id="wsl-avatar" alt="Volt"/>
           <div class="wsl-bubble-content">
             <div class="wsl-bubble-name">VOLT
               <div class="wsl-wave"><span></span><span></span><span></span></div>
@@ -1424,8 +1426,11 @@ export class WireStrippingLesson {
   _onNext() {
     const step = STEPS[this._step];
     if (step.t === 'done') {
+      const alreadyDone = Database.getLearnStage('wireStripping');
       Database.completeLesson('wireStripping');
-      this.state.setState('wireLearn');
+      Database.saveLearnStage('wireStripping');
+      if (!alreadyDone) Database.addXP(100);
+      this.state.setState('stagesHub');
       return;
     }
     if (this._step < STEPS.length - 1) this._gotoStep(this._step + 1);

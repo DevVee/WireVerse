@@ -149,11 +149,17 @@ const CSS = `
   transition:transform .15s,border-color .15s,box-shadow .15s;
   -webkit-tap-highlight-color:transparent;touch-action:manipulation;
 }
-.sh-card:not(.sh-locked):hover{transform:translateY(-2px);box-shadow:0 8px 26px rgba(0,0,0,.55);}
-.sh-card:not(.sh-locked):active{transform:scale(.97);}
+.sh-card:not(.sh-locked):hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 0 1px rgba(0,212,255,.15);}
+.sh-card:not(.sh-locked):active{transform:scale(.95);}
 .sh-card.sh-locked{opacity:.45;cursor:not-allowed;}
-.sh-card.sh-done{border-color:rgba(34,197,94,.24);}
-.sh-card.sh-active{border-color:rgba(0,212,255,.45);box-shadow:0 0 16px rgba(0,212,255,.1);}
+.sh-card.sh-done{border-color:rgba(34,197,94,.28);}
+.sh-card.sh-active{border-color:rgba(0,212,255,.5);box-shadow:0 0 20px rgba(0,212,255,.14);}
+.sh-card:nth-child(1){animation:cardEntrance .42s cubic-bezier(.34,1.56,.64,1) .04s both;}
+.sh-card:nth-child(2){animation:cardEntrance .42s cubic-bezier(.34,1.56,.64,1) .10s both;}
+.sh-card:nth-child(3){animation:cardEntrance .42s cubic-bezier(.34,1.56,.64,1) .17s both;}
+.sh-card:nth-child(4){animation:cardEntrance .42s cubic-bezier(.34,1.56,.64,1) .24s both;}
+.sh-card:nth-child(5){animation:cardEntrance .42s cubic-bezier(.34,1.56,.64,1) .31s both;}
+.sh-card:nth-child(n+6){animation:cardEntrance .42s cubic-bezier(.34,1.56,.64,1) .36s both;}
 
 /* Image band */
 .sh-card-img{

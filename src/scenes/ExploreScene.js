@@ -87,17 +87,17 @@ export class ExploreScene {
     });
     this._renderer.setPixelRatio(Math.min(devicePixelRatio, isMob ? 1.5 : 2));
     this._renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this._renderer.toneMapping = isMob ? THREE.LinearToneMapping : THREE.ACESFilmicToneMapping;
-    this._renderer.toneMappingExposure = 1.35;
+    this._renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this._renderer.toneMappingExposure = isMob ? 1.7 : 1.9;
     this._renderer.shadowMap.enabled = !isMob;
     this._renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this._scene = new THREE.Scene();
-    this._scene.background = new THREE.Color(0x060810);
+    this._scene.background = new THREE.Color(isMob ? 0x8fb8d0 : 0xa0c0d8);
     if (isMob) {
-      this._scene.fog = new THREE.Fog(0x060810, 12, 32);
+      this._scene.fog = new THREE.Fog(0x8fb8d0, 14, 36);
     } else {
-      this._scene.fog = new THREE.FogExp2(0x060810, 0.028);
+      this._scene.fog = new THREE.FogExp2(0xa0c0d8, 0.020);
     }
 
     // PMREM env map (desktop only)
@@ -177,31 +177,28 @@ export class ExploreScene {
   _makeFloorTex() {
     const c = document.createElement('canvas'); c.width = c.height = 512;
     const x = c.getContext('2d');
-    x.fillStyle = '#525e6a'; x.fillRect(0,0,512,512);
+    // Warm cream base (Philippine white ceramic tile)
+    x.fillStyle = '#c8b89a'; x.fillRect(0,0,512,512);
     const ts = 128, grout = 3;
     for (let row = 0; row < 4; row++) {
       for (let col = 0; col < 4; col++) {
         const tx = col*ts+grout, ty = row*ts+grout, tw = ts-grout*2, th = ts-grout*2;
-        const v = (Math.random()-.5)*14;
-        x.fillStyle=`rgb(${82+v|0},${94+v|0},${106+v|0})`; x.fillRect(tx,ty,tw,th);
+        const v = (Math.random()-.5)*12;
+        // Light cream/off-white tile
+        x.fillStyle=`rgb(${228+v|0},${220+v|0},${208+v|0})`; x.fillRect(tx,ty,tw,th);
         const cx2=tx+tw/2,cy2=ty+th/2;
         const gr = x.createRadialGradient(cx2,cy2,2,cx2,cy2,tw*.72);
-        gr.addColorStop(0,'rgba(255,255,255,.10)');
-        gr.addColorStop(.5,'rgba(255,255,255,.03)');
-        gr.addColorStop(1,'rgba(0,0,0,.08)');
+        gr.addColorStop(0,'rgba(255,255,255,.18)');
+        gr.addColorStop(.5,'rgba(255,255,255,.06)');
+        gr.addColorStop(1,'rgba(0,0,0,.04)');
         x.fillStyle=gr; x.fillRect(tx,ty,tw,th);
-        x.strokeStyle='rgba(0,0,0,.18)'; x.lineWidth=1.5;
+        x.strokeStyle='rgba(180,160,130,.25)'; x.lineWidth=1;
         x.strokeRect(tx+1,ty+1,tw-2,th-2);
       }
     }
-    x.fillStyle='#2e3840';
+    // Warm grout lines
+    x.fillStyle='#c8b89a';
     for (let i=0;i<=512;i+=ts){ x.fillRect(i,0,grout,512); x.fillRect(0,i,512,grout); }
-    for (let i=0;i<400;i++) {
-      x.strokeStyle=`rgba(0,0,0,${Math.random()*.15})`;
-      x.lineWidth=Math.random()*2.5; x.beginPath();
-      const sx=Math.random()*512,sy=Math.random()*512;
-      x.moveTo(sx,sy); x.lineTo(sx+(Math.random()-.5)*80,sy+(Math.random()-.5)*20); x.stroke();
-    }
     const t = this._mkTex(c); t.repeat.set(8,8);
     return t;
   }
@@ -209,7 +206,7 @@ export class ExploreScene {
   _makeWallTex() {
     const c = document.createElement('canvas'); c.width = c.height = 512;
     const x = c.getContext('2d');
-    x.fillStyle='#c2cbd4'; x.fillRect(0,0,512,512);
+    x.fillStyle='#ddd8ce'; x.fillRect(0,0,512,512);
     const bH=48, bW=128, mortar=4;
     for (let row=0;row*bH<512;row++) {
       const off = (row%2===0) ? 0 : bW/2;
@@ -217,7 +214,7 @@ export class ExploreScene {
         const bx=col*bW+off+mortar/2, by=row*bH+mortar/2;
         const bw=bW-mortar, bh=bH-mortar;
         const v=(Math.random()-.5)*18;
-        const r=194+v|0,g=204+v|0,b=214+v|0;
+        const r=224+v|0,g=218+v|0,b=208+v|0;
         x.fillStyle=`rgb(${r},${g},${b})`; x.fillRect(bx,by,bw,bh);
         const gr=x.createLinearGradient(bx,by,bx,by+bh);
         gr.addColorStop(0,'rgba(255,255,255,.08)'); gr.addColorStop(1,'rgba(0,0,0,.06)');
@@ -225,7 +222,7 @@ export class ExploreScene {
         x.strokeStyle='rgba(0,0,0,.12)'; x.lineWidth=.8; x.strokeRect(bx+.5,by+.5,bw-1,bh-1);
       }
     }
-    x.fillStyle='#9aabb8';
+    x.fillStyle='#c8b89a';
     for (let row=0;row<=512/bH;row++) {
       x.fillRect(0,row*bH,512,mortar);
       const off=(row%2===0)?0:bW/2;
@@ -256,11 +253,11 @@ export class ExploreScene {
   _makeConcrTex() {
     const c = document.createElement('canvas'); c.width = c.height = 512;
     const x = c.getContext('2d');
-    x.fillStyle='#8a9298'; x.fillRect(0,0,512,512);
+    x.fillStyle='#c4b8a8'; x.fillRect(0,0,512,512);
     for (let i=0;i<3000;i++) {
       const gx=Math.random()*512,gy=Math.random()*512;
-      const v=(Math.random()-.5)*30;
-      const base=138+v|0;
+      const v=(Math.random()-.5)*24;
+      const base=196+v|0;
       x.fillStyle=`rgba(${base},${base},${base},.18)`;
       x.fillRect(gx,gy,1+Math.random()*3,1+Math.random()*3);
     }
@@ -323,7 +320,7 @@ export class ExploreScene {
       floor:    new THREE.MeshStandardMaterial({ map:fT, roughness:.62, metalness:.06, envMapIntensity:.4 }),
       wall:     new THREE.MeshStandardMaterial({ map:wT, roughness:.85, metalness:.0,  envMapIntensity:.2 }),
       ceil:     new THREE.MeshStandardMaterial({ map:cT, roughness:.90, metalness:.0,  envMapIntensity:.15 }),
-      concrete: new THREE.MeshStandardMaterial({ map:kT, color:0xaab2ba, roughness:.92, metalness:.0, envMapIntensity:.15 }),
+      concrete: new THREE.MeshStandardMaterial({ map:kT, color:0xd8d0c4, roughness:.90, metalness:.0, envMapIntensity:.20 }),
       door:     new THREE.MeshStandardMaterial({ color:0xb08050, roughness:.68, metalness:.10, envMapIntensity:.3 }),
       doorFrame:new THREE.MeshStandardMaterial({ map:mT, color:0x99aabb, roughness:.18, metalness:.92, envMapIntensity:.8 }),
       panel:    new THREE.MeshStandardMaterial({ color:0x2a4a62, roughness:.52, metalness:.38, envMapIntensity:.5 }),
@@ -342,8 +339,8 @@ export class ExploreScene {
       eGreen:   new THREE.MeshBasicMaterial({ color:0x22ff88 }),
       eRed:     new THREE.MeshBasicMaterial({ color:0xff3322 }),
       eYellow:  new THREE.MeshBasicMaterial({ color:0xffee00 }),
-      window:   new THREE.MeshStandardMaterial({ color:0xb8e0f8, transparent:true, opacity:.34, roughness:.02, metalness:.06, envMapIntensity:.5, side:THREE.DoubleSide }),
-      winFrame: new THREE.MeshStandardMaterial({ color:0xeeeeec, roughness:.45, metalness:.25, envMapIntensity:.5 }),
+      window:   new THREE.MeshStandardMaterial({ color:0xd0ecff, emissive:new THREE.Color(0x88ccff), emissiveIntensity:0.55, transparent:true, opacity:.45, roughness:.02, metalness:.06, envMapIntensity:.5, side:THREE.DoubleSide }),
+      winFrame: new THREE.MeshStandardMaterial({ color:0xf5f2ee, roughness:.40, metalness:.15, envMapIntensity:.5 }),
     };
     const M = this._M;
     if (!isMob) {
@@ -363,28 +360,31 @@ export class ExploreScene {
       });
     }
 
-    // Workshop wall mats — dark industrial night tone
+    // Workshop wall mats — warm residential
     const wsWallMat = new THREE.MeshStandardMaterial({
-      map:wT, color:0x0e1c2e, roughness:.88, metalness:.0, envMapIntensity:.18,
+      map:wT, color:0xd4ccbc, roughness:.88, metalness:.0, envMapIntensity:.25,
     });
     const ws2WallMat = new THREE.MeshStandardMaterial({
-      map:wT, color:0x0a1622, roughness:.90, metalness:.0, envMapIntensity:.12,
+      map:wT, color:0xccc0aa, roughness:.88, metalness:.0, envMapIntensity:.20,
     });
     if (isMob) {
       wsWallMat.normalMap = null; ws2WallMat.normalMap = null;
       wsWallMat.envMapIntensity = 0; ws2WallMat.envMapIntensity = 0;
     }
 
-    // ── LIGHTING ────────────────────────────────────────────────────────────────
+    // ── LIGHTING — bright Philippine daytime interior ────────────────────────────
     this._roomLightSets = {};
-    scene.add(new THREE.AmbientLight(0x1a2a44, isMob ? 0.35 : 0.18));
+
+    // Bright warm ambient (daylight fill)
+    scene.add(new THREE.AmbientLight(0xfff8e8, isMob ? 0.75 : 0.60));
     if (!isMob) {
-      scene.add(new THREE.HemisphereLight(0x0a1428, 0x080c10, 0.12));
+      // Natural sky light from above
+      scene.add(new THREE.HemisphereLight(0xb8d0ff, 0xd4bc8a, 0.55));
     }
 
-    // Very dim cool directional — just enough to reveal silhouettes
-    const sun = new THREE.DirectionalLight(0xe8f0ff, isMob ? 0.5 : 1.4);
-    sun.position.set(12,18,8); sun.target.position.set(0,0,-12);
+    // Strong warm sunlight through windows (east side)
+    const sun = new THREE.DirectionalLight(0xfff8d0, isMob ? 2.2 : 3.5);
+    sun.position.set(12, 18, 8); sun.target.position.set(0, 0, -12);
     scene.add(sun); scene.add(sun.target);
     if (!isMob) {
       sun.castShadow = true;
@@ -392,19 +392,24 @@ export class ExploreScene {
       sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 65;
       sun.shadow.camera.left = sun.shadow.camera.bottom = -20;
       sun.shadow.camera.right = sun.shadow.camera.top   =  20;
-      sun.shadow.bias = -0.0015; sun.shadow.normalBias = 0.04; sun.shadow.radius = 4.5;
+      sun.shadow.bias = -0.0015; sun.shadow.normalBias = 0.03; sun.shadow.radius = 3.5;
     }
 
-    // Warm fill points in each room for depth
+    // Secondary window fill from west — bounced natural light
+    const winFill = new THREE.DirectionalLight(0xdceeff, isMob ? 0.9 : 1.5);
+    winFill.position.set(-10, 6, -5); winFill.target.position.set(0, 0, -10);
+    scene.add(winFill); scene.add(winFill.target);
+
+    // Warm ceiling light fills per room (incandescent / fluorescent)
     const addRoom = (x, y, z, color, int) => {
-      const pl = new THREE.PointLight(color, int, 12, 1.8);
+      const pl = new THREE.PointLight(color, int, 16, 1.5);
       pl.position.set(x,y,z); scene.add(pl);
     };
-    addRoom(0,  3.2,  2,  0xffe8c0, isMob?1.2:0.55);
-    addRoom(-2, 3.2, -8,  0xfff0d0, isMob?1.0:0.45);
-    addRoom( 3, 3.2,-14,  0xfff0d0, isMob?1.0:0.45);
-    addRoom( 0, 3.2,-22,  0xffe8c0, isMob?0.9:0.40);
-    addRoom( 0, 3.2,-28,  0xffe8c0, isMob?0.9:0.40);
+    addRoom(0,  3.6,   2,  0xfffce8, isMob ? 2.2 : 1.4);
+    addRoom(-2, 3.6,  -8,  0xfff8e0, isMob ? 2.0 : 1.2);
+    addRoom( 3, 3.6, -14,  0xfff8e0, isMob ? 2.0 : 1.2);
+    addRoom( 0, 3.6, -22,  0xfffce8, isMob ? 1.8 : 1.0);
+    addRoom( 0, 3.6, -28,  0xfffce8, isMob ? 1.8 : 1.0);
 
     // ── ROOM FLOORS / CEILINGS ──────────────────────────────────────────────────
     const _mkRoom = (cx, cz, w, d) => {
@@ -455,11 +460,11 @@ export class ExploreScene {
       this._mkDoor(2, 0, -18),
     ];
 
-    // ── CEILING LIGHTS — fewer, brighter, dramatic shadows ────────────────────
-    this._mkLight(0,  H-.2,   3, 0xfff4e0, 2.8, 'entrance');
-    this._mkLight( 0, H-.2, -10, 0xfff8f0, 3.2, 'workshop');
-    this._mkLight( 0, H-.2, -18, 0xfff8f0, 3.0, 'workshop');
-    this._mkLight( 0, H-.2, -28, 0xfff4e0, 2.6, 'workshop');
+    // ── CEILING LIGHTS — bright warm daylight + fluorescent fill ──────────────
+    this._mkLight(0,  H-.2,   3, 0xfffef5, 4.0, 'entrance');
+    this._mkLight( 0, H-.2, -10, 0xfffef5, 4.5, 'workshop');
+    this._mkLight( 0, H-.2, -18, 0xfffef5, 4.2, 'workshop');
+    this._mkLight( 0, H-.2, -28, 0xfffef5, 3.8, 'workshop');
 
     // ── CEILING CABLE TRAY (WS1) ─────────────────────────────────────────────────
     {

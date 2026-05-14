@@ -4,7 +4,7 @@ const TIPS = [
   'Check your connections carefully. Every wire matters!',
   'Yellow wires carry positive current — plan your route!',
   'A short circuit can blow the fuse. Stay alert.',
-  'Use hints wisely — they cost gems to unlock.',
+
   'Stars are awarded based on accuracy and completion speed.',
 ];
 

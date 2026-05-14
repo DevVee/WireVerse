@@ -11,7 +11,7 @@ function defaults() {
     loginStreak: 0,
     lastLoginDate: null,
     learnProgress: { wireTypes: false, electricianTools: false, wireStripping: false },
-    learnStages: { electricianTools: false, outlet: false, learnOutlet: false, ways: false, switchInstallation: false },
+    learnStages: { wireTypes: false, wireStripping: false, electricianTools: false, outlet: false, learnOutlet: false, ways: false, switchInstallation: false },
     exploreOutlets: {},
     exploreSwitches: {},
     exploreBreakerFixed: false,

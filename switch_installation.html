@@ -11,326 +11,342 @@
   --y:#00d4ff;--g:#22c55e;--r:#ef4444;--b:#3b82f6;
   --dark:#060a14;--panel:rgba(4,8,20,.94);
   --border:rgba(0,212,255,.2);--txt:rgba(255,255,255,.88);
+  --safe-top:56px;--safe-bottom:76px;
 }
 html,body{height:100%;overflow:hidden;background:var(--dark)}
 body{font-family:'Barlow',sans-serif;color:var(--txt)}
 canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0}
 #hud{position:fixed;inset:0;pointer-events:none;z-index:10}
 
+/* ── TOP HEADER BAR ── */
+#header-bar{
+  position:absolute;top:0;left:0;right:0;
+  height:var(--safe-top);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 10px;gap:8px;
+  background:linear-gradient(to bottom,rgba(6,10,20,.96) 70%,transparent);
+  pointer-events:auto;
+}
 
-/* ── MISSION STEPS ── */
-#mission{
-  position:absolute;top:16px;left:12px;
-  background:var(--panel);border:1px solid var(--border);
-  border-radius:8px;padding:12px 14px;min-width:218px;pointer-events:auto
+/* ── STEP PILLS ── */
+#step-pills{
+  display:flex;align-items:center;gap:4px;
+  flex:1;overflow:hidden;cursor:pointer;pointer-events:auto;
 }
-.m-hdr{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
-  letter-spacing:.18em;color:var(--y);text-transform:uppercase;margin-bottom:8px;
-  display:flex;align-items:center;gap:6px}
-.m-step{display:flex;align-items:flex-start;gap:7px;
-  font-size:11.5px;margin-bottom:5px;color:rgba(255,255,255,.28);transition:color .3s;line-height:1.35}
-.m-step.active{color:#fff}
-.m-step.done{color:var(--g);text-decoration:line-through}
-.m-dot{width:7px;height:7px;border-radius:50%;border:1.5px solid currentColor;
-  flex-shrink:0;margin-top:3px;transition:all .3s}
-.m-step.active .m-dot{background:var(--y);border-color:var(--y);animation:blink 1s infinite}
-.m-step.done .m-dot{background:var(--g);border-color:var(--g)}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-.m-footer{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);
-  font-size:10px;color:rgba(255,255,255,.28)}
+.step-pill{
+  width:22px;height:22px;border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
+  color:rgba(255,255,255,.3);flex-shrink:0;transition:all .3s;
+}
+.step-pill.active{
+  border-color:var(--y);background:rgba(0,212,255,.15);color:var(--y);
+  box-shadow:0 0 8px rgba(0,212,255,.4);animation:pill-pulse 1.2s ease-in-out infinite;
+}
+.step-pill.done{border-color:var(--g);background:var(--g);color:#000;}
+.step-pill.done::after{content:'✓';font-size:10px;font-weight:900;}
+.step-pill:not(.done) .pnum{display:inline;}
+.step-pill.done .pnum{display:none;}
+@keyframes pill-pulse{
+  0%,100%{box-shadow:0 0 6px rgba(0,212,255,.4);}
+  50%{box-shadow:0 0 14px rgba(0,212,255,.9);}
+}
 
-/* ── PROGRESS ── */
-#prog{
-  position:absolute;top:16px;right:12px;
-  background:var(--panel);border:1px solid var(--border);
-  border-radius:8px;padding:10px 14px;min-width:110px
+/* Active step label */
+#step-label{
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.08em;color:#fff;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  max-width:140px;flex-shrink:1;opacity:.85;
 }
-.p-lbl{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
-  letter-spacing:.15em;color:var(--y);text-transform:uppercase;margin-bottom:6px}
-.p-track{height:4px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden}
-.p-fill{height:100%;background:var(--y);border-radius:99px;transition:width .5s ease;width:0}
-.p-pct{font-family:'Share Tech Mono',monospace;font-size:22px;font-weight:700;margin-top:4px}
+#step-label span{color:var(--y);}
 
-/* ── PH STANDARDS BADGE ── */
-#ph-badge{
-  position:absolute;top:16px;right:135px;
-  background:var(--panel);border:1px solid var(--border);
-  border-radius:8px;padding:8px 12px;font-size:10px;line-height:1.55;
-  color:rgba(255,255,255,.45)
+/* ── PROGRESS (top-right) ── */
+#progress-wrap{display:flex;align-items:center;gap:7px;flex-shrink:0;}
+.pw-bar-bg{width:56px;height:5px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;}
+.pw-bar{height:100%;background:var(--y);border-radius:99px;transition:width .5s ease;width:0%;}
+.pw-pct{
+  font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;
+  color:var(--y);min-width:34px;text-align:right;
 }
-#ph-badge strong{color:var(--y);display:block;font-family:'Barlow Condensed',sans-serif;
-  font-size:10px;letter-spacing:.12em;font-weight:700}
 
-/* ── TOOL PANEL — zero-knowledge labels ── */
-#toolbar{
-  position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
-  display:flex;gap:7px;
-  background:rgba(0,0,0,.78);border:1px solid rgba(255,255,255,.1);
-  border-radius:10px;padding:7px;pointer-events:auto
+/* ── MISSION DRAWER (expandable detail) ── */
+#mission-drawer{
+  position:absolute;top:var(--safe-top);left:0;right:0;
+  background:rgba(4,8,20,.96);border-bottom:1px solid var(--border);
+  padding:14px 16px 12px;
+  transform:translateY(-110%);transition:transform .3s ease;
+  pointer-events:auto;z-index:20;
+  backdrop-filter:blur(8px);
 }
-.tool{
-  width:66px;height:66px;border-radius:7px;
-  background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.1);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  cursor:pointer;gap:3px;transition:all .2s;position:relative
+#mission-drawer.open{transform:translateY(0);}
+.md-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.14em;color:var(--y);text-transform:uppercase;
+  margin-bottom:10px;display:flex;align-items:center;gap:6px;
 }
-.tool:hover{border-color:var(--y);background:rgba(0,212,255,.1)}
-.tool.on{border-color:var(--y);background:rgba(0,212,255,.15)}
-.tool.off{opacity:.16;pointer-events:none}
-.tool svg{width:22px;height:22px;fill:rgba(255,255,255,.7)}
-.tool.on svg{fill:var(--y)}
-.tool-n{font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;
-  letter-spacing:.06em;color:rgba(255,255,255,.4);text-transform:uppercase}
-.tool.on .tool-n{color:var(--y)}
-/* Tooltip on hover */
-.tool-tip{
-  position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
-  background:rgba(0,0,0,.95);border:1px solid var(--border);
-  border-radius:6px;padding:7px 10px;min-width:160px;max-width:200px;
-  font-size:10.5px;line-height:1.5;color:rgba(255,255,255,.8);
-  pointer-events:none;opacity:0;transition:opacity .15s;z-index:50;
-  white-space:normal;text-align:center
+.md-task{
+  display:flex;align-items:center;gap:8px;font-size:12px;
+  padding:3px 0;color:rgba(255,255,255,.38);transition:color .3s;
 }
-.tool-tip strong{color:var(--y);display:block;margin-bottom:2px;font-size:11px}
-.tool:hover .tool-tip{opacity:1}
+.md-task.active{color:#fff;}
+.md-task.done{color:var(--g);text-decoration:line-through;}
+.md-dot{width:8px;height:8px;border-radius:50%;border:2px solid currentColor;flex-shrink:0;}
+.md-task.done .md-dot{background:var(--g);}
+.md-task.active .md-dot{background:var(--y);border-color:var(--y);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.md-close{
+  position:absolute;top:10px;right:14px;
+  font-size:18px;color:rgba(255,255,255,.4);cursor:pointer;line-height:1;
+}
+.md-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;
+}
 
-/* ── INSTRUCTION BAR ── */
+/* ── INSTRUCTION STRIP (above toolbar) ── */
 #instr{
-  position:absolute;bottom:90px;left:50%;transform:translateX(-50%);
-  background:var(--panel);border:1px solid var(--border);
-  border-radius:8px;padding:10px 18px;
-  font-size:13px;text-align:center;max-width:500px;line-height:1.65;
-  pointer-events:none
+  position:absolute;
+  bottom:calc(var(--safe-bottom) + 6px);
+  left:10px;right:10px;
+  background:rgba(4,8,20,.88);border:1px solid var(--border);
+  border-radius:10px;padding:9px 14px;
+  font-size:12px;font-weight:500;line-height:1.5;text-align:center;
+  pointer-events:none;backdrop-filter:blur(6px);
 }
-#instr .hi{color:var(--y);font-weight:600}
+#instr .hi{color:var(--y);font-weight:600;}
 #instr .num{
   display:inline-block;background:var(--y);color:#000;
   font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:700;
-  padding:1px 6px;border-radius:2px;margin-right:4px
+  padding:1px 6px;border-radius:2px;margin-right:4px;letter-spacing:.06em;
 }
-#instr .why{color:rgba(255,255,255,.5);font-size:11px;display:block;margin-top:3px}
+#instr .why{color:rgba(255,255,255,.5);font-size:10px;display:block;margin-top:2px;}
 
-/* ── WIRE LEGEND ── */
-#wire-legend{
-  position:absolute;bottom:90px;right:12px;
-  background:var(--panel);border:1px solid var(--border);
-  border-radius:8px;padding:10px 13px;pointer-events:none
+/* ── TOOLBAR (bottom strip) ── */
+#toolbar{
+  position:absolute;bottom:0;left:0;right:0;
+  height:var(--safe-bottom);
+  display:flex;align-items:center;justify-content:center;
+  gap:10px;padding:8px 12px 12px;
+  background:linear-gradient(to top,rgba(6,10,20,.97) 70%,transparent);
+  pointer-events:auto;
 }
-.wl-title{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
-  letter-spacing:.12em;color:var(--y);text-transform:uppercase;margin-bottom:7px}
-.wl-row{display:flex;align-items:center;gap:7px;margin-bottom:4px;font-size:10.5px}
-.wl-swatch{width:22px;height:4px;border-radius:2px;flex-shrink:0}
-.wl-name{color:rgba(255,255,255,.75)}
-.wl-why{font-size:9.5px;color:rgba(255,255,255,.35)}
+.tool-slot{
+  height:48px;flex:1;max-width:110px;border-radius:10px;
+  background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);
+  display:flex;align-items:center;justify-content:center;
+  gap:7px;cursor:pointer;transition:all .2s;padding:0 12px;
+}
+.tool-slot svg{width:18px;height:18px;stroke:rgba(255,255,255,.55);fill:none;stroke-width:1.8;flex-shrink:0;}
+.tool-name{
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.05em;color:rgba(255,255,255,.5);white-space:nowrap;
+}
+.tool-slot:hover,.tool-slot:active{border-color:var(--y);background:rgba(0,212,255,.1);}
+.tool-slot.on{border-color:var(--y);background:rgba(0,212,255,.16);box-shadow:0 0 12px rgba(0,212,255,.28);}
+.tool-slot.on svg{stroke:var(--y);}
+.tool-slot.on .tool-name{color:var(--y);}
+.tool-slot.off{opacity:.22;pointer-events:none;}
 
 /* ── WIRE PANEL ── */
 #wire-panel{
-  position:absolute;bottom:90px;left:50%;transform:translateX(-50%);
-  background:rgba(7,10,13,.97);border:1.5px solid rgba(0,212,255,.4);
-  border-radius:11px;padding:16px 20px;display:none;
-  pointer-events:auto;min-width:390px
+  position:absolute;
+  bottom:calc(var(--safe-bottom) + 8px);
+  left:10px;right:10px;
+  background:var(--panel);border:1.5px solid rgba(0,212,255,.4);
+  border-radius:11px;padding:14px 16px;display:none;
+  pointer-events:auto;backdrop-filter:blur(8px);
 }
-.wp-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
-  letter-spacing:.16em;color:var(--y);text-transform:uppercase;text-align:center;margin-bottom:4px}
-.wp-rule{font-size:10px;color:rgba(255,255,255,.35);text-align:center;margin-bottom:12px}
-.wire-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+#wire-panel.hi{animation:wire-glow 1.8s ease-in-out infinite;}
+@keyframes wire-glow{
+  0%,100%{box-shadow:0 0 12px rgba(0,212,255,.3);}
+  50%{box-shadow:0 0 28px rgba(0,212,255,.7);}
+}
+.wp-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.16em;color:var(--y);text-transform:uppercase;text-align:center;margin-bottom:12px;
+}
+.wire-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
 .wdrag{
   display:flex;align-items:center;gap:6px;
   padding:5px 11px;border-radius:18px;font-size:11px;font-weight:700;
   cursor:grab;user-select:none;border:1.5px solid rgba(255,255,255,.2);
-  min-width:108px;transition:all .2s;color:#fff
+  min-width:108px;transition:all .2s;color:#fff;
 }
-.wdrag:hover{transform:scale(1.05)}
-.wdrag.used{opacity:.2;pointer-events:none}
-.wdrag svg{width:12px;height:12px;fill:currentColor;flex-shrink:0}
-.wline{flex:1;height:2px;border-radius:2px;opacity:.38}
-.wterm-wrap{display:flex;flex-direction:column;align-items:center;gap:2px}
+.wdrag:hover{transform:scale(1.05);}
+.wdrag.used{opacity:.2;pointer-events:none;}
+.wdrag svg{width:12px;height:12px;fill:currentColor;flex-shrink:0;}
+.wline{flex:1;height:2px;border-radius:2px;opacity:.38;}
+.wterm-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;}
 .wterm{
   width:46px;height:26px;border-radius:4px;border:2px dashed;
   display:flex;align-items:center;justify-content:center;
-  font-size:10px;font-weight:700;cursor:pointer;transition:all .22s
+  font-size:10px;font-weight:700;cursor:pointer;transition:all .22s;
 }
-.wterm-label{font-size:9px;color:rgba(255,255,255,.35)}
-.wterm.ok{border-style:solid;animation:tglow .4s ease}
+.wterm-label{font-size:9px;color:rgba(255,255,255,.35);}
+.wterm.ok{border-style:solid;animation:tglow .4s ease;}
 @keyframes tglow{0%{transform:scale(1.18)}100%{transform:scale(1)}}
-.wterm.no{animation:shake .3s}
+.wterm.no{animation:shake .3s;}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 
-/* ── KNOWLEDGE CALLOUT (what is this thing?) ── */
+/* ── FLIP UI ── */
+#flip-ui{
+  position:absolute;bottom:calc(var(--safe-bottom) + 8px);left:50%;transform:translateX(-50%);
+  display:none;flex-direction:column;align-items:center;gap:8px;
+  pointer-events:auto;z-index:20;
+}
+.flip-lbl{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.12em;color:rgba(255,255,255,.45);text-transform:uppercase;}
+.flip-btn{
+  padding:12px 36px;border-radius:7px;background:var(--y);color:#000;
+  font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;
+  letter-spacing:.07em;border:none;cursor:pointer;transition:transform .15s;
+  display:flex;align-items:center;gap:8px;
+}
+.flip-btn:hover{transform:scale(1.04);}
+.flip-btn svg{width:18px;height:18px;fill:#000;}
+
+/* ── TOAST (below header) ── */
+#toast{
+  position:absolute;top:calc(var(--safe-top) + 6px);left:50%;transform:translateX(-50%);
+  padding:7px 16px;border-radius:30px;font-size:12px;font-weight:600;
+  opacity:0;transition:opacity .25s;pointer-events:none;
+  white-space:nowrap;max-width:calc(100vw - 40px);
+  overflow:hidden;text-overflow:ellipsis;z-index:30;
+}
+#toast.show{opacity:1;}
+#toast.ok{background:rgba(34,197,94,.12);border:1px solid var(--g);color:#4ade80;}
+#toast.err{background:rgba(239,68,68,.12);border:1px solid var(--r);color:#f87171;}
+#toast.info{background:rgba(59,130,246,.12);border:1px solid var(--b);color:#60a5fa;}
+
+/* ── KNOWLEDGE CARD ── */
 #knowledge-card{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   background:rgba(7,10,13,.97);border:1.5px solid rgba(0,212,255,.35);
   border-radius:12px;padding:20px 24px;display:none;z-index:40;
   pointer-events:auto;max-width:420px;width:90%;
-  box-shadow:0 8px 40px rgba(0,0,0,.7)
+  box-shadow:0 8px 40px rgba(0,0,0,.7);
 }
 .kc-badge{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
   letter-spacing:.18em;color:var(--y);text-transform:uppercase;margin-bottom:8px;
-  display:flex;align-items:center;gap:6px}
+  display:flex;align-items:center;gap:6px;}
 .kc-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;
-  color:#fff;margin-bottom:8px;line-height:1.1}
-.kc-body{font-size:12.5px;color:rgba(255,255,255,.72);line-height:1.65;margin-bottom:12px}
-.kc-body em{color:var(--y);font-style:normal}
+  color:#fff;margin-bottom:8px;line-height:1.1;}
+.kc-body{font-size:12.5px;color:rgba(255,255,255,.72);line-height:1.65;margin-bottom:12px;}
+.kc-body em{color:var(--y);font-style:normal;}
 .kc-rule{
   background:rgba(0,212,255,.08);border-left:3px solid var(--y);
   border-radius:0 6px 6px 0;padding:8px 12px;
-  font-size:11.5px;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:12px
+  font-size:11.5px;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:12px;
 }
-.kc-rule strong{color:#fff}
+.kc-rule strong{color:#fff;}
 .kc-close{
   width:100%;padding:9px;background:rgba(0,212,255,.12);
   border:1px solid rgba(0,212,255,.4);border-radius:6px;
   font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
-  letter-spacing:.1em;color:var(--y);cursor:pointer;transition:all .18s;text-transform:uppercase
+  letter-spacing:.1em;color:var(--y);cursor:pointer;transition:all .18s;text-transform:uppercase;
 }
-.kc-close:hover{background:rgba(0,212,255,.22)}
-
-/* ── FLIP UI ── */
-#flip-ui{
-  position:absolute;bottom:90px;left:50%;transform:translateX(-50%);
-  display:none;flex-direction:column;align-items:center;gap:10px
-}
-.flip-lbl{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
-  letter-spacing:.12em;color:rgba(255,255,255,.45);text-transform:uppercase}
-.flip-btn{
-  padding:12px 36px;border-radius:7px;background:var(--y);color:#000;
-  font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;
-  letter-spacing:.07em;border:none;cursor:pointer;transition:transform .15s;
-  display:flex;align-items:center;gap:8px
-}
-.flip-btn:hover{transform:scale(1.04)}
-.flip-btn svg{width:18px;height:18px;fill:#000}
-
-/* ── MULTIMETER READING ── */
-#reading{
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  background:rgba(0,8,4,.97);border:2px solid var(--g);border-radius:10px;
-  padding:20px 32px;text-align:center;display:none;z-index:30;
-  pointer-events:none;min-width:180px
-}
-#reading.show{display:block}
-.r-lbl{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:.18em;
-  color:rgba(255,255,255,.35);text-transform:uppercase;margin-bottom:9px}
-.r-val{font-family:'Share Tech Mono',monospace;font-size:54px;font-weight:700;color:var(--g);line-height:1}
-.r-unit{font-family:'Share Tech Mono',monospace;font-size:14px;color:rgba(255,255,255,.35);margin-top:5px}
-.r-std{font-size:10px;color:rgba(0,230,118,.5);margin-top:3px;letter-spacing:.08em}
-.r-explain{font-size:10px;color:rgba(255,255,255,.35);margin-top:5px;line-height:1.4}
-
-/* ── TOAST ── */
-#toast{
-  position:absolute;top:16px;left:50%;transform:translateX(-50%);
-  padding:7px 16px;border-radius:99px;font-size:12px;font-weight:500;
-  opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap
-}
-#toast.show{opacity:1}
-#toast.ok{background:rgba(34,197,94,.12);border:1px solid var(--g);color:#4ade80}
-#toast.err{background:rgba(239,68,68,.12);border:1px solid var(--r);color:#f87171}
-#toast.info{background:rgba(59,130,246,.12);border:1px solid var(--b);color:#60a5fa}
+.kc-close:hover{background:rgba(0,212,255,.22);}
 
 /* ── TUT RING ── */
 #ring,#rpulse{position:absolute;pointer-events:none;z-index:25;
-  width:62px;height:62px;border-radius:50%;transform:translate(-50%,-50%);display:none}
-#ring{border:2px solid var(--y)}
-#rpulse{border:1.5px solid rgba(0,212,255,.35);animation:rpop 1.4s ease-out infinite}
+  width:62px;height:62px;border-radius:50%;transform:translate(-50%,-50%);display:none;}
+#ring{border:2px solid var(--y);}
+#rpulse{border:1.5px solid rgba(0,212,255,.35);animation:rpop 1.4s ease-out infinite;}
 @keyframes rpop{0%{transform:translate(-50%,-50%) scale(1);opacity:.8}100%{transform:translate(-50%,-50%) scale(2.2);opacity:0}}
 #rlabel{position:absolute;z-index:26;pointer-events:none;
   background:rgba(0,0,0,.9);border:1px solid var(--y);color:var(--y);
   font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;
   letter-spacing:.12em;padding:2px 8px;border-radius:3px;
   transform:translateX(-50%);display:none;white-space:nowrap;
-  animation:bounce .8s ease-in-out infinite alternate}
+  animation:bounce .8s ease-in-out infinite alternate;}
 @keyframes bounce{from{transform:translateX(-50%) translateY(0)}to{transform:translateX(-50%) translateY(8px)}}
+
+/* ── MULTIMETER READING ── */
+#reading{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(0,8,4,.97);border:2px solid var(--g);border-radius:10px;
+  padding:20px 32px;text-align:center;display:none;z-index:30;
+  pointer-events:none;min-width:180px;
+}
+#reading.show{display:block;}
+.r-lbl{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:.18em;
+  color:rgba(255,255,255,.35);text-transform:uppercase;margin-bottom:9px;}
+.r-val{font-family:'Share Tech Mono',monospace;font-size:54px;font-weight:700;color:var(--g);line-height:1;}
+.r-unit{font-family:'Share Tech Mono',monospace;font-size:14px;color:rgba(255,255,255,.35);margin-top:5px;}
+.r-std{font-size:10px;color:rgba(0,230,118,.5);margin-top:3px;letter-spacing:.08em;}
+.r-explain{font-size:10px;color:rgba(255,255,255,.35);margin-top:5px;line-height:1.4;}
 
 /* ── SUCCESS ── */
 #success{position:absolute;inset:0;background:rgba(0,0,0,.84);
   display:none;align-items:center;justify-content:center;
-  flex-direction:column;gap:13px;pointer-events:auto}
-#success.show{display:flex}
-.s-big{display:flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:50%;background:rgba(34,197,94,.12);border:2px solid rgba(34,197,94,.4)}
-.s-sub{font-size:14px;color:rgba(255,255,255,.6)}
-.s-score{font-family:'Share Tech Mono',monospace;font-size:22px;color:var(--y)}
+  flex-direction:column;gap:13px;pointer-events:auto;}
+#success.show{display:flex;}
+.s-big{display:flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:50%;background:rgba(34,197,94,.12);border:2px solid rgba(34,197,94,.4);}
+.s-sub{font-size:14px;color:rgba(255,255,255,.6);}
+.s-score{font-family:'Share Tech Mono',monospace;font-size:22px;color:var(--y);}
 .s-recap{
   background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
   border-radius:8px;padding:12px 20px;max-width:360px;width:90%;
-  font-size:11.5px;color:rgba(255,255,255,.55);line-height:1.7;text-align:center
+  font-size:11.5px;color:rgba(255,255,255,.55);line-height:1.7;text-align:center;
 }
-.s-recap strong{color:#fff}
+.s-recap strong{color:#fff;}
 .s-btn{padding:11px 28px;border-radius:6px;background:var(--y);color:#000;
   font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;
-  letter-spacing:.06em;border:none;cursor:pointer;transition:transform .15s}
-.s-btn:hover{transform:scale(1.04)}
+  letter-spacing:.06em;border:none;cursor:pointer;transition:transform .15s;}
+.s-btn:hover{transform:scale(1.04);}
 
 /* ── LIGHT GLOW ── */
 #light-glow{position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(ellipse 55% 45% at 68% 30%,rgba(255,240,80,.16) 0%,transparent 70%);
-  opacity:0;transition:opacity 1.2s ease;z-index:5}
-#light-glow.on{opacity:1}
+  opacity:0;transition:opacity 1.2s ease;z-index:5;}
+#light-glow.on{opacity:1;}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="hud">
 
-  <div id="mission">
-    <div class="m-hdr">
-      <!-- Plug SVG -->
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M8 6v4M16 6v4M6 14h4M14 14h4"/><rect x="9" y="10" width="6" height="8" rx="1"/></svg>
+  <!-- ── TOP HEADER BAR ── -->
+  <div id="header-bar">
+    <div id="step-pills" onclick="toggleDrawer()">
+      <!-- injected by JS -->
+    </div>
+    <div id="step-label"><span>Turn OFF</span> the MCB</div>
+    <div id="progress-wrap">
+      <div class="pw-bar-bg"><div class="pw-bar" id="pw-bar"></div></div>
+      <div class="pw-pct"><span id="pw-pct">0</span>%</div>
+    </div>
+  </div>
+
+  <!-- ── MISSION DRAWER ── -->
+  <div id="mission-drawer">
+    <div class="md-title">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M8 6v4M16 6v4M6 14h4M14 14h4"/><rect x="9" y="10" width="6" height="8" rx="1"/></svg>
       Single-Pole Switch Install
+      <span style="margin-left:auto;font-size:10px;opacity:.5;font-weight:400">Steps: <span id="done-ct">0</span>/8</span>
     </div>
-    <div class="m-step active" id="s1"><div class="m-dot"></div>Turn OFF the MCB (circuit breaker)</div>
-    <div class="m-step" id="s2"><div class="m-dot"></div>Mount switch into Gang Box</div>
-    <div class="m-step" id="s3"><div class="m-dot"></div>Connect Line wire to switch</div>
-    <div class="m-step" id="s4"><div class="m-dot"></div>Connect Load wire to fixture</div>
-    <div class="m-step" id="s5"><div class="m-dot"></div>Tighten all connections</div>
-    <div class="m-step" id="s6"><div class="m-dot"></div>Turn ON the MCB</div>
-    <div class="m-step" id="s7"><div class="m-dot"></div>Flip the switch</div>
-    <div class="m-step" id="s8"><div class="m-dot"></div>Verify 220V AC — complete!</div>
-    <div class="m-footer">Steps: <span id="done-ct">0</span>/8 &nbsp;|&nbsp; PEC Vol.1 Art.3.10</div>
+    <div class="md-close" onclick="toggleDrawer()">✕</div>
+    <div class="md-grid">
+      <div class="md-task active" id="s1"><div class="md-dot"></div>Turn OFF the MCB</div>
+      <div class="md-task" id="s2"><div class="md-dot"></div>Mount switch into Gang Box</div>
+      <div class="md-task" id="s3"><div class="md-dot"></div>Connect Line wire to switch</div>
+      <div class="md-task" id="s4"><div class="md-dot"></div>Connect Load wire to fixture</div>
+      <div class="md-task" id="s5"><div class="md-dot"></div>Tighten all connections</div>
+      <div class="md-task" id="s6"><div class="md-dot"></div>Turn ON the MCB</div>
+      <div class="md-task" id="s7"><div class="md-dot"></div>Flip the switch</div>
+      <div class="md-task" id="s8"><div class="md-dot"></div>Verify 220V AC — complete!</div>
+    </div>
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);font-size:10px;color:rgba(255,255,255,.28);">PEC Vol.1 Art.3.10 &nbsp;|&nbsp; 220V / 60Hz / MERALCO</div>
   </div>
 
-  <div id="prog">
-    <div class="p-lbl">Progress</div>
-    <div class="p-track"><div class="p-fill" id="pfill"></div></div>
-    <div class="p-pct"><span id="ppct">0</span>%</div>
-  </div>
-
-  <div id="ph-badge">
-    <strong>PH STANDARD</strong>
-    220V / 60Hz AC<br>
-    PEC 2017 / OSHS<br>
-    MERALCO grid
-  </div>
-
-  <!-- PH Wire Color Legend — with explanations -->
-  <div id="wire-legend">
-    <div class="wl-title">PH Wire Colors (PEC 2017)</div>
-    <div class="wl-row">
-      <div class="wl-swatch" style="background:#ef4444"></div>
-      <div><div class="wl-name">Red = Line (Hot)</div><div class="wl-why">Carries current from source</div></div>
-    </div>
-    <div class="wl-row">
-      <div class="wl-swatch" style="background:#3b82f6"></div>
-      <div><div class="wl-name">Blue = Neutral</div><div class="wl-why">Return path to source</div></div>
-    </div>
-    <div class="wl-row">
-      <div class="wl-swatch" style="background:#22c55e"></div>
-      <div><div class="wl-name">Green = Load</div><div class="wl-why">Power output to fixture</div></div>
-    </div>
-    <div class="wl-row" style="margin-bottom:0">
-      <div class="wl-swatch" style="background:#22c55e"></div>
-      <div><div class="wl-name">Green = Ground/Earth</div><div class="wl-why">Safety — fault current escape</div></div>
-    </div>
-  </div>
-
-  <!-- Wire Connection Panel -->
+  <!-- ── WIRE CONNECTION PANEL ── -->
   <div id="wire-panel">
-    <div class="wp-title">Connect Wires — PH Standard (PEC 2017)</div>
-    <div class="wp-rule">Drag each wire label to its matching terminal slot on the right</div>
-    <!-- Line -->
+    <div class="wp-title">Connect Wires — PEC 2017</div>
     <div class="wire-row">
       <div class="wdrag" id="wd-line" style="background:#7f1d1d;border-color:#ef4444" draggable="true" ondragstart="wds(event,'line')">
-        <svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#ef4444"/></svg>
-        LINE (RED)
+        <svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#ef4444"/></svg>LINE (RED)
       </div>
       <div class="wline" style="background:#ef4444"></div>
       <div class="wterm-wrap">
@@ -338,11 +354,9 @@ canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0}
         <div class="wterm-label">Hot in</div>
       </div>
     </div>
-    <!-- Load -->
     <div class="wire-row">
       <div class="wdrag" id="wd-load" style="background:#14532d;border-color:#22c55e" draggable="true" ondragstart="wds(event,'load')">
-        <svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#22c55e"/></svg>
-        LOAD (GRN)
+        <svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#22c55e"/></svg>LOAD (GRN)
       </div>
       <div class="wline" style="background:#22c55e"></div>
       <div class="wterm-wrap">
@@ -350,11 +364,9 @@ canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0}
         <div class="wterm-label">To fixture</div>
       </div>
     </div>
-    <!-- Neutral -->
     <div class="wire-row">
       <div class="wdrag" id="wd-neutral" style="background:#1e3a5f;border-color:#3b82f6" draggable="true" ondragstart="wds(event,'neutral')">
-        <svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#3b82f6"/></svg>
-        NEUTRAL (BLU)
+        <svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#3b82f6"/></svg>NEUTRAL (BLU)
       </div>
       <div class="wline" style="background:#3b82f6"></div>
       <div class="wterm-wrap">
@@ -362,11 +374,9 @@ canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0}
         <div class="wterm-label">Return</div>
       </div>
     </div>
-    <!-- Ground -->
     <div class="wire-row" style="margin-bottom:0">
       <div class="wdrag" id="wd-ground" style="background:#14532d;border-color:#22c55e" draggable="true" ondragstart="wds(event,'ground')">
-        <svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#22c55e"/></svg>
-        GROUND (GRN)
+        <svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#22c55e"/></svg>GROUND (GRN)
       </div>
       <div class="wline" style="background:#22c55e"></div>
       <div class="wterm-wrap">
@@ -378,49 +388,45 @@ canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0}
 
   <!-- FLIP UI -->
   <div id="flip-ui">
-    <div class="flip-lbl">Switch is installed — test it</div>
+    <div class="flip-lbl">Switch installed — test it</div>
     <button class="flip-btn" onclick="doFlip()">
-      <!-- Toggle switch SVG -->
       <svg viewBox="0 0 24 24"><rect x="2" y="8" width="20" height="8" rx="4"/><circle cx="16" cy="12" r="3" fill="#000" opacity=".5"/></svg>
       FLIP SWITCH
     </button>
   </div>
 
-  <!-- TOOLBAR — SVG icons, no emoji -->
+  <!-- TOOLBAR -->
   <div id="toolbar">
-    <!-- Screwdriver -->
-    <div class="tool off" id="tool-screwdriver" onclick="selTool('screwdriver')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21l5-5 11-11-2-2L6 14l-3 7z"/><path d="M15 5l4 4"/></svg>
-      <div class="tool-n">SCREW</div>
-      <div class="tool-tip"><strong>Screwdriver</strong>Used to tighten terminal screws and secure wire connections inside the switch and gang box.</div>
+    <div class="tool-slot off" id="tool-screwdriver" onclick="selTool('screwdriver')">
+      <svg viewBox="0 0 24 24"><path d="M3 21l5-5 11-11-2-2L6 14l-3 7z"/><path d="M15 5l4 4"/></svg>
+      <div class="tool-name">SCREW</div>
     </div>
-    <!-- Pliers -->
-    <div class="tool off" id="tool-pliers" onclick="selTool('pliers')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4l6 6M20 4l-6 6M10 10l4 4M14 14l2 6M10 10l-2 6"/></svg>
-      <div class="tool-n">PLIERS</div>
-      <div class="tool-tip"><strong>Linesman Pliers</strong>Used to strip wire insulation and bend wire ends into loops before connecting to terminals.</div>
+    <div class="tool-slot off" id="tool-pliers" onclick="selTool('pliers')">
+      <svg viewBox="0 0 24 24"><path d="M4 4l6 6M20 4l-6 6M10 10l4 4M14 14l2 6M10 10l-2 6"/></svg>
+      <div class="tool-name">PLIERS</div>
     </div>
-    <!-- Mounting bracket -->
-    <div class="tool off" id="tool-mount" onclick="selTool('mount')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="6" width="16" height="12" rx="1"/><line x1="8" y1="6" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="18"/><circle cx="6" cy="9" r="1"/><circle cx="6" cy="15" r="1"/><circle cx="18" cy="9" r="1"/><circle cx="18" cy="15" r="1"/></svg>
-      <div class="tool-n">MOUNT</div>
-      <div class="tool-tip"><strong>Mounting Tool</strong>Used to fasten the switch plate into the gang box using the four corner screws. Gang box is the plastic box in the wall.</div>
+    <div class="tool-slot off" id="tool-mount" onclick="selTool('mount')">
+      <svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="1"/><line x1="8" y1="6" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="18"/><circle cx="6" cy="9" r="1"/><circle cx="6" cy="15" r="1"/><circle cx="18" cy="9" r="1"/><circle cx="18" cy="15" r="1"/></svg>
+      <div class="tool-name">MOUNT</div>
     </div>
-    <!-- Multimeter -->
-    <div class="tool off" id="tool-multimeter" onclick="selTool('multimeter')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 11h4M12 14v4"/><circle cx="12" cy="16" r="1.5" stroke="none" fill="currentColor"/></svg>
-      <div class="tool-n">METER</div>
-      <div class="tool-tip"><strong>Digital Multimeter</strong>Measures voltage in the circuit. PH standard is 220V AC / 60Hz. Always test AFTER turning breaker ON to confirm proper wiring.</div>
+    <div class="tool-slot off" id="tool-multimeter" onclick="selTool('multimeter')">
+      <svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 11h4M12 14v4"/><circle cx="12" cy="16" r="1.5" stroke="none" fill="currentColor"/></svg>
+      <div class="tool-name">METER</div>
     </div>
   </div>
 
+  <!-- INSTRUCTION STRIP -->
   <div id="instr"></div>
+
+  <!-- TOAST -->
   <div id="toast"></div>
+
+  <!-- TUT RING -->
   <div id="ring"></div>
   <div id="rpulse"></div>
   <div id="rlabel">TAP HERE</div>
 
-  <!-- Knowledge Card — zero-knowledge teaching popup -->
+  <!-- KNOWLEDGE CARD -->
   <div id="knowledge-card">
     <div class="kc-badge" id="kc-badge"></div>
     <div class="kc-title" id="kc-title"></div>
@@ -429,7 +435,7 @@ canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0}
     <button class="kc-close" onclick="closeKnowledge()">GOT IT — CONTINUE</button>
   </div>
 
-  <!-- Multimeter reading -->
+  <!-- MULTIMETER READING -->
   <div id="reading">
     <div class="r-lbl">Voltage Reading</div>
     <div class="r-val" id="rval">---</div>
@@ -438,6 +444,7 @@ canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0}
     <div class="r-explain">60Hz frequency — MERALCO grid</div>
   </div>
 
+  <!-- SUCCESS -->
   <div id="success">
     <div class="s-big"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
     <div class="s-sub">Single-pole switch installed per PEC 2017.</div>
@@ -450,6 +457,28 @@ canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+// ── STEP PILLS SETUP ──────────────────────────────────────────────────────────
+const stepNames = [
+  'Turn OFF MCB','Mount Switch','Connect Line','Connect Load',
+  'Tighten','Turn ON MCB','Flip Switch','Verify 220V'
+];
+const pillsEl = document.getElementById('step-pills');
+stepNames.forEach((_, i) => {
+  const p = document.createElement('div');
+  p.className = 'step-pill' + (i === 0 ? ' active' : '');
+  p.id = 'pill-' + (i + 1);
+  p.innerHTML = `<span class="pnum">${i + 1}</span>`;
+  p.title = stepNames[i];
+  pillsEl.appendChild(p);
+});
+
+function toggleDrawer(){
+  document.getElementById('mission-drawer').classList.toggle('open');
+}
+document.getElementById('c').addEventListener('click', () => {
+  document.getElementById('mission-drawer').classList.remove('open');
+});
+
 // ── KNOWLEDGE CARD DATA ───────────────────────────────────────────────────────
 const KNOWLEDGE = {
   breaker:{
@@ -564,10 +593,7 @@ const mcbLED=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.07,12),mcbLEDM
 mcbLED.rotation.x=Math.PI/2;mcbLED.position.set(BX+.36,BY+.72,BZ+.39);mcbRoot.add(mcbLED);
 const emtBot=cyl(.1,.1,.8,12,0x60656e,.45,.55);emtBot.position.set(BX,BY-1.5,BZ+.18);mcbRoot.add(emtBot);
 const emtTop=cyl(.1,.1,.5,12,0x60656e,.45,.55);emtTop.position.set(BX,BY+1.5,BZ+.18);mcbRoot.add(emtTop);
-
-// Rating plate
 const ratingBox=box(.88,.12,.04,0xf0f0f0,.8,0);ratingBox.position.set(BX,BY-.56,BZ+.39);mcbRoot.add(ratingBox);
-// "20A" rating pill
 const ratPill=box(.45,.08,.025,0x333333,.9,0);ratPill.position.set(BX,BY-.56,BZ+.41);mcbRoot.add(ratPill);
 
 // ── GANG BOX ──────────────────────────────────────────────────────────────────
@@ -669,13 +695,16 @@ function updTut(){
   const v=wp.clone().project(cam);
   if(v.z>1){tgtRing.style.display='none';tgtPulse.style.display='none';tgtLabel.style.display='none';return}
   const sx=(v.x+1)/2*innerWidth,sy=(-v.y+1)/2*innerHeight;
-  [tgtRing,tgtPulse].forEach(el=>{el.style.display='block';el.style.left=sx+'px';el.style.top=sy+'px'});
-  tgtLabel.style.display='block';tgtLabel.style.left=sx+'px';tgtLabel.style.top=(sy+44)+'px';
+  const safeTop=56,safeBot=76;
+  const clampedY=Math.max(safeTop+36,Math.min(innerHeight-safeBot-36,sy));
+  [tgtRing,tgtPulse].forEach(el=>{el.style.display='block';el.style.left=sx+'px';el.style.top=clampedY+'px'});
+  tgtLabel.style.display='block';tgtLabel.style.left=sx+'px';tgtLabel.style.top=(clampedY+44)+'px';
 }
 
 // ── CLICK ─────────────────────────────────────────────────────────────────────
 cv.addEventListener('click',e=>{
   if(state==='animating'||state==='done')return;
+  document.getElementById('mission-drawer').classList.remove('open');
   mouse.x=(e.clientX/innerWidth)*2-1;
   mouse.y=-(e.clientY/innerHeight)*2+1;
   ray.setFromCamera(mouse,cam);
@@ -694,7 +723,7 @@ cv.addEventListener('click',e=>{
   }
   else if(state==='test'){
     if(activeTool!=='multimeter'){toast('Select the Multimeter from the toolbar first','err');return}
-    if(ray.intersectObjects([bulbGlass,swRocker],false).length)doTest();
+    if(ray.intersectObjects([bulbGlass,filament,socket,bulbNeck,rosette,swRocker],false).length)doTest();
     else toast('Tap the light bulb or switch to measure voltage','err');
   }
 });
@@ -705,7 +734,7 @@ cv.addEventListener('mousemove',e=>{
   let cur='default';
   if((state==='breaker_off'||state==='breaker_on')&&ray.intersectObject(mcbHandle,false).length)cur='pointer';
   else if(state==='mount'&&ray.intersectObjects([gbFlange,gangBox],false).length)cur='pointer';
-  else if(state==='test'&&ray.intersectObjects([bulbGlass,swRocker],false).length)cur='pointer';
+  else if(state==='test'&&ray.intersectObjects([bulbGlass,filament,socket,bulbNeck,rosette,swRocker],false).length)cur='pointer';
   cv.style.cursor=cur;
 });
 
@@ -720,11 +749,10 @@ function doBreaker(goOff){
 }
 function afterBreakerOff(){
   complStep(1,12);
-  // Teach about gang box before mounting
   setTimeout(()=>{
     showKnowledge('gangbox',()=>{
       toast('MCB OFF ✓ — Now mount the switch into the Gang Box','ok');
-      setInstr(`<span class="num">STEP 2</span>Select <span class="hi">Mount Tool</span> in the toolbar below, then click the <span class="hi">Gang Box</span> on the wall<span class="why">The gang box holds and protects all wire connections</span>`);
+      setInstr(`<span class="num">2</span>Select <span class="hi">Mount Tool</span> then click the <span class="hi">Gang Box</span><span class="why">The gang box holds and protects all wire connections</span>`);
       enableTool('mount');selTool('mount');
       setTut(gbFlange,'TAP BOX');
       animCam(new THREE.Vector3(0,.4,7.2),new THREE.Vector3(0,0,0),800,()=>{state='mount'});
@@ -739,11 +767,10 @@ function doMount(){
 }
 function afterMount(){
   complStep(2,24);
-  // Teach about wire colors before connecting
   showKnowledge('wires',()=>{
     toast('Switch mounted ✓ — Now connect the 4 wires','ok');
     buildSwitchWires3D();
-    setInstr(`<span class="num">STEP 3 & 4</span>Drag each <span class="hi">wire</span> to its correct terminal slot<span class="why">Match wire color to terminal label — wrong connections are dangerous</span>`);
+    setInstr(`<span class="num">3&4</span>Drag each <span class="hi">wire</span> to its matching terminal<span class="why">Match wire color to terminal label — wrong connections are dangerous</span>`);
     document.getElementById('wire-panel').style.display='block';
     document.getElementById('instr').style.display='none';
     conduitGrp.visible=true;
@@ -766,10 +793,15 @@ function addSw3D(name,pts,col){
 
 function afterAllWires(){
   complStep(3,36);complStep(4,50);
+  // Hide wire panel with a quick fade-out
+  const wp=document.getElementById('wire-panel');
+  wp.style.transition='opacity .5s ease';
+  wp.style.opacity='0';
+  setTimeout(()=>{wp.style.display='none';wp.style.opacity='';wp.style.transition='';},500);
   setTimeout(()=>{
     complStep(5,62);
     toast('All connections secure ✓ — Now restore power','ok');
-    setInstr(`<span class="num">STEP 6</span>Go back to the <span class="hi">MCB panel</span> and turn it <span class="hi">ON</span><span class="why">Power must be OFF while wiring, and only turned ON to test</span>`);
+    setInstr(`<span class="num">6</span>Go back to the <span class="hi">MCB panel</span> and turn it <span class="hi">ON</span><span class="why">Power must be OFF while wiring, then ON to test</span>`);
     document.getElementById('instr').style.display='block';
     setTut(mcbHandle,'TAP MCB');
     state='breaker_on';
@@ -779,12 +811,12 @@ function afterAllWires(){
 function afterBreakerOn(){
   complStep(6,75);
   toast('Power ON ✓ — 220V AC live. Flip the switch!','ok');
-  setInstr(`<span class="num">STEP 7</span>Tap the <span class="hi">FLIP SWITCH</span> button to test the circuit<span class="why">A working switch will complete/break the circuit and turn the light on/off</span>`);
+  document.getElementById('instr').style.display='none';
   clrTut();
   document.getElementById('flip-ui').style.display='flex';
-  document.getElementById('instr').style.display='block';
   state='flip';
-  animCam(new THREE.Vector3(1.4,.5,5.8),new THREE.Vector3(.5,.1,0),800,()=>{});
+  // Wide shot showing switch (center) AND ceiling light (top-right) together
+  animCam(new THREE.Vector3(1.5,1.5,10),new THREE.Vector3(1.8,1.0,0),900,()=>{});
 }
 function doFlip(){
   switchFlipped=!switchFlipped;
@@ -796,13 +828,15 @@ function doFlip(){
       complStep(7,88);
       setTimeout(()=>{
         complStep(8,100);
-        toast('Light confirmed working ✓','ok');
+        toast('Light confirmed working ✓ — now test voltage','ok');
         document.getElementById('flip-ui').style.display='none';
         state='test';
-        setInstr(`<span class="num">STEP 8</span>Select <span class="hi">Multimeter</span> in toolbar, then tap the <span class="hi">circuit</span> to verify 220V AC<span class="why">Always verify voltage after installation to confirm correct wiring</span>`);
+        setInstr(`<span class="num">8</span>Select <span class="hi">Multimeter</span> then tap the <span class="hi">light bulb</span> to verify 220V<span class="why">Always verify voltage after installation</span>`);
+        document.getElementById('instr').style.display='block';
         enableTool('multimeter');selTool('multimeter');
         setTut(bulbGlass,'TEST BULB');
-        animCam(new THREE.Vector3(2,2,5.5),new THREE.Vector3(1.8,1.8,0),900,()=>{});
+        // Zoom camera to the ceiling light so it's easy to click
+        animCam(new THREE.Vector3(3.2,2.8,5.5),new THREE.Vector3(3.2,1.8,0),900,()=>{});
       },1400);
     }
   },280);
@@ -825,7 +859,7 @@ function doTest(){
         setTimeout(()=>{
           const score=700+Math.floor(timerVal*1.8);
           document.getElementById('sscore').textContent='Score: '+score+' pts';
-          document.getElementById('s-recap').innerHTML=`<strong>What you did:</strong><br>1. De-energized the MCB (safety first!)<br>2. Mounted switch to gang box<br>3. Connected Line → Switch → Load → Fixture<br>4. Re-energized and verified 220V AC / 60Hz<br><br>This is a proper <strong>PEC 2017</strong> single-pole switch installation.`;
+          document.getElementById('s-recap').innerHTML=`<strong>What you did:</strong><br>1. De-energized the MCB<br>2. Mounted switch to gang box<br>3. Connected Line → Switch → Load → Fixture<br>4. Re-energized and verified 220V AC / 60Hz<br><br><strong>PEC 2017</strong> single-pole switch installation.`;
           document.getElementById('success').classList.add('show');
           if(window.parent!==window) window.parent.postMessage({type:'complete'},'*');
         },1100);
@@ -849,14 +883,14 @@ function wdp(e,termName){
   else{
     document.getElementById('wt-'+termName).classList.add('no');
     setTimeout(()=>document.getElementById('wt-'+termName).classList.remove('no'),350);
-    toast('Wrong terminal! Check the wire colors — Red=Line, Blue=Neutral, Green=Load/Ground','err');
+    toast('Wrong terminal! Red=Line, Blue=Neutral, Green=Load/Ground','err');
   }
 }
 const labelMap={
-  line:'Red (Line) → Switch Input ✓ — hot wire now at switch',
-  load:'Green (Load) → Fixture ✓ — switched power to bulb',
-  neutral:'Blue (Neutral) → Neutral bar ✓ — return path complete',
-  ground:'Green (Ground) → Earth bar ✓ — safety connection made'
+  line:'Red (Line) → Switch Input ✓',
+  load:'Green (Load) → Fixture ✓',
+  neutral:'Blue (Neutral) → Neutral bar ✓',
+  ground:'Green (Ground) → Earth bar ✓'
 };
 const pctMap={line:36,load:44,neutral:50,ground:56};
 function connectWire(name){
@@ -875,12 +909,32 @@ function connectWire(name){
 // ── PROGRESS ─────────────────────────────────────────────────────────────────
 function complStep(n,pct){
   doneCount++;
-  const el=document.getElementById('s'+n);if(el){el.classList.remove('active');el.classList.add('done')}
-  const nx=document.getElementById('s'+(n+1));if(nx)nx.classList.add('active');
-  document.getElementById('done-ct').textContent=doneCount;setPct(pct);
+  const el=document.getElementById('s'+n);
+  if(el){el.classList.remove('active');el.classList.add('done');}
+  const nx=document.getElementById('s'+(n+1));
+  if(nx)nx.classList.add('active');
+  // Update pills
+  const pill=document.getElementById('pill-'+n);
+  if(pill){pill.classList.remove('active');pill.classList.add('done');}
+  const npill=document.getElementById('pill-'+(n+1));
+  if(npill)npill.classList.add('active');
+  // Update header label
+  if(n+1<=stepNames.length){
+    document.getElementById('step-label').innerHTML=
+      `<span>Step ${n+1}</span> ${stepNames[n]}`;
+  }
+  document.getElementById('done-ct').textContent=doneCount;
+  setPct(pct);
 }
-function setPct(p){document.getElementById('pfill').style.width=p+'%';document.getElementById('ppct').textContent=p;}
-function selTool(t){activeTool=t;document.querySelectorAll('.tool').forEach(el=>el.classList.remove('on'));const s=document.getElementById('tool-'+t);if(s)s.classList.add('on');}
+function setPct(p){
+  document.getElementById('pw-bar').style.width=p+'%';
+  document.getElementById('pw-pct').textContent=p;
+}
+function selTool(t){
+  activeTool=t;
+  document.querySelectorAll('.tool-slot').forEach(el=>el.classList.remove('on'));
+  const s=document.getElementById('tool-'+t);if(s)s.classList.add('on');
+}
 function enableTool(t){const s=document.getElementById('tool-'+t);if(s)s.classList.remove('off');}
 function setInstr(html){const el=document.getElementById('instr');el.style.display='block';el.innerHTML=html;}
 let toastTmr;
@@ -890,10 +944,7 @@ function toast(msg,type){
   clearTimeout(toastTmr);toastTmr=setTimeout(()=>el.classList.remove('show'),3200);
 }
 
-// Timer
-setInterval(()=>{
-  if(!timerOn)return;timerVal=Math.max(0,timerVal-1);
-},1000);
+setInterval(()=>{if(!timerOn)return;timerVal=Math.max(0,timerVal-1);},1000);
 
 // ── MAIN LOOP ─────────────────────────────────────────────────────────────────
 function animate(){
@@ -924,6 +975,12 @@ function resetAll(){
   setLightState(false);conduitGrp.visible=false;
   Object.values(sw3DWires).forEach(w=>sc.remove(w));Object.keys(sw3DWires).forEach(k=>delete sw3DWires[k]);
   setPct(0);document.getElementById('done-ct').textContent='0';
+  // Reset pills
+  document.querySelectorAll('.step-pill').forEach((p,i)=>{
+    p.className='step-pill'+(i===0?' active':'');
+    p.innerHTML=`<span class="pnum">${i+1}</span>`;
+  });
+  document.getElementById('step-label').innerHTML=`<span>Turn OFF</span> the MCB`;
   for(let i=1;i<=8;i++){const el=document.getElementById('s'+i);el.classList.remove('done','active');if(i===1)el.classList.add('active');}
   ['line','load','neutral','ground'].forEach(n=>{
     document.getElementById('wd-'+n).classList.remove('used');
@@ -933,16 +990,15 @@ function resetAll(){
     t.style.background='';t.style.color=col;t.style.borderStyle='dashed';t.textContent=lbl;
   });
   ['screwdriver','pliers','mount','multimeter'].forEach(t=>{const s=document.getElementById('tool-'+t);s.classList.add('off');s.classList.remove('on');});
-  setInstr(`<span class="num">STEP 1</span>Find the <span class="hi">MCB (Circuit Breaker)</span> panel on the left wall — tap it to turn it <span class="hi">OFF</span><span class="why">Always de-energize first! 220V AC can be lethal</span>`);
-  // Show MCB knowledge on first play
+  setInstr(`<span class="num">1</span>Find the <span class="hi">MCB (Circuit Breaker)</span> on the left — tap to turn <span class="hi">OFF</span><span class="why">Always de-energize first! 220V AC can be lethal</span>`);
   showKnowledge('breaker',()=>{setTut(mcbHandle,'TAP HERE');});
   animCam(new THREE.Vector3(0,.6,9),new THREE.Vector3(0,0,0),800,()=>{});
 }
 window.addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();rnd.setSize(innerWidth,innerHeight);});
 
-// Auto-start with first knowledge card
+// Auto-start
 showKnowledge('breaker',()=>{
-  setInstr(`<span class="num">STEP 1</span>Find the <span class="hi">MCB (Circuit Breaker)</span> panel on the left wall — tap it to turn it <span class="hi">OFF</span><span class="why">Always de-energize first! 220V AC can be lethal</span>`);
+  setInstr(`<span class="num">1</span>Find the <span class="hi">MCB (Circuit Breaker)</span> on the left — tap to turn <span class="hi">OFF</span><span class="why">Always de-energize first! 220V AC can be lethal</span>`);
   setTut(mcbHandle,'TAP HERE');
 });
 </script>

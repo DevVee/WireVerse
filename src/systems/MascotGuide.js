@@ -237,6 +237,7 @@ export class MascotGuide {
     el.innerHTML = `
       <div class="mg-card">
         <div class="mg-card-left">
+          <div class="mg-volt-badge">⚡ Volt — Your Guide</div>
           <div class="mg-step-counter"></div>
           <div class="mg-step-title"></div>
           <div class="mg-step-text"></div>

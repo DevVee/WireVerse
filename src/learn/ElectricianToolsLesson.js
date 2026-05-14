@@ -166,11 +166,11 @@ const CSS = `
 
 /* ── TOP BAR ────────────────────────────────────────────── */
 .etl-top{
-  height:50px;flex-shrink:0;
+  height:calc(50px + env(safe-area-inset-top));flex-shrink:0;
   background:linear-gradient(180deg,rgba(2,5,14,.98) 0%,rgba(4,8,20,.9) 100%);
   border-bottom:1px solid rgba(0,212,255,.14);
   box-shadow:0 2px 16px rgba(0,0,0,.6);
-  display:flex;align-items:center;padding:0 12px;gap:8px;
+  display:flex;align-items:flex-end;padding:env(safe-area-inset-top) 12px 10px;gap:8px;
   z-index:5;
 }
 .etl-back{
@@ -194,16 +194,15 @@ const CSS = `
   padding:4px 9px;border-radius:6px;
 }
 
+/* ── MAIN SPLIT LAYOUT ───────────────────────────────────── */
+.etl-main{flex:1;display:flex;flex-direction:row;min-height:0;overflow:hidden;}
+
 /* ── 3D SCENE ────────────────────────────────────────────── */
 .etl-scene{
-  height:42vh;min-height:190px;max-height:300px;
-  position:relative;flex-shrink:0;background:#060a14;overflow:hidden;
-  transition:height .25s ease,min-height .25s ease;
+  flex:1;
+  position:relative;background:#060a14;overflow:hidden;
 }
 .etl-canvas{display:block;width:100%;height:100%;}
-
-/* Quiz mode: collapse 3D scene, give full height to quiz panel */
-.etl--quiz .etl-scene{height:0;min-height:0;max-height:0;overflow:hidden;}
 
 /* Scene vignette overlay for depth */
 .etl-scene::after{
@@ -226,13 +225,15 @@ const CSS = `
 .etl-tool-overlay.show{opacity:1;}
 
 /* ── DIALOG PANEL ────────────────────────────────────────── */
+@keyframes etlDialogIn{from{opacity:0;transform:translateX(-12px);}to{opacity:1;transform:translateX(0);}}
 .etl-dialog{
+  width:38%;flex-shrink:0;
   background:linear-gradient(180deg,rgba(4,8,20,.98) 0%,rgba(6,10,24,.98) 100%);
-  border-top:1px solid rgba(0,212,255,.14);
-  padding:14px 16px 16px;
-  display:flex;flex-direction:column;gap:10px;
-  flex:1;overflow-y:auto;min-height:0;
-  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+  border-right:1px solid rgba(0,212,255,.14);
+  padding:12px 14px;
+  display:flex;flex-direction:column;gap:8px;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+  animation:etlDialogIn .32s cubic-bezier(.25,.46,.45,.94) both;
 }
 .etl-dialog::-webkit-scrollbar{display:none;}
 
@@ -304,29 +305,37 @@ const CSS = `
 .etl-quiz-pip.active{background:#00d4ff;box-shadow:0 0 8px #00d4ff;}
 
 /* ── RICH TOOL PANEL ─────────────────────────────────────── */
-.etl-rich{display:grid;grid-template-columns:1fr 1fr 120px;gap:10px;padding:10px 14px 0;}
-.etl-rich-col{display:flex;flex-direction:column;gap:7px;}
-.etl-rich-hd{font-size:9px;font-weight:800;letter-spacing:2.5px;color:#00d4ff;display:flex;align-items:center;gap:5px;flex-shrink:0;}
-.etl-rich-hd-icon{width:16px;height:16px;border-radius:50%;border:1.5px solid rgba(0,212,255,.6);display:flex;align-items:center;justify-content:center;font-size:8px;flex-shrink:0;}
-.etl-about-text{font-size:11.5px;color:rgba(255,255,255,.72);line-height:1.58;flex:1;}
-.etl-feat-row{display:flex;flex-direction:column;gap:5px;margin-top:auto;}
-.etl-feat-item{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:7px;padding:5px 8px;}
-.etl-feat-icon{font-size:13px;flex-shrink:0;width:20px;text-align:center;}
-.etl-feat-label{font-size:10px;font-weight:700;color:rgba(255,255,255,.55);letter-spacing:.3px;}
-.etl-howto-steps{display:flex;flex-direction:column;gap:6px;}
-.etl-step{display:flex;align-items:flex-start;gap:7px;}
-.etl-step-num{width:19px;height:19px;border-radius:6px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#00d4ff;flex-shrink:0;margin-top:1px;}
-.etl-step-text{font-size:11px;color:rgba(255,255,255,.68);line-height:1.52;}
-.etl-tip-box{background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.15);border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:5px;}
-.etl-tip-head{font-size:9px;font-weight:800;letter-spacing:2px;color:#00d4ff;display:flex;align-items:center;gap:4px;flex-shrink:0;}
-.etl-tip-text{font-size:10.5px;color:rgba(255,255,255,.55);line-height:1.55;}
+.etl-rich{display:flex;flex-direction:column;gap:6px;flex:1;overflow:hidden;}
+.etl-rich-col{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+.etl-rich-hd{font-size:8px;font-weight:800;letter-spacing:2px;color:#00d4ff;display:flex;align-items:center;gap:4px;}
+.etl-rich-hd-icon{width:13px;height:13px;border-radius:50%;border:1.5px solid rgba(0,212,255,.6);display:flex;align-items:center;justify-content:center;font-size:7px;flex-shrink:0;}
+.etl-about-text{font-size:11px;color:rgba(255,255,255,.75);line-height:1.45;}
+.etl-feat-row{display:flex;flex-wrap:wrap;gap:3px;}
+.etl-feat-item{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:5px;padding:3px 6px;}
+.etl-feat-icon{font-size:10px;flex-shrink:0;}
+.etl-feat-label{font-size:9px;font-weight:700;color:rgba(255,255,255,.55);}
+.etl-howto-steps{display:flex;flex-direction:column;gap:3px;}
+.etl-step{display:flex;align-items:flex-start;gap:5px;}
+.etl-step-num{width:14px;height:14px;border-radius:4px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#00d4ff;flex-shrink:0;margin-top:1px;}
+.etl-step-text{font-size:10px;color:rgba(255,255,255,.68);line-height:1.4;}
+.etl-tip-box{background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:7px;padding:5px 8px;flex-shrink:0;}
+.etl-tip-head{font-size:8px;font-weight:800;letter-spacing:1.5px;color:#00d4ff;margin-bottom:2px;}
+.etl-tip-text{font-size:10px;color:rgba(255,255,255,.55);line-height:1.4;}
 
-/* ── NAV BAR (PREV / NEXT) ───────────────────────────────── */
-.etl-nav{display:flex;align-items:center;justify-content:space-between;padding:8px 14px 10px;border-top:1px solid rgba(0,212,255,.08);flex-shrink:0;gap:6px;margin-top:auto;}
-.etl-nav-lesson{display:flex;align-items:center;gap:5px;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:7px 11px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:rgba(0,212,255,.65);cursor:pointer;-webkit-tap-highlight-color:transparent;}
-.etl-nav-prev{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 14px;font-size:11px;font-weight:700;color:rgba(255,255,255,.45);cursor:pointer;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;-webkit-tap-highlight-color:transparent;transition:all .15s;touch-action:manipulation;}
+/* ── BOTTOM NAV BAR ─────────────────────────────────────── */
+.etl-bottom{
+  height:calc(62px + env(safe-area-inset-bottom));flex-shrink:0;
+  background:rgba(4,8,18,.98);border-top:1px solid rgba(0,212,255,.1);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px env(safe-area-inset-bottom);gap:10px;
+}
+.etl-dots{display:flex;gap:4px;align-items:center;flex:1;justify-content:center;overflow:hidden;}
+.etl-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.1);transition:all .3s;flex-shrink:0;}
+.etl-dot.done{background:#2dc653;}
+.etl-dot.active{background:#00d4ff;width:14px;border-radius:3px;}
+.etl-nav-prev{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:0 18px;height:44px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.6);cursor:pointer;min-width:72px;-webkit-tap-highlight-color:transparent;transition:transform .1s;touch-action:manipulation;}
 .etl-nav-prev:active{transform:scale(.93);}
-.etl-nav-next{background:linear-gradient(135deg,#00d4ff,#2dc653);border:none;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:900;color:#000;cursor:pointer;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;box-shadow:0 0 12px rgba(0,212,255,.2);transition:all .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.etl-nav-next{background:linear-gradient(135deg,#00d4ff,#2dc653);border:none;border-radius:10px;padding:0 18px;height:44px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;color:#000;cursor:pointer;min-width:96px;letter-spacing:1px;box-shadow:0 0 12px rgba(0,212,255,.2);transition:transform .1s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 .etl-nav-next:active{transform:scale(.93);}
 `;
 
@@ -367,11 +376,14 @@ export class ElectricianToolsLesson {
           <span class="etl-chlbl" id="etl-chlbl">TOOLS</span>
           <span class="etl-prog" id="etl-prog"></span>
         </header>
-        <div class="etl-scene" id="etl-scene">
-          <canvas id="etl-canvas" class="etl-canvas"></canvas>
-          <div class="etl-tool-overlay" id="etl-tool-overlay"></div>
+        <div class="etl-main">
+          <div class="etl-dialog" id="etl-dialog"></div>
+          <div class="etl-scene" id="etl-scene">
+            <canvas id="etl-canvas" class="etl-canvas"></canvas>
+            <div class="etl-tool-overlay" id="etl-tool-overlay"></div>
+          </div>
         </div>
-        <div class="etl-dialog" id="etl-dialog"></div>
+        <div class="etl-bottom" id="etl-bottom"></div>
       </div>`;
     const backBtn = el.querySelector('.etl-back');
     const goBack = () => this.state.setState('stagesHub');
@@ -1115,6 +1127,7 @@ export class ElectricianToolsLesson {
     this._el.querySelector('.etl').classList.toggle('etl--quiz', step.t === 'quiz');
     this._applyScene(step.scene, step);
     this._renderDialog(step);
+    this._renderNav(step);
   }
 
   _renderDialog(step) {
@@ -1126,9 +1139,7 @@ export class ElectricianToolsLesson {
           <div class="etl-chap-num">CHAPTER ${step.ch}</div>
           <div class="etl-chap-title">${step.title}</div>
           <div class="etl-chap-body">${step.text}</div>
-        </div>
-        <button class="etl-dlg-btn" id="etl-btn">NEXT →</button>`;
-      dlg.querySelector('#etl-btn').addEventListener('click', () => this._onNext());
+        </div>`;
       return;
     }
 
@@ -1159,9 +1170,7 @@ export class ElectricianToolsLesson {
       dlg.innerHTML = `
         <div class="etl-dlg-title">${step.title}</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:${scoreColor};letter-spacing:2px;">QUIZ: ${this._quizScore}/${QUIZ.length} CORRECT</div>
-        <div class="etl-dlg-body">${step.text}</div>
-        <button class="etl-dlg-btn" id="etl-btn" style="background:linear-gradient(135deg,#2dc653,#00d4ff)">${step.btn}</button>`;
-      dlg.querySelector('#etl-btn').addEventListener('click', () => this._onNext());
+        <div class="etl-dlg-body">${step.text}</div>`;
       return;
     }
 
@@ -1191,30 +1200,40 @@ export class ElectricianToolsLesson {
             <div class="etl-tip-head">💡 TIP</div>
             <div class="etl-tip-text">${step.tip}</div>
           </div>
-        </div>
-        <div class="etl-nav">
-          <button class="etl-nav-lesson">📖 OVERVIEW</button>
-          <div style="display:flex;gap:7px;">
-            <button class="etl-nav-prev" id="etl-prev">← PREV</button>
-            <button class="etl-nav-next" id="etl-next">NEXT →</button>
-          </div>
         </div>`;
-      dlg.querySelector('#etl-prev').addEventListener('click', () => this._onPrev());
-      dlg.querySelector('#etl-next').addEventListener('click', () => this._onNext());
-      dlg.querySelector('.etl-nav-lesson').addEventListener('click', () => this._gotoStep(0));
       return;
     }
 
-    // info / qintro / chap fallback
+    // info / qintro / intro fallback
     dlg.innerHTML = `
       ${step.title ? `<div class="etl-dlg-title">${step.title}</div>` : ''}
-      <div class="etl-dlg-body">${step.text ?? ''}</div>
-      <div class="etl-nav" style="border-top:none;padding:0;margin-top:auto;">
-        ${this._step > 0 ? `<button class="etl-nav-prev" id="etl-prev">← PREV</button>` : '<div></div>'}
-        <button class="etl-nav-next" id="etl-next">${step.btn ?? 'NEXT →'}</button>
-      </div>`;
-    dlg.querySelector('#etl-next')?.addEventListener('click', () => this._onNext());
-    dlg.querySelector('#etl-prev')?.addEventListener('click', () => this._onPrev());
+      <div class="etl-dlg-body">${step.text ?? ''}</div>`;
+  }
+
+  _renderNav(step) {
+    const bot = this._el.querySelector('#etl-bottom');
+    if (!bot) return;
+    const i = this._step;
+    const dots = STEPS.map((_, idx) => {
+      const cls = idx < i ? 'done' : idx === i ? 'active' : '';
+      return `<div class="etl-dot ${cls}"></div>`;
+    }).join('');
+
+    if (step.t === 'quiz') {
+      bot.innerHTML = `<div class="etl-dots">${dots}</div>`;
+      return;
+    }
+
+    const prevHTML = i > 0
+      ? `<button class="etl-nav-prev" id="etl-prev">← BACK</button>`
+      : `<div style="min-width:72px"></div>`;
+    const nextLabel = step.btn ?? 'NEXT →';
+    bot.innerHTML = `
+      ${prevHTML}
+      <div class="etl-dots">${dots}</div>
+      <button class="etl-nav-next" id="etl-next">${nextLabel}</button>`;
+    bot.querySelector('#etl-next')?.addEventListener('click', () => this._onNext());
+    bot.querySelector('#etl-prev')?.addEventListener('click', () => this._onPrev());
   }
 
   _onNext() {

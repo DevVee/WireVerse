@@ -28,7 +28,7 @@ const LESSONS = [
 ];
 
 const CSS = `
-@keyframes lh-fade-up{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes lh-fade-up{0%{opacity:0;transform:translateY(22px) scale(.95);}70%{opacity:1;transform:translateY(-3px) scale(1.015);}100%{opacity:1;transform:translateY(0) scale(1);}}
 
 /* ── ROOT ─────────────────────────────────────────────────── */
 .lh{position:absolute;inset:0;display:flex;flex-direction:column;background:#070d1c;font-family:'Barlow Condensed',sans-serif;overflow:hidden;}
@@ -66,13 +66,18 @@ const CSS = `
 .lh-card{
   border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.08);
   background:rgba(6,12,28,.9);position:relative;cursor:pointer;
-  -webkit-tap-highlight-color:transparent;transition:transform .14s;
+  -webkit-tap-highlight-color:transparent;transition:transform .18s,box-shadow .18s;
   display:flex;flex-direction:row;min-height:200px;
-  animation:lh-fade-up .32s ease-out both;margin-bottom:14px;
+  animation:lh-fade-up .4s cubic-bezier(.34,1.56,.64,1) both;margin-bottom:14px;
 }
-.lh-card:active{transform:scale(.977);}
+.lh-card:not(.locked):hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,.55);}
+.lh-card:active{transform:scale(.96);}
 .lh-card.locked{opacity:.5;cursor:not-allowed;}
 .lh-card.locked:active{transform:none;}
+.lh-card:nth-child(1){animation-delay:.05s;}
+.lh-card:nth-child(2){animation-delay:.12s;}
+.lh-card:nth-child(3){animation-delay:.19s;}
+.lh-card:nth-child(n+4){animation-delay:.25s;}
 
 /* Image column (left ~42%) */
 .lh-card-img{

@@ -37,8 +37,6 @@
 
   /* Stat accent colours */
   --c-energy: #ffd000;
-  --c-coins: #ffb800;
-  --c-gems: #60b0ff;
 
   /* Layout */
   --hdr-h: 52px;
@@ -105,6 +103,51 @@ input {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   GLOBAL KEYFRAMES
+   ═══════════════════════════════════════════════════════════ */
+@keyframes fadeSlideUp {
+  from { opacity:0; transform:translateY(14px) scale(.98); }
+  to   { opacity:1; transform:translateY(0)    scale(1);   }
+}
+@keyframes fadeSlideDown {
+  from { opacity:0; transform:translateY(-10px) scale(.99); }
+  to   { opacity:1; transform:translateY(0)     scale(1);  }
+}
+@keyframes popIn {
+  0%   { opacity:0; transform:scale(.82) translateY(6px); }
+  65%  { opacity:1; transform:scale(1.04) translateY(-1px); }
+  100% { opacity:1; transform:scale(1)   translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes pulseGlow {
+  0%,100% { box-shadow: 0 0 10px rgba(0,212,255,.18), 0 0 0 0 rgba(0,212,255,.0); }
+  50%     { box-shadow: 0 0 22px rgba(0,212,255,.35), 0 0 0 4px rgba(0,212,255,.08); }
+}
+@keyframes pulseGlowCyan {
+  0%,100% { box-shadow:0 0 14px rgba(0,195,255,.2); }
+  50%     { box-shadow:0 0 28px rgba(0,195,255,.45); }
+}
+@keyframes breathe {
+  0%,100% { transform: scale(1);    }
+  50%     { transform: scale(1.025); }
+}
+@keyframes slideInLeft {
+  from { opacity:0; transform:translateX(-18px); }
+  to   { opacity:1; transform:translateX(0);     }
+}
+@keyframes slideInRight {
+  from { opacity:0; transform:translateX(18px); }
+  to   { opacity:1; transform:translateX(0);    }
+}
+@keyframes cardEntrance {
+  from { opacity:0; transform:translateY(20px) scale(.94); }
+  to   { opacity:1; transform:translateY(0)    scale(1);   }
+}
+
+/* ═══════════════════════════════════════════════════════════
    SCREEN TRANSITION SYSTEM
    ═══════════════════════════════════════════════════════════ */
 .screen {
@@ -113,29 +156,77 @@ input {
   overflow: hidden;
   background: var(--bg0);
   will-change: opacity, transform;
-  transition: opacity .32s cubic-bezier(.4, 0, .2, 1),
-    transform .32s cubic-bezier(.4, 0, .2, 1);
+  transition: opacity .30s cubic-bezier(.25,.46,.45,.94),
+    transform .30s cubic-bezier(.25,.46,.45,.94);
 }
 
 .screen-hidden {
   opacity: 0;
-  transform: scale(.96);
+  transform: translateY(8px) scale(.97);
   pointer-events: none;
   visibility: hidden;
 }
 
 .screen-visible {
   opacity: 1;
-  transform: scale(1);
+  transform: translateY(0) scale(1);
   pointer-events: all;
   visibility: visible;
 }
 
 .screen-exit {
   opacity: 0;
-  transform: scale(1.03);
+  transform: translateY(-6px) scale(1.01);
   pointer-events: none;
-  transition-duration: .22s;
+  transition-duration: .20s;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL ANIMATION ENHANCEMENTS
+   ═══════════════════════════════════════════════════════════ */
+
+/* All buttons: crisper active feedback */
+button:active { transition: transform .08s ease; }
+
+/* Primary gradient buttons — breathing glow */
+.mm-btn--play { animation: pulseGlow 3s ease-in-out infinite; }
+.mm-btn--play:active { animation: none; transform: scale(.96); }
+
+/* Main menu nav buttons — staggered slide-in */
+.mm-btn {
+  animation: slideInLeft .32s cubic-bezier(.25,.46,.45,.94) both;
+}
+.mm-nav .mm-btn:nth-child(1) { animation-delay:.06s; }
+.mm-nav .mm-btn:nth-child(2) { animation-delay:.12s; }
+.mm-nav .mm-btn:nth-child(3) { animation-delay:.18s; }
+.mm-nav .mm-btn:nth-child(4) { animation-delay:.24s; }
+.mm-nav .mm-btn:nth-child(5) { animation-delay:.30s; }
+
+/* Player badge — slides in from right */
+.mm-player-badge {
+  animation: slideInRight .38s cubic-bezier(.25,.46,.45,.94) .1s both;
+}
+
+/* Stats bar — fade in from top */
+.mm-stats {
+  animation: fadeSlideDown .35s cubic-bezier(.25,.46,.45,.94) .15s both;
+}
+
+/* XP bar — fill animation on entrance */
+.mm-xp-bar {
+  transform-origin: left center;
+  animation: shimmer 2.5s linear 0.8s infinite;
+  background-size: 200% auto;
+}
+
+/* Achievements / settings back areas — pop in */
+#ach-back, #stg-back, #crd-back {
+  animation: popIn .35s cubic-bezier(.34,1.56,.64,1) .1s both;
+}
+
+/* XP level badge — pop with bounce */
+.mm-level-badge {
+  animation: popIn .4s cubic-bezier(.34,1.56,.64,1) .25s both;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -894,15 +985,6 @@ input {
   color: var(--blue-l);
 }
 
-.mm-stat-gems .mm-stat-icon,
-.mm-stat-gems .mm-stat-val {
-  color: var(--c-gems);
-}
-
-.mm-stat-coins .mm-stat-icon,
-.mm-stat-coins .mm-stat-val {
-  color: var(--c-coins);
-}
 
 .mm-stat-explore .mm-stat-icon,
 .mm-stat-explore .mm-stat-val {
@@ -2006,7 +2088,7 @@ input {
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-  color: var(--c-gems);
+  color: #00d4ff;
 }
 
 .ach-reward svg {
