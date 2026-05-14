@@ -1,0 +1,2945 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Electrician Tools Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent
+        }
+
+        :root {
+            --navy: #060f1e;
+            --navy2: #0a1628;
+            --navy3: #0d1f3c;
+            --blue: #1a3a6e;
+            --cyan: #00d4ff;
+            --cyan2: #0099cc;
+            --green: #22c55e;
+            --green2: #16a34a;
+            --yellow: #fbbf24;
+            --red: #ef4444;
+            --white: #ffffff;
+            --text: #e8f0fe;
+            --dim: rgba(232, 240, 254, 0.5);
+            --panel: rgba(8, 20, 40, 0.94);
+            --border: rgba(0, 212, 255, 0.22);
+            --borderhi: rgba(0, 212, 255, 0.55)
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--navy);
+            font-family: 'Nunito', system-ui, sans-serif;
+            color: var(--text);
+            user-select: none
+        }
+
+        #bg {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 20% 50%, rgba(26, 58, 110, .55) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(0, 153, 204, .12) 0%, transparent 50%), linear-gradient(160deg, #04080f 0%, #06101e 40%, #0a1628 100%);
+            z-index: 0;
+            pointer-events: none
+        }
+
+        #bg::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(circle, rgba(0, 212, 255, .05) 1px, transparent 1px);
+            background-size: 44px 44px;
+            pointer-events: none
+        }
+
+        #sel-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 24px;
+            overflow-y: auto
+        }
+
+        .sel-logo {
+            font-size: clamp(22px, 4vw, 48px);
+            font-weight: 900;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            text-align: center;
+            line-height: 1.1;
+            color: var(--white)
+        }
+
+        .sel-logo span {
+            color: var(--cyan)
+        }
+
+        .sel-logo small {
+            display: block;
+            font-size: .28em;
+            font-weight: 700;
+            letter-spacing: .25em;
+            color: var(--dim);
+            margin-top: 5px
+        }
+
+        .sel-sub {
+            font-size: 12.5px;
+            color: var(--dim);
+            letter-spacing: .05em;
+            text-align: center
+        }
+
+        .sel-prog-wrap {
+            width: 100%;
+            max-width: 780px
+        }
+
+        .sel-prog-top {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 7px
+        }
+
+        .sel-prog-lbl {
+            font-size: 9.5px;
+            font-weight: 800;
+            letter-spacing: .22em;
+            color: var(--dim);
+            text-transform: uppercase
+        }
+
+        .sel-prog-val {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--cyan)
+        }
+
+        .sel-prog-bar {
+            height: 5px;
+            background: rgba(255, 255, 255, .1);
+            border-radius: 3px;
+            overflow: hidden
+        }
+
+        .sel-prog-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--cyan), var(--green));
+            border-radius: 3px;
+            transition: width .5s
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+            gap: 10px;
+            width: 100%;
+            max-width: 780px
+        }
+
+        .tool-card {
+            background: rgba(13, 31, 60, .88);
+            border: 1.5px solid rgba(0, 212, 255, .14);
+            border-radius: 14px;
+            padding: 13px 9px 11px;
+            cursor: pointer;
+            transition: all .22s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            text-align: center;
+            position: relative;
+            overflow: hidden
+        }
+
+        .tool-card:hover {
+            border-color: var(--borderhi);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, .6), 0 0 18px rgba(0, 212, 255, .1)
+        }
+
+        .tool-card.done {
+            border-color: rgba(34, 197, 94, .5);
+            background: rgba(34, 197, 94, .07)
+        }
+
+        .tc-num {
+            position: absolute;
+            top: 7px;
+            left: 8px;
+            font-size: 8.5px;
+            font-weight: 800;
+            color: var(--dim);
+            letter-spacing: .1em
+        }
+
+        .tc-done {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: var(--green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            font-weight: 900
+        }
+
+        .tc-icon {
+            font-size: 28px;
+            line-height: 1
+        }
+
+        .tc-name {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .03em;
+            line-height: 1.25;
+            color: var(--white)
+        }
+
+        .tc-cat {
+            font-size: 8px;
+            font-weight: 600;
+            color: var(--dim);
+            letter-spacing: .1em;
+            text-transform: uppercase
+        }
+
+        #game-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            display: none;
+            flex-direction: column
+        }
+
+        #topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: linear-gradient(to bottom, rgba(4, 8, 15, .96), rgba(4, 8, 15, .75));
+            border-bottom: 1px solid rgba(0, 212, 255, .14);
+            flex-shrink: 0;
+            z-index: 20
+        }
+
+        .tb-left {
+            display: flex;
+            align-items: center;
+            gap: 9px
+        }
+
+        .tb-back {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            background: rgba(0, 212, 255, .1);
+            border: 1.5px solid rgba(0, 212, 255, .35);
+            border-radius: 8px;
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: .12em;
+            color: var(--cyan);
+            cursor: pointer;
+            transition: all .18s;
+            text-transform: uppercase;
+            font-family: inherit
+        }
+
+        .tb-back:hover {
+            background: rgba(0, 212, 255, .2)
+        }
+
+        .tb-module-txt {
+            font-size: 8.5px;
+            font-weight: 800;
+            letter-spacing: .2em;
+            color: var(--cyan);
+            text-transform: uppercase
+        }
+
+        .tb-title-txt {
+            font-size: 13.5px;
+            font-weight: 900;
+            color: var(--white)
+        }
+
+        .tb-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            min-width: 180px
+        }
+
+        .tb-prog-row {
+            width: 170px;
+            display: flex;
+            align-items: center;
+            gap: 7px
+        }
+
+        .tb-prog-bar {
+            flex: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, .12);
+            border-radius: 4px;
+            overflow: hidden
+        }
+
+        .tb-prog-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green), #4ade80);
+            border-radius: 4px;
+            transition: width .5s
+        }
+
+        .tb-prog-pct {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--green)
+        }
+
+        .tb-stars {
+            display: flex;
+            gap: 4px
+        }
+
+        .tb-star {
+            font-size: 15px;
+            color: rgba(255, 255, 255, .18);
+            transition: all .3s
+        }
+
+        .tb-star.on {
+            color: var(--yellow);
+            filter: drop-shadow(0 0 5px rgba(251, 191, 36, .5))
+        }
+
+        .tb-right {
+            display: flex;
+            align-items: center;
+            gap: 7px
+        }
+
+        .tb-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .07);
+            border: 1.5px solid rgba(255, 255, 255, .14);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all .18s
+        }
+
+        .tb-icon:hover {
+            background: rgba(255, 255, 255, .14)
+        }
+
+        #main-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative
+        }
+
+        #task-panel {
+            width: 192px;
+            flex-shrink: 0;
+            background: rgba(6, 12, 24, .88);
+            border-right: 1px solid rgba(0, 212, 255, .13);
+            padding: 14px 11px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto
+        }
+
+        .tp-lbl {
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: .26em;
+            color: var(--dim);
+            text-transform: uppercase;
+            padding-bottom: 7px;
+            border-bottom: 1px solid rgba(0, 212, 255, .11)
+        }
+
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            padding: 9px;
+            border-radius: 10px;
+            border: 1.5px solid transparent;
+            transition: all .25s
+        }
+
+        .task-item.active-t {
+            background: rgba(0, 212, 255, .08);
+            border-color: rgba(0, 212, 255, .28)
+        }
+
+        .task-item.done-t {
+            opacity: .5
+        }
+
+        .task-num {
+            width: 23px;
+            height: 23px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10.5px;
+            font-weight: 900;
+            border: 2px solid rgba(255, 255, 255, .18);
+            color: var(--dim);
+            background: rgba(255, 255, 255, .05);
+            transition: all .3s
+        }
+
+        .task-item.active-t .task-num {
+            border-color: var(--green);
+            background: var(--green);
+            color: #fff
+        }
+
+        .task-item.done-t .task-num {
+            border-color: var(--green2);
+            background: var(--green2);
+            color: #fff
+        }
+
+        .task-txt {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--dim);
+            line-height: 1.35;
+            transition: color .3s
+        }
+
+        .task-item.active-t .task-txt {
+            color: var(--white)
+        }
+
+        .task-hl {
+            color: var(--green);
+            font-weight: 800
+        }
+
+        .hint-btn {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 11px;
+            margin-top: 4px;
+            background: rgba(251, 191, 36, .07);
+            border: 1.5px solid rgba(251, 191, 36, .28);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all .2s;
+            font-family: inherit
+        }
+
+        .hint-btn:hover {
+            background: rgba(251, 191, 36, .14);
+            border-color: rgba(251, 191, 36, .5)
+        }
+
+        .hint-icon {
+            font-size: 15px
+        }
+
+        .hint-label {
+            font-size: 11.5px;
+            font-weight: 800;
+            color: var(--yellow);
+            letter-spacing: .06em
+        }
+
+        .hint-count {
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            background: var(--red);
+            color: #fff;
+            font-size: 9.5px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: auto
+        }
+
+        #scene-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            inset: 0
+        }
+
+        /* INTERACTION OVERLAY */
+        #interact-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 50;
+            display: none;
+            cursor: crosshair;
+            touch-action: none;
+            background: rgba(0, 0, 0, 0.01)
+        }
+
+        #interact-overlay.active {
+            display: block
+        }
+
+        /* Gesture canvas on top */
+        #gesture-canvas {
+            position: absolute;
+            inset: 0;
+            z-index: 55;
+            pointer-events: none
+        }
+
+        /* Action prompt */
+        #action-prompt {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 60;
+            background: rgba(0, 10, 30, 0.9);
+            border: 2px solid var(--cyan);
+            border-radius: 24px;
+            padding: 12px 28px;
+            font-size: 14px;
+            font-weight: 900;
+            color: var(--cyan);
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            pointer-events: none;
+            display: none;
+            text-align: center;
+            box-shadow: 0 0 24px rgba(0, 212, 255, .3)
+        }
+
+        #action-prompt.show {
+            display: block;
+            animation: promptPulse 1.8s ease-in-out infinite
+        }
+
+        @keyframes promptPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 16px rgba(0, 212, 255, .3)
+            }
+
+            50% {
+                box-shadow: 0 0 36px rgba(0, 212, 255, .6)
+            }
+        }
+
+        /* Progress bar for gestures */
+        #gesture-prog-wrap {
+            position: absolute;
+            bottom: 108px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 240px;
+            display: none;
+            z-index: 61
+        }
+
+        #gesture-prog-wrap.show {
+            display: block
+        }
+
+        #gesture-prog-bar {
+            height: 10px;
+            background: rgba(255, 255, 255, .15);
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 212, 255, .3)
+        }
+
+        #gesture-prog-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--cyan), var(--green));
+            border-radius: 5px;
+            transition: width .05s
+        }
+
+        #gesture-prog-label {
+            font-size: 9px;
+            font-weight: 800;
+            color: var(--dim);
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 5px
+        }
+
+        /* Hotspot pulse dot */
+        .hotspot-dot {
+            position: absolute;
+            pointer-events: none;
+            z-index: 52;
+            transform: translate(-50%, -50%);
+            display: none
+        }
+
+        .hotspot-dot.show {
+            display: block
+        }
+
+        .hotspot-dot .hd-ring1 {
+            position: absolute;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 2px solid var(--cyan);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: hdring 1.6s ease-out infinite
+        }
+
+        .hotspot-dot .hd-ring2 {
+            position: absolute;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 212, 255, .6);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: hdring 1.6s .3s ease-out infinite
+        }
+
+        .hotspot-dot .hd-core {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--cyan);
+            box-shadow: 0 0 18px rgba(0, 212, 255, 1);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: hdpulse 1s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px
+        }
+
+        @keyframes hdring {
+            0% {
+                opacity: .8;
+                transform: translate(-50%, -50%) scale(1)
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.8)
+            }
+        }
+
+        @keyframes hdpulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 10px rgba(0, 212, 255, .7)
+            }
+
+            50% {
+                box-shadow: 0 0 26px rgba(0, 212, 255, 1), 0 0 48px rgba(0, 212, 255, .4)
+            }
+        }
+
+        .hotspot-dot .hd-label {
+            position: absolute;
+            top: calc(50% + 22px);
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 10px;
+            font-weight: 900;
+            color: var(--cyan);
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            background: rgba(3, 10, 25, .9);
+            border: 1px solid rgba(0, 212, 255, .4);
+            border-radius: 6px;
+            padding: 3px 9px;
+            margin-top: 8px
+        }
+
+        #step-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 7px 18px;
+            background: rgba(4, 8, 15, .78);
+            border-top: 1px solid rgba(0, 212, 255, .11);
+            z-index: 5
+        }
+
+        .sdot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, .18);
+            background: rgba(255, 255, 255, .07);
+            transition: all .4s
+        }
+
+        .sdot.done-s {
+            background: var(--green);
+            border-color: var(--green);
+            box-shadow: 0 0 7px rgba(34, 197, 94, .5)
+        }
+
+        .sdot.act-s {
+            background: var(--cyan);
+            border-color: var(--cyan);
+            box-shadow: 0 0 7px rgba(0, 212, 255, .5)
+        }
+
+        #step-lbl {
+            font-size: 10.5px;
+            font-weight: 800;
+            color: var(--dim);
+            letter-spacing: .1em;
+            text-transform: uppercase
+        }
+
+        /* GUIDE OVERLAY */
+        #guide-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 52px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity .3s
+        }
+
+        #guide-overlay.show {
+            opacity: 1;
+            pointer-events: auto
+        }
+
+        #guide-overlay::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(3, 7, 18, .62);
+            backdrop-filter: blur(3px)
+        }
+
+        #guide-card {
+            position: relative;
+            width: min(800px, 95vw);
+            background: linear-gradient(160deg, rgba(7, 20, 50, .99), rgba(5, 12, 30, .99));
+            border: 2px solid rgba(0, 212, 255, .48);
+            border-radius: 20px;
+            box-shadow: 0 14px 60px rgba(0, 0, 0, .85), 0 0 36px rgba(0, 212, 255, .1), inset 0 1px 0 rgba(0, 212, 255, .18);
+            display: flex;
+            align-items: flex-end;
+            overflow: visible;
+            animation: gin .4s cubic-bezier(.22, 1, .36, 1) both
+        }
+
+        @keyframes gin {
+            from {
+                transform: translateY(36px);
+                opacity: 0
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1
+            }
+        }
+
+        #mascot-wrap {
+            flex-shrink: 0;
+            width: 170px;
+            align-self: flex-end;
+            margin-bottom: -2px;
+            margin-left: 14px
+        }
+
+        #mascot-svg {
+            width: 170px;
+            height: 210px;
+            display: block;
+            object-fit: contain;
+            object-position: bottom center;
+            border-radius: 12px
+        }
+
+        #guide-bubble {
+            flex: 1;
+            padding: 20px 20px 15px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 9px
+        }
+
+        .guide-who {
+            font-size: 12.5px;
+            font-weight: 900;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--cyan);
+            display: flex;
+            align-items: center;
+            gap: 7px
+        }
+
+        .guide-who::after {
+            content: '';
+            flex: 1;
+            height: 1.5px;
+            background: linear-gradient(to right, rgba(0, 212, 255, .4), transparent)
+        }
+
+        .gwave {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+            margin-left: 3px
+        }
+
+        .gwave span {
+            width: 2.5px;
+            background: var(--cyan);
+            border-radius: 2px;
+            animation: wv 1.2s ease-in-out infinite
+        }
+
+        .gwave span:nth-child(1) {
+            height: 8px
+        }
+
+        .gwave span:nth-child(2) {
+            height: 13px;
+            animation-delay: .14s
+        }
+
+        .gwave span:nth-child(3) {
+            height: 7px;
+            animation-delay: .28s
+        }
+
+        .gwave span:nth-child(4) {
+            height: 11px;
+            animation-delay: .42s
+        }
+
+        @keyframes wv {
+
+            0%,
+            100% {
+                transform: scaleY(1)
+            }
+
+            50% {
+                transform: scaleY(.45)
+            }
+        }
+
+        #guide-txt {
+            font-size: clamp(13px, 1.9vw, 16px);
+            font-weight: 700;
+            color: var(--white);
+            line-height: 1.75;
+            min-height: 56px
+        }
+
+        #guide-txt em {
+            color: var(--yellow);
+            font-style: normal;
+            font-weight: 800
+        }
+
+        #guide-txt strong {
+            color: var(--cyan);
+            font-weight: 800
+        }
+
+        .guide-step-lbl {
+            font-size: 8.5px;
+            color: rgba(0, 212, 255, .45);
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            font-weight: 700
+        }
+
+        .guide-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 7px
+        }
+
+        .guide-action-hint {
+            font-size: 11px;
+            font-weight: 800;
+            color: rgba(0, 212, 255, .7);
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            padding: 6px 13px;
+            background: rgba(0, 212, 255, .08);
+            border: 1.5px solid rgba(0, 212, 255, .3);
+            border-radius: 8px;
+            animation: tpulse 1.8s ease-in-out infinite
+        }
+
+        @keyframes tpulse {
+
+            0%,
+            100% {
+                opacity: .6
+            }
+
+            50% {
+                opacity: 1
+            }
+        }
+
+        .guide-btns {
+            display: flex;
+            gap: 7px
+        }
+
+        .btn-skip {
+            padding: 6px 13px;
+            background: transparent;
+            border: 1.5px solid rgba(255, 255, 255, .14);
+            border-radius: 8px;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: .1em;
+            color: rgba(255, 255, 255, .32);
+            cursor: pointer;
+            font-family: inherit;
+            transition: all .18s;
+            text-transform: uppercase
+        }
+
+        .btn-skip:hover {
+            border-color: rgba(255, 255, 255, .3);
+            color: rgba(255, 255, 255, .55)
+        }
+
+        .btn-gnext {
+            padding: 9px 22px;
+            background: linear-gradient(135deg, var(--cyan), var(--cyan2));
+            color: #fff;
+            border: none;
+            border-radius: 9px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: .1em;
+            cursor: pointer;
+            transition: all .2s;
+            text-transform: uppercase;
+            box-shadow: 0 3px 14px rgba(0, 212, 255, .35)
+        }
+
+        .btn-gnext:hover {
+            transform: scale(1.04);
+            box-shadow: 0 5px 22px rgba(0, 212, 255, .45)
+        }
+
+        #feedback {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 80;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity .2s
+        }
+
+        #feedback.show {
+            opacity: 1
+        }
+
+        #feedback-inner {
+            font-size: clamp(32px, 6vw, 58px);
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-shadow: 0 0 40px currentColor
+        }
+
+        #feedback.ok #feedback-inner {
+            color: var(--green)
+        }
+
+        #feedback.err #feedback-inner {
+            color: var(--red)
+        }
+
+        #bottom-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 16px;
+            background: linear-gradient(to top, rgba(3, 6, 15, .96), rgba(4, 9, 20, .82));
+            border-top: 1px solid rgba(0, 212, 255, .14);
+            flex-shrink: 0;
+            z-index: 20
+        }
+
+        .bb-back {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 18px;
+            background: rgba(255, 255, 255, .06);
+            border: 1.5px solid rgba(255, 255, 255, .16);
+            border-radius: 10px;
+            font-size: 12.5px;
+            font-weight: 800;
+            color: rgba(255, 255, 255, .55);
+            cursor: pointer;
+            letter-spacing: .05em;
+            transition: all .18s;
+            font-family: inherit
+        }
+
+        .bb-back:hover {
+            background: rgba(255, 255, 255, .1);
+            color: var(--white)
+        }
+
+        .bb-info {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--dim);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            text-align: center
+        }
+
+        #success-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 600;
+            background: rgba(3, 7, 18, .93);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 14px
+        }
+
+        #success-screen.show {
+            display: flex;
+            animation: fi .4s ease
+        }
+
+        @keyframes fi {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+
+        .ss-check {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            border: 3px solid var(--green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            animation: ci .4s .1s cubic-bezier(.22, 1, .36, 1) both
+        }
+
+        @keyframes ci {
+            from {
+                transform: scale(0) rotate(-20deg)
+            }
+
+            to {
+                transform: scale(1) rotate(0)
+            }
+        }
+
+        .ss-title {
+            font-size: clamp(38px, 7vw, 64px);
+            font-weight: 900;
+            color: var(--green);
+            line-height: 1
+        }
+
+        .ss-tool {
+            font-size: clamp(13px, 2.2vw, 18px);
+            font-weight: 700;
+            color: var(--dim)
+        }
+
+        .ss-tip {
+            font-size: 12.5px;
+            color: rgba(255, 255, 255, .52);
+            max-width: 340px;
+            text-align: center;
+            line-height: 1.65;
+            padding: 13px 18px;
+            background: rgba(0, 212, 255, .05);
+            border: 1px solid rgba(0, 212, 255, .16);
+            border-radius: 12px
+        }
+
+        .ss-stars {
+            font-size: 34px;
+            letter-spacing: 5px
+        }
+
+        .ss-btns {
+            display: flex;
+            gap: 9px;
+            margin-top: 4px
+        }
+
+        .ss-btn {
+            padding: 11px 26px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--cyan), var(--cyan2));
+            color: #fff;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: .07em;
+            border: none;
+            cursor: pointer;
+            transition: all .18s
+        }
+
+        .ss-btn:hover {
+            transform: scale(1.04);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, .32)
+        }
+
+        .ss-btn.sec {
+            background: rgba(0, 212, 255, .1);
+            border: 1.5px solid rgba(0, 212, 255, .32)
+        }
+
+        #toast {
+            position: fixed;
+            top: 65px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 18px;
+            border-radius: 28px;
+            font-size: 12.5px;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity .25s;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 999;
+            font-family: inherit
+        }
+
+        #toast.show {
+            opacity: 1
+        }
+
+        #toast.ok {
+            background: rgba(34, 197, 94, .14);
+            border: 1.5px solid rgba(34, 197, 94, .5);
+            color: #4ade80
+        }
+
+        #toast.err {
+            background: rgba(239, 68, 68, .14);
+            border: 1.5px solid rgba(239, 68, 68, .5);
+            color: #f87171
+        }
+
+        #toast.info {
+            background: rgba(0, 212, 255, .1);
+            border: 1.5px solid rgba(0, 212, 255, .4);
+            color: var(--cyan)
+        }
+
+        #rotate-hint {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, .55);
+            border: 1px solid rgba(255, 255, 255, .13);
+            border-radius: 8px;
+            padding: 5px 11px;
+            font-size: 9.5px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, .5);
+            letter-spacing: .05em;
+            pointer-events: none;
+            z-index: 5
+        }
+    </style>
+</head>
+
+<body>
+    <div id="bg"></div>
+
+    <!-- SELECTION -->
+    <div id="sel-screen">
+        <div class="sel-logo">⚡ Electrician <span>Tools</span> Academy<small>PINOYTEK TRAINING SERIES</small></div>
+        <div class="sel-sub">7 essential tools — interactive 3D training with Sparky • <strong
+                style="color:var(--cyan)">Click & drag to interact!</strong></div>
+        <div class="sel-prog-wrap">
+            <div class="sel-prog-top">
+                <div class="sel-prog-lbl">Overall Progress</div>
+                <div class="sel-prog-val" id="sel-val">0 / 7 Mastered</div>
+            </div>
+            <div class="sel-prog-bar">
+                <div class="sel-prog-fill" id="sel-fill" style="width:0%"></div>
+            </div>
+        </div>
+        <div class="tools-grid" id="tools-grid"></div>
+    </div>
+
+    <!-- GAME -->
+    <div id="game-screen">
+        <div id="topbar">
+            <div class="tb-left">
+                <button class="tb-back" onclick="goBack()">← TOOLS</button>
+                <div>
+                    <div class="tb-module-txt" id="tb-mod">MODULE 1</div>
+                    <div class="tb-title-txt" id="tb-title">Tool</div>
+                </div>
+            </div>
+            <div class="tb-center">
+                <div class="tb-prog-row">
+                    <div class="tb-prog-bar">
+                        <div class="tb-prog-fill" id="tb-fill" style="width:0%"></div>
+                    </div>
+                    <div class="tb-prog-pct" id="tb-pct">0%</div>
+                </div>
+                <div class="tb-stars" id="tb-stars"><span class="tb-star on">★</span><span class="tb-star">☆</span><span
+                        class="tb-star">☆</span></div>
+            </div>
+            <div class="tb-right">
+                <div class="tb-icon" onclick="showHint()" title="Hint">💡</div>
+            </div>
+        </div>
+        <div id="main-layout">
+            <div id="task-panel">
+                <div class="tp-lbl">Tasks</div>
+                <div id="task-list"></div>
+                <button class="hint-btn" onclick="showHint()"><span class="hint-icon">💡</span><span
+                        class="hint-label">HINT</span><span class="hint-count" id="hint-cnt">3</span></button>
+            </div>
+            <div id="scene-area">
+                <canvas id="c"></canvas>
+                <canvas id="gesture-canvas"></canvas>
+                <div id="rotate-hint">🔄 Drag to rotate</div>
+
+                <!-- Single hotspot dot -->
+                <div class="hotspot-dot" id="hotspot-dot">
+                    <div class="hd-ring1"></div>
+                    <div class="hd-ring2"></div>
+                    <div class="hd-core" id="hd-core">👆</div>
+                    <div class="hd-label" id="hd-label">TAP HERE</div>
+                </div>
+
+                <!-- Interaction overlay (active during gesture) -->
+                <div id="interact-overlay"></div>
+
+                <!-- Action prompt -->
+                <div id="action-prompt">👆 INTERACT TO CONTINUE</div>
+
+                <!-- Gesture progress -->
+                <div id="gesture-prog-wrap">
+                    <div id="gesture-prog-label">PERFORMING ACTION...</div>
+                    <div id="gesture-prog-bar">
+                        <div id="gesture-prog-fill"></div>
+                    </div>
+                </div>
+
+                <!-- SPARKY GUIDE -->
+                <div id="guide-overlay">
+                    <div id="guide-card">
+                        <div id="mascot-wrap">
+                            <img id="mascot-svg" src="../assets/Mascot.png" alt="Sparky"
+                                onerror="this.outerHTML='<div style=\'width:170px;height:210px;display:flex;align-items:flex-end;justify-content:center;font-size:80px;padding-bottom:10px\'>⚡</div>'">
+                        </div>
+                        <div id="guide-bubble">
+                            <div class="guide-who">SPARKY<div class="gwave">
+                                    <span></span><span></span><span></span><span></span>
+                                </div>
+                            </div>
+                            <div id="guide-txt">...</div>
+                            <div class="guide-step-lbl" id="guide-step-lbl"></div>
+                            <div class="guide-footer">
+                                <div class="guide-action-hint" id="guide-action-hint">👆 TAP THE HOTSPOT TO BEGIN</div>
+                                <div class="guide-btns">
+                                    <button class="btn-skip" onclick="skipGuide()">SKIP</button>
+                                    <button class="btn-gnext" id="btn-gnext">NEXT</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="step-bar">
+                    <span id="step-lbl">STEP 1 OF 4</span>
+                    <div id="step-dots"></div>
+                </div>
+                <div id="feedback">
+                    <div id="feedback-inner">✓ DONE!</div>
+                </div>
+            </div>
+        </div>
+        <div id="bottom-bar">
+            <button class="bb-back" onclick="goBack()">← BACK</button>
+            <div class="bb-info" id="bb-info">STEP 1 OF 4</div>
+            <div></div>
+        </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div id="success-screen">
+        <div class="ss-check">✓</div>
+        <div class="ss-title">MASTERED!</div>
+        <div class="ss-tool" id="ss-tool"></div>
+        <div class="ss-tip" id="ss-tip"></div>
+        <div class="ss-stars" id="ss-stars">★★★</div>
+        <div class="ss-btns">
+            <button class="ss-btn sec" onclick="goBack()">TOOL LIST</button>
+            <button class="ss-btn" id="ss-next" onclick="nextTool()">NEXT TOOL →</button>
+        </div>
+    </div>
+    <div id="toast"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // ═══════════════════════════════════════════════
+        // TOOLS DATA  — Fixed icons
+        // ═══════════════════════════════════════════════
+        const TOOLS = [
+            {
+                id: 0, icon: '🔧', name: "Lineman's Pliers", category: "GRIPPING", module: "MODULE 1",
+                tip: "Grip from the base for maximum force. Never use on live wires!",
+                tasks: ["Grip the <span class='task-hl'>wire bundle</span> with the jaws", "Twist the <span class='task-hl'>conductors</span> clockwise", "Cut the <span class='task-hl'>excess wire</span> flush", "Inspect the <span class='task-hl'>twisted joint</span>"],
+                guide: [
+                    { txt: "Welcome! These are <em>Lineman's Pliers</em> — your all-in-one gripper, twister, and cutter.\n\nThe <strong>serrated jaws</strong> lock onto wire bundles, the pivot transfers force, and the blade near the pivot cuts flush.\n\n🔄 Drag to rotate and inspect!", action: "CLICK THE GLOWING HOTSPOT", gestureType: "click" },
+                    { txt: "The <em>serrated jaws</em> are open above the wire bundle. <strong>Grip from the base</strong> for maximum leverage.\n\nWatch the jaws close and bite down on all three wires at once!", action: "CLICK TO GRIP THE WIRES", gestureType: "click" },
+                    { txt: "Now <em>twist clockwise</em> — rotate the pliers to wind the conductors together into a tight pigtail.\n\nA solid twist means a <strong>secure, low-resistance connection</strong>!", action: "DRAG IN A CIRCLE TO TWIST", gestureType: "rotate" },
+                    { txt: "The <em>cutting blades</em> are near the pivot where force is greatest.\n\nOne firm squeeze cuts the wire <strong>flush</strong>. No jagged ends!", action: "CLICK TO CUT THE WIRE", gestureType: "click" }
+                ]
+            },
+            {
+                id: 1, icon: '✂️', name: "Wire Stripper", category: "PREP", module: "MODULE 1",
+                tip: "Always match the wire gauge to the correct notch. Wrong size = nicked conductor!",
+                tasks: ["Select the <span class='task-hl'>correct 12 AWG notch</span>", "Score the <span class='task-hl'>insulation</span> — squeeze firmly", "Pull to <span class='task-hl'>remove the insulation</span>", "Inspect the <span class='task-hl'>exposed conductor</span>"],
+                guide: [
+                    { txt: "These are <em>Wire Strippers</em> — each notch is a different <strong>AWG gauge</strong> size.\n\nUsing the <em>wrong notch</em> nicks the copper conductor — a hidden defect causing heat, sparks, and fire!\n\n🔄 Drag to see all the notches!", action: "CLICK THE 12 AWG NOTCH", gestureType: "click" },
+                    { txt: "The wire sits in the <strong>12 AWG notch</strong>. Squeeze the handles — blades bite through insulation only, stopping right before the copper.\n\n<em>Controlled depth is everything!</em>", action: "CLICK TO SCORE INSULATION", gestureType: "click" },
+                    { txt: "Now <em>pull the insulation</em> away — a smooth slide reveals shiny copper beneath.\n\n<strong>No nicks, no scratches</strong> = perfect strip!", action: "DRAG RIGHT TO PULL OFF", gestureType: "swipe-right" },
+                    { txt: "Inspect the conductor — it should be <em>bright, smooth copper</em>.\n\nIf you see nicks or scratches, <strong>cut and strip again</strong>. Never use a damaged conductor!", action: "CLICK TO INSPECT", gestureType: "click" }
+                ]
+            },
+            {
+                id: 2, icon: '🪛', name: "Screwdrivers", category: "FASTENING", module: "MODULE 1",
+                tip: "Push firmly THEN turn. Never let the bit slip on the screw head!",
+                tasks: ["Seat the <span class='task-hl'>Phillips bit</span> in the screw head", "Drive the <span class='task-hl'>terminal screw</span> in clockwise", "Tighten the <span class='task-hl'>outlet cover</span> screw", "Check all <span class='task-hl'>connections are snug</span>"],
+                guide: [
+                    { txt: "Screwdrivers — every electrician's most-used tool!\n\n<em>Phillips (+)</em> for cross-head screws. <em>Flathead (−)</em> for slotted screws.\n\n<strong>Wrong type strips the head!</strong> Align perfectly before turning.", action: "CLICK TO SEAT THE BIT", gestureType: "click" },
+                    { txt: "<strong>Push first, then turn.</strong> Downward pressure keeps the bit seated in the cross pattern.\n\nIf it slips — you're applying torque without pressing down.\n\n<em>Stripped screw = hours of frustration!</em>", action: "DRAG IN A CIRCLE TO DRIVE", gestureType: "rotate" },
+                    { txt: "The outlet cover screw uses a <em>flathead</em> blade. Align in the slot.\n\n<strong>Snug — not over-tight.</strong> Over-tightening cracks plastic outlet boxes!", action: "DRAG IN A CIRCLE TO TIGHTEN", gestureType: "rotate" },
+                    { txt: "Final check — each terminal should be <em>firmly seated</em>.\n\n<strong>Every loose terminal is a fire hazard.</strong> Electricians always check twice!", action: "CLICK TO VERIFY", gestureType: "click" }
+                ]
+            },
+            {
+                id: 3, icon: '🔌', name: "Voltage Tester", category: "SAFETY", module: "MODULE 2",
+                tip: "Test the tester on a known live source first. Always. No exceptions.",
+                tasks: ["Verify the <span class='task-hl'>tester works</span> on known live outlet", "Test the <span class='task-hl'>red (Live) wire</span>", "Test the <span class='task-hl'>black (Neutral) wire</span>", "Confirm the <span class='task-hl'>circuit is safe to work</span>"],
+                guide: [
+                    { txt: "<strong>YOUR LIFE DEPENDS ON THIS TOOL.</strong>\n\n<em>Always test the tester first</em> — on a known live outlet. A dead tester gives no warning at all.\n\nBring the tip near the slot — the LED and buzzer activate!", action: "DRAG TOWARD THE OUTLET", gestureType: "swipe-right" },
+                    { txt: "Now test the <em>red wire</em> — hold the tip near it, no touching needed.\n\nThe non-contact sensor detects the <strong>electric field through insulation</strong>.\n\n<em>Beep + red flash = LIVE!</em>", action: "DRAG TOWARD THE RED WIRE", gestureType: "swipe-right" },
+                    { txt: "Test the <em>black (neutral) wire</em> the same way.\n\nNo beep = no voltage detected.\n\n<strong>Still wear PPE!</strong> No signal ≠ 100% safe — verify twice!", action: "DRAG TOWARD THE BLACK WIRE", gestureType: "swipe-right" },
+                    { txt: "Both wires tested, circuit confirmed safe!\n\n<em>Tester back in your pouch</em> — always within reach.\n\n<strong>Never assume a circuit is off</strong> without testing. Breakers get mislabeled!", action: "CLICK TO CONFIRM SAFE", gestureType: "click" }
+                ]
+            },
+            {
+                id: 4, icon: '📟', name: "Multimeter", category: "TESTING", module: "MODULE 2",
+                tip: "Always set the correct mode before connecting probes. Wrong mode = blown fuse!",
+                tasks: ["Set the dial to <span class='task-hl'>AC Voltage (V~) mode</span>", "Connect <span class='task-hl'>probes</span> and measure voltage", "Switch to <span class='task-hl'>Continuity mode</span> and test", "Read and <span class='task-hl'>record</span> the display"],
+                guide: [
+                    { txt: "The <em>Multimeter</em> measures Voltage (V~), Current (A), and Resistance (Ω).\n\n<strong>CRITICAL: Set the correct mode BEFORE connecting probes.</strong>\n\nWrong mode on live AC = blown internal fuse!", action: "DRAG DIAL TO V~ POSITION", gestureType: "rotate" },
+                    { txt: "Red probe to <em>VΩ port</em>, Black to <em>COM</em>.\n\nRed tip to Live, Black to Neutral — the display counts up to <strong>220V AC</strong>.\n\nPhilippine standard mains voltage!", action: "DRAG RED PROBE TO LIVE TERMINAL", gestureType: "swipe-right" },
+                    { txt: "Switch to <em>Continuity mode</em> (diode/speaker symbol).\n\nTouch both probe tips to same wire ends — a <strong>beep confirms unbroken conductor</strong>.\n\nNo beep = broken wire somewhere!", action: "DRAG DIAL TO CONTINUITY", gestureType: "rotate" },
+                    { txt: "Read the display clearly — write the value down!\n\n<em>Voltage variation &gt;10%</em> from nominal (220V) = investigate.\n\n<strong>Accurate records prevent future faults.</strong>", action: "CLICK DISPLAY TO RECORD", gestureType: "click" }
+                ]
+            },
+            {
+                id: 5, icon: '🗜️', name: "Electrical Tape", category: "SAFETY", module: "MODULE 2",
+                tip: "50% overlap minimum — 3 full layers for proper insulation. Stretch as you wrap!",
+                tasks: ["Anchor the <span class='task-hl'>first wrap</span> on the joint", "Wrap with <span class='task-hl'>50% overlap</span> toward the joint", "Complete all <span class='task-hl'>3 full layers</span>", "Seal and <span class='task-hl'>tear the tape</span> tight"],
+                guide: [
+                    { txt: "<em>Electrical tape</em> is your final insulation layer after joining conductors.\n\nOnly use <strong>PVC electrical tape</strong> — masking tape and duct tape are <em>NOT</em> rated for electrical insulation!", action: "CLICK TO ANCHOR TAPE", gestureType: "click" },
+                    { txt: "Wrap at a <em>45° angle</em> with <strong>50% overlap</strong> — each layer covers half the previous one.\n\nThis creates <em>double coverage</em> at every point. Never wrap straight across!", action: "DRAG IN A CIRCLE TO WRAP", gestureType: "rotate" },
+                    { txt: "Keep <em>slight tension</em> on the tape as you wrap — the stretch compresses it tighter.\n\n<strong>Minimum 3 layers</strong> for proper insulation. Each layer = extra protection!", action: "DRAG IN A CIRCLE AGAIN", gestureType: "rotate" },
+                    { txt: "At the end, <em>stretch and tear</em> the tape sharply — this leaves a tight sealed end.\n\n<strong>Check: no copper visible anywhere.</strong> Press the end firmly so it bonds.", action: "DRAG DOWN TO TEAR & SEAL", gestureType: "swipe-down" }
+                ]
+            },
+            {
+                id: 6, icon: '🔪', name: "Utility Knife", category: "PREP", module: "MODULE 3",
+                tip: "Score lightly and rotate around the cable. Never cut straight through!",
+                tasks: ["Score the <span class='task-hl'>cable jacket</span> lightly", "Rotate cable <span class='task-hl'>180°</span> and score again", "Peel back the <span class='task-hl'>outer jacket</span>", "Inspect the <span class='task-hl'>inner wires</span> for damage"],
+                guide: [
+                    { txt: "The Utility Knife strips <em>outer cable jackets</em> (NM-B Romex cables).\n\n<strong>Score lightly — never cut straight through!</strong>\n\nToo deep nicks the inner wire insulation — invisible damage that causes faults!", action: "DRAG KNIFE ALONG THE CABLE", gestureType: "swipe-right" },
+                    { txt: "Draw the blade <em>along the cable</em> with light, consistent pressure.\n\n<strong>Cut AWAY from your body.</strong>\n\nYou're only scratching through the outer jacket — feel the resistance change!", action: "DRAG ALONG CABLE AGAIN", gestureType: "swipe-right" },
+                    { txt: "Now <em>peel back the jacket</em> firmly — it should fold back cleanly after two scores.\n\n<strong>Consistent depth = clean peel every time!</strong>", action: "DRAG UP TO PEEL JACKET", gestureType: "swipe-up" },
+                    { txt: "Grip the jacket end and <em>inspect inner wires</em> — insulation intact, no nicks?\n\n<strong>If any inner wire is damaged</strong>, cut further back and redo!", action: "CLICK TO INSPECT WIRES", gestureType: "click" }
+                ]
+            }
+        ];
+
+        // ═══════════════════════════════════════════════
+        // THREE.JS SETUP
+        // ═══════════════════════════════════════════════
+        const cnv = document.getElementById('c');
+        const renderer = new THREE.WebGLRenderer({ canvas: cnv, antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.15;
+        renderer.setClearColor(0x000000, 0);
+
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x060f1e, 0.018);
+        const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+        camera.position.set(0, 0.8, 9);
+        camera.lookAt(0, 0, 0);
+
+        // Lighting
+        scene.add(new THREE.AmbientLight(0xc8d8ff, 0.6));
+        const keyL = new THREE.SpotLight(0xfff8f0, 3.2, 28, Math.PI * 0.16, 0.3, 1.2);
+        keyL.position.set(3, 10, 7); keyL.castShadow = true; keyL.shadow.mapSize.setScalar(2048);
+        scene.add(keyL); scene.add(keyL.target);
+        const rimL = new THREE.DirectionalLight(0x0099cc, 0.85); rimL.position.set(-6, 4, -3); scene.add(rimL);
+        const fillL = new THREE.DirectionalLight(0xffffff, 0.35); fillL.position.set(1, 5, 9); scene.add(fillL);
+        const botL = new THREE.DirectionalLight(0x112244, 0.3); botL.position.set(0, -5, 2); scene.add(botL);
+
+        // Environment
+        const flr = new THREE.Mesh(new THREE.PlaneGeometry(24, 18), new THREE.MeshStandardMaterial({ color: 0x060d1e, roughness: 0.95 }));
+        flr.rotation.x = -Math.PI / 2; flr.position.y = -2.9; flr.receiveShadow = true; scene.add(flr);
+        const wll = new THREE.Mesh(new THREE.PlaneGeometry(24, 14), new THREE.MeshStandardMaterial({ color: 0x07132a, roughness: 0.9 }));
+        wll.position.z = -5; wll.receiveShadow = true; scene.add(wll);
+        const bench = new THREE.Mesh(new THREE.BoxGeometry(8, 0.15, 3.2), new THREE.MeshStandardMaterial({ color: 0x0e0a06, roughness: 0.82, metalness: 0.04 }));
+        bench.position.set(0, -2.08, 0.3); bench.receiveShadow = true; bench.castShadow = true; scene.add(bench);
+        const lip = new THREE.Mesh(new THREE.BoxGeometry(8, 0.06, 0.08), new THREE.MeshStandardMaterial({ color: 0x1a1008, roughness: 0.7 }));
+        lip.position.set(0, -2.0, 1.76); scene.add(lip);
+
+        // Orbit drag (only when no interaction active)
+        let drag = false, px = 0, py = 0, rotY = 0, rotX = 0;
+        let interactionActive = false;
+
+        cnv.addEventListener('mousedown', e => { if (!interactionActive) { drag = true; px = e.clientX; py = e.clientY; } });
+        window.addEventListener('mousemove', e => { if (!drag || interactionActive) return; rotY += (e.clientX - px) * 0.007; rotX += (e.clientY - py) * 0.004; rotX = Math.max(-0.45, Math.min(0.55, rotX)); px = e.clientX; py = e.clientY; });
+        window.addEventListener('mouseup', () => drag = false);
+        cnv.addEventListener('touchstart', e => { if (!interactionActive) { drag = true; px = e.touches[0].clientX; py = e.touches[0].clientY; } }, { passive: true });
+        window.addEventListener('touchmove', e => { if (!drag || interactionActive) return; rotY += (e.touches[0].clientX - px) * 0.007; rotX += (e.touches[0].clientY - py) * 0.004; rotX = Math.max(-0.45, Math.min(0.55, rotX)); px = e.touches[0].clientX; py = e.touches[0].clientY; }, { passive: true });
+        window.addEventListener('touchend', () => drag = false);
+
+        function resize() {
+            const a = document.getElementById('scene-area');
+            const w = a.clientWidth || 800, h = a.clientHeight || 500;
+            renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix();
+            const gc = document.getElementById('gesture-canvas');
+            gc.width = w; gc.height = h;
+        }
+        window.addEventListener('resize', resize); setTimeout(resize, 100);
+
+        // ═══════════════════════════════════════════════
+        // MATERIAL / GEOMETRY HELPERS
+        // ═══════════════════════════════════════════════
+        function mat(col, rough = 0.6, metal = 0.1, emissive = 0, emInt = 0) {
+            const m = new THREE.MeshStandardMaterial({ color: col, roughness: rough, metalness: metal });
+            if (emissive) { m.emissive = new THREE.Color(emissive); m.emissiveIntensity = emInt; }
+            return m;
+        }
+        function bx(w, h, d, col, r = 0.6, m = 0.1) { return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(col, r, m)); }
+        function cy(rt, rb, h, seg, col, r = 0.5, m = 0.2) { return new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat(col, r, m)); }
+        function sp(rad, col, r = 0.5, m = 0.1) { return new THREE.Mesh(new THREE.SphereGeometry(rad, 20, 16), mat(col, r, m)); }
+        function setRole(m, role) { m.userData.role = role; return m; }
+        function addShadow(obj) { obj.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } }); }
+        function wireMesh(pts, col, rad = 0.042) {
+            const curve = new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(...p)));
+            return new THREE.Mesh(new THREE.TubeGeometry(curve, 64, rad, 10, false), mat(col, 0.55, 0.04));
+        }
+        function getRole(role) { if (!toolG) return null; let found = null; toolG.traverse(c => { if (c.userData && c.userData.role === role) found = c; }); return found; }
+        function getCtxRole(role) { let found = null; ctxObjs.forEach(o => { if (o.userData && o.userData.role === role) found = o; }); return found; }
+
+        let toolG = null, ctxObjs = [];
+        function clearScene() {
+            if (toolG) { scene.remove(toolG); toolG.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); }); toolG = null; }
+            ctxObjs.forEach(o => { scene.remove(o); o.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); }); }); ctxObjs = [];
+        }
+
+        // ═══════════════════════════════════════════════
+        // TWEEN ENGINE
+        // ═══════════════════════════════════════════════
+        const TW = [];
+        function eio(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+        function eOut(t) { return 1 - Math.pow(1 - t, 4); }
+        function tw(fn, dur, done) { let e = 0; TW.push({ done: false, tick(dt) { e = Math.min(e + dt, dur); fn(eio(e / dur)); if (e >= dur) { this.done = true; if (done) done(); } } }); }
+        function twPos(obj, to, dur, cb) { const from = obj.position.clone(); tw(t => obj.position.lerpVectors(from, new THREE.Vector3(...to), t), dur, cb); }
+        function twRot(obj, ax, from, to, dur, ef, cb) { tw(t => { obj.rotation[ax] = from + (to - from) * (ef || eio)(t); }, dur, cb); }
+        function twScale(obj, from, to, dur, cb) { tw(t => { const s = from + (to - from) * eio(t); obj.scale.setScalar(s); }, dur, cb); }
+        function wait(ms, cb) { setTimeout(cb, ms); }
+        function seq(...fns) { let i = 0; const n = () => { if (i < fns.length) fns[i++](n); }; n(); }
+
+        let cTw = false, cT = 0, cD = 1, cCB = null;
+        const cFrom = new THREE.Vector3(), cTo = new THREE.Vector3(), cLF = new THREE.Vector3(), cLT = new THREE.Vector3();
+        function animCam(toPos, toLook, dur, cb) {
+            cFrom.copy(camera.position); cTo.copy(new THREE.Vector3(...toPos));
+            const d = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+            cLF.copy(camera.position).addScaledVector(d, 5);
+            cLT.copy(new THREE.Vector3(...toLook));
+            cT = 0; cD = dur || 700; cCB = cb; cTw = true;
+        }
+
+        // ═══════════════════════════════════════════════
+        // INTERACTION SYSTEM — Unified, simple
+        // ═══════════════════════════════════════════════
+        let pendingInteraction = null; // {type, label, icon, onComplete}
+        let hotspotWorldPos = new THREE.Vector3();
+        let hotspotVisible = false;
+
+        function showHotspotDot(worldPos, icon, label) {
+            hotspotWorldPos.copy(worldPos);
+            hotspotVisible = true;
+            document.getElementById('hd-core').textContent = icon;
+            document.getElementById('hd-label').textContent = label;
+            document.getElementById('hotspot-dot').classList.add('show');
+            document.getElementById('action-prompt').textContent = '👆 ' + label;
+            document.getElementById('action-prompt').classList.add('show');
+        }
+        function hideHotspotDot() {
+            hotspotVisible = false;
+            document.getElementById('hotspot-dot').classList.remove('show');
+            document.getElementById('action-prompt').classList.remove('show');
+        }
+
+        // Activate interaction zone — waits for user gesture then calls onComplete
+        function activateInteraction(type, icon, label, onComplete) {
+            interactionActive = true;
+            drag = false;
+            pendingInteraction = { type, icon, label, onComplete };
+
+            const sa = document.getElementById('scene-area');
+            const cx = sa.clientWidth / 2, cy2 = sa.clientHeight / 2;
+
+            // Show prompt dot at screen center
+            showHotspotDot(new THREE.Vector3(0, 0, 0), icon, label);
+
+            // Setup gesture listeners
+            const overlay = document.getElementById('interact-overlay');
+            overlay.classList.add('active');
+
+            const gc = document.getElementById('gesture-canvas');
+            const ctx = gc.getContext('2d');
+            ctx.clearRect(0, 0, gc.width, gc.height);
+
+            const progWrap = document.getElementById('gesture-prog-wrap');
+            const progFill = document.getElementById('gesture-prog-fill');
+            const progLabel = document.getElementById('gesture-prog-label');
+
+            if (type === 'click') {
+                // Draw target ring
+                ctx.strokeStyle = 'rgba(0,212,255,0.5)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 5]);
+                ctx.beginPath(); ctx.arc(cx, cy2, 55, 0, Math.PI * 2); ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = 'rgba(0,212,255,0.08)';
+                ctx.beginPath(); ctx.arc(cx, cy2, 55, 0, Math.PI * 2); ctx.fill();
+                progWrap.classList.remove('show');
+
+                const onTap = (e) => {
+                    e.preventDefault();
+                    ctx.clearRect(0, 0, gc.width, gc.height);
+                    // Flash effect
+                    ctx.fillStyle = 'rgba(0,212,255,0.35)';
+                    ctx.beginPath(); ctx.arc(cx, cy2, 70, 0, Math.PI * 2); ctx.fill();
+                    setTimeout(() => ctx.clearRect(0, 0, gc.width, gc.height), 200);
+                    completeInteraction();
+                    overlay.removeEventListener('click', onTap);
+                    overlay.removeEventListener('touchend', onTap);
+                };
+                overlay.addEventListener('click', onTap);
+                overlay.addEventListener('touchend', onTap);
+
+            } else if (type === 'rotate') {
+                progWrap.classList.add('show');
+                progLabel.textContent = 'ROTATE — DRAG IN A CIRCLE';
+                progFill.style.width = '0%';
+
+                // Draw circular arrow guide
+                ctx.strokeStyle = 'rgba(0,212,255,0.4)';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([10, 6]);
+                ctx.beginPath(); ctx.arc(cx, cy2, 70, 0, Math.PI * 1.6); ctx.stroke();
+                ctx.setLineDash([]);
+                // arrowhead
+                const ea = Math.PI * 1.6;
+                const ex2 = cx + 70 * Math.cos(ea), ey2 = cy2 + 70 * Math.sin(ea);
+                const ta = ea + Math.PI / 2;
+                ctx.fillStyle = 'rgba(0,212,255,0.8)';
+                ctx.beginPath();
+                ctx.moveTo(ex2, ey2);
+                ctx.lineTo(ex2 - 14 * Math.cos(ta - 0.4), ey2 - 14 * Math.sin(ta - 0.4));
+                ctx.lineTo(ex2 - 14 * Math.cos(ta + 0.4), ey2 - 14 * Math.sin(ta + 0.4));
+                ctx.closePath(); ctx.fill();
+
+                let rotating = false, totalRot = 0, startAngle = 0, lastAngle = 0;
+                const trailPts = [];
+
+                const onDown = (e) => {
+                    e.preventDefault();
+                    const pos = getEvtPos(e, overlay);
+                    startAngle = Math.atan2(pos.y - cy2, pos.x - cx);
+                    lastAngle = startAngle;
+                    rotating = true; totalRot = 0;
+                    trailPts.length = 0;
+                };
+                const onMove = (e) => {
+                    if (!rotating) return; e.preventDefault();
+                    const pos = getEvtPos(e, overlay);
+                    const a = Math.atan2(pos.y - cy2, pos.x - cx);
+                    let da = a - lastAngle;
+                    if (da > Math.PI) da -= Math.PI * 2;
+                    if (da < -Math.PI) da += Math.PI * 2;
+                    totalRot += da; lastAngle = a;
+                    trailPts.push({ x: pos.x, y: pos.y });
+                    // Draw trail
+                    ctx.clearRect(0, 0, gc.width, gc.height);
+                    // Redraw guide (faded)
+                    ctx.strokeStyle = 'rgba(0,212,255,0.2)';
+                    ctx.lineWidth = 2; ctx.setLineDash([8, 5]);
+                    ctx.beginPath(); ctx.arc(cx, cy2, 70, 0, Math.PI * 2); ctx.stroke();
+                    ctx.setLineDash([]);
+                    // Trail
+                    if (trailPts.length > 1) {
+                        ctx.strokeStyle = 'rgba(0,212,255,0.8)';
+                        ctx.lineWidth = 4; ctx.lineCap = 'round';
+                        ctx.shadowColor = 'rgba(0,212,255,0.5)'; ctx.shadowBlur = 8;
+                        ctx.beginPath(); ctx.moveTo(trailPts[0].x, trailPts[0].y);
+                        for (let i = 1; i < trailPts.length; i++) ctx.lineTo(trailPts[i].x, trailPts[i].y);
+                        ctx.stroke(); ctx.shadowBlur = 0;
+                    }
+                    const prog = Math.min(1, Math.abs(totalRot) / (Math.PI * 1.3));
+                    progFill.style.width = (prog * 100) + '%';
+                    if (prog >= 1 && pendingInteraction) completeInteraction();
+                };
+                const onUp = () => { rotating = false; };
+                overlay.addEventListener('mousedown', onDown);
+                overlay.addEventListener('mousemove', onMove);
+                overlay.addEventListener('mouseup', onUp);
+                overlay.addEventListener('touchstart', onDown, { passive: false });
+                overlay.addEventListener('touchmove', onMove, { passive: false });
+                overlay.addEventListener('touchend', onUp);
+                overlay._cleanListeners = () => {
+                    overlay.removeEventListener('mousedown', onDown);
+                    overlay.removeEventListener('mousemove', onMove);
+                    overlay.removeEventListener('mouseup', onUp);
+                    overlay.removeEventListener('touchstart', onDown);
+                    overlay.removeEventListener('touchmove', onMove);
+                    overlay.removeEventListener('touchend', onUp);
+                };
+
+            } else if (type === 'swipe-right' || type === 'swipe-up' || type === 'swipe-down') {
+                const isRight = type === 'swipe-right';
+                const isUp = type === 'swipe-up';
+                progWrap.classList.add('show');
+                const dirLabel = isRight ? 'DRAG RIGHT →' : isUp ? 'DRAG UP ↑' : 'DRAG DOWN ↓';
+                progLabel.textContent = dirLabel;
+                progFill.style.width = '0%';
+
+                // Draw direction arrow
+                const x1 = isRight ? cx - 90 : cx;
+                const y1 = isRight ? cy2 : (isUp ? cy2 + 70 : cy2 - 70);
+                const x2 = isRight ? cx + 90 : cx;
+                const y2 = isRight ? cy2 : (isUp ? cy2 - 70 : cy2 + 70);
+                ctx.strokeStyle = 'rgba(0,212,255,0.5)';
+                ctx.lineWidth = 3; ctx.setLineDash([10, 6]);
+                ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+                ctx.setLineDash([]);
+                const aa = Math.atan2(y2 - y1, x2 - x1);
+                ctx.fillStyle = 'rgba(0,212,255,0.8)';
+                ctx.beginPath();
+                ctx.moveTo(x2, y2);
+                ctx.lineTo(x2 - 16 * Math.cos(aa - 0.4), y2 - 16 * Math.sin(aa - 0.4));
+                ctx.lineTo(x2 - 16 * Math.cos(aa + 0.4), y2 - 16 * Math.sin(aa + 0.4));
+                ctx.closePath(); ctx.fill();
+
+                let swiping = false, sx = 0, sy = 0;
+                const trailPts = [];
+                const onDown = (e) => {
+                    e.preventDefault();
+                    const pos = getEvtPos(e, overlay);
+                    sx = pos.x; sy = pos.y; swiping = true; trailPts.length = 0;
+                };
+                const onMove = (e) => {
+                    if (!swiping) return; e.preventDefault();
+                    const pos = getEvtPos(e, overlay);
+                    trailPts.push({ x: pos.x, y: pos.y });
+                    const dx = pos.x - sx, dy = pos.y - sy;
+                    let prog = 0;
+                    if (isRight) prog = Math.max(0, Math.min(1, dx / 140));
+                    else if (isUp) prog = Math.max(0, Math.min(1, -dy / 120));
+                    else prog = Math.max(0, Math.min(1, dy / 120));
+                    // Redraw
+                    ctx.clearRect(0, 0, gc.width, gc.height);
+                    ctx.strokeStyle = 'rgba(0,212,255,0.2)'; ctx.lineWidth = 2; ctx.setLineDash([8, 5]);
+                    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+                    if (trailPts.length > 1) {
+                        ctx.strokeStyle = 'rgba(0,212,255,0.8)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+                        ctx.shadowColor = 'rgba(0,212,255,0.5)'; ctx.shadowBlur = 8;
+                        ctx.beginPath(); ctx.moveTo(trailPts[0].x, trailPts[0].y);
+                        for (let i = 1; i < trailPts.length; i++) ctx.lineTo(trailPts[i].x, trailPts[i].y);
+                        ctx.stroke(); ctx.shadowBlur = 0;
+                    }
+                    progFill.style.width = (prog * 100) + '%';
+                    if (prog >= 1 && pendingInteraction) completeInteraction();
+                };
+                const onUp = () => { swiping = false; };
+                overlay.addEventListener('mousedown', onDown);
+                overlay.addEventListener('mousemove', onMove);
+                overlay.addEventListener('mouseup', onUp);
+                overlay.addEventListener('touchstart', onDown, { passive: false });
+                overlay.addEventListener('touchmove', onMove, { passive: false });
+                overlay.addEventListener('touchend', onUp);
+                overlay._cleanListeners = () => {
+                    overlay.removeEventListener('mousedown', onDown);
+                    overlay.removeEventListener('mousemove', onMove);
+                    overlay.removeEventListener('mouseup', onUp);
+                    overlay.removeEventListener('touchstart', onDown);
+                    overlay.removeEventListener('touchmove', onMove);
+                    overlay.removeEventListener('touchend', onUp);
+                };
+            }
+        }
+
+        function getEvtPos(e, el) {
+            const rect = el.getBoundingClientRect();
+            const src = e.touches ? e.touches[0] : e;
+            return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+        }
+
+        function completeInteraction() {
+            if (!pendingInteraction) return;
+            const cb = pendingInteraction.onComplete;
+            pendingInteraction = null;
+            interactionActive = false;
+            hideHotspotDot();
+            // Close overlay
+            const overlay = document.getElementById('interact-overlay');
+            overlay.classList.remove('active');
+            if (overlay._cleanListeners) { overlay._cleanListeners(); overlay._cleanListeners = null; }
+            // Clear gesture canvas after brief delay
+            const gc = document.getElementById('gesture-canvas');
+            const ctx = gc.getContext('2d');
+            setTimeout(() => ctx.clearRect(0, 0, gc.width, gc.height), 300);
+            document.getElementById('gesture-prog-wrap').classList.remove('show');
+            if (cb) cb();
+        }
+
+        // ═══════════════════════════════════════════════
+        // FEEDBACK
+        // ═══════════════════════════════════════════════
+        let feedbackTimer = null;
+        function flashFeedback(text, type, ms = 1200) {
+            const fb = document.getElementById('feedback');
+            const fi = document.getElementById('feedback-inner');
+            fi.textContent = text; fb.className = 'show ' + type;
+            clearTimeout(feedbackTimer); feedbackTimer = setTimeout(() => fb.classList.remove('show'), ms);
+        }
+        function emissiveFlash(mesh, col, duration) { if (!mesh || !mesh.material) return; const m = mesh.material; m.emissive = new THREE.Color(col); m.emissiveIntensity = 1.4; setTimeout(() => { if (m) m.emissiveIntensity = 0; }, duration); }
+
+        // ═══════════════════════════════════════════════
+        // TOOL BUILDERS
+        // ═══════════════════════════════════════════════
+        function buildLinemansPliers() {
+            const g = new THREE.Group();
+            // Jaw halves — pivot at center, jaws open upward
+            const jawTop = new THREE.Group(); // upper jaw assembly
+            const jtBody = bx(0.68, 0.2, 0.16, 0x708090, 0.25, 0.8); jtBody.position.set(-0.1, 0.1, 0); jawTop.add(jtBody);
+            for (let i = 0; i < 5; i++) { const s = bx(0.05, 0.06, 0.18, 0x5a6a7a, 0.3, 0.8); s.position.set(-0.28 + i * 0.12, 0.19, 0); jawTop.add(s); }
+            const cutTop = bx(0.13, 0.12, 0.17, 0x607080, 0.2, 0.85); cutTop.position.set(0.25, 0.06, 0); jawTop.add(cutTop);
+            jawTop.position.set(0, 0.22, 0); setRole(jawTop, 'jawTop'); g.add(jawTop);
+
+            const jawBot = new THREE.Group(); // lower jaw assembly
+            const jbBody = bx(0.68, 0.2, 0.16, 0x708090, 0.25, 0.8); jbBody.position.set(-0.1, -0.1, 0); jawBot.add(jbBody);
+            for (let i = 0; i < 5; i++) { const s = bx(0.05, 0.06, 0.18, 0x5a6a7a, 0.3, 0.8); s.position.set(-0.28 + i * 0.12, -0.19, 0); jawBot.add(s); }
+            const cutBot = bx(0.13, 0.12, 0.17, 0x607080, 0.2, 0.85); cutBot.position.set(0.25, -0.06, 0); jawBot.add(cutBot);
+            jawBot.position.set(0, 0.22, 0); setRole(jawBot, 'jawBot'); g.add(jawBot);
+
+            // Pivot pin
+            const pivot = cy(0.09, 0.09, 0.2, 16, 0x9a9a9a, 0.15, 0.9); pivot.rotation.x = Math.PI / 2; pivot.position.set(0, 0.22, 0); g.add(pivot);
+
+            // Handles
+            const hTop = new THREE.Group();
+            const hTb = bx(0.18, 0.96, 0.13, 0x111111, 0.85, 0.02); hTop.add(hTb);
+            for (let i = 0; i < 6; i++) { const r = bx(0.2, 0.036, 0.15, 0x222222, 0.9, 0); r.position.set(0, 0.18 - i * 0.17, 0.005); hTop.add(r); }
+            hTop.position.set(-0.14, -0.28, 0); hTop.rotation.z = 0.09; setRole(hTop, 'hTop'); g.add(hTop);
+
+            const hBot = new THREE.Group();
+            const hBb = bx(0.18, 0.96, 0.13, 0xcc2200, 0.7, 0.03); hBot.add(hBb);
+            for (let i = 0; i < 6; i++) { const r = bx(0.2, 0.036, 0.15, 0xaa1a00, 0.8, 0); r.position.set(0, 0.18 - i * 0.17, 0.005); hBot.add(r); }
+            hBot.position.set(0.14, -0.28, 0); hBot.rotation.z = -0.09; setRole(hBot, 'hBot'); g.add(hBot);
+
+            addShadow(g);
+            toolG = g; g.scale.setScalar(1.5); g.position.set(0, 0.3, 0.3);
+            scene.add(g);
+
+            // Context: wire bundle on workbench
+            const wireColors = [0xcc2222, 0x2255cc, 0x22aa55];
+            const wYBase = -1.85;
+            wireColors.forEach((col, i) => {
+                const w = wireMesh([[-2.8, wYBase + i * 0.1, 0.5], [-0.6, wYBase + i * 0.1, 0.58], [0.3, wYBase + i * 0.1, 0.55], [1.2, wYBase + i * 0.1, 0.5]], col);
+                w.castShadow = true; setRole(w, 'wire' + i); scene.add(w); ctxObjs.push(w);
+                // Copper tip
+                const tip = cy(0.034, 0.028, 0.28, 10, 0xd4a853, 0.3, 0.6); tip.rotation.z = Math.PI / 2; tip.position.set(1.35, wYBase + i * 0.1, 0.52); scene.add(tip); ctxObjs.push(tip);
+            });
+            // Wire clamp
+            const clamp = bx(0.4, 0.38, 0.22, 0x111111, 0.65, 0.15); clamp.position.set(-0.55, -1.85, 0.56); scene.add(clamp); ctxObjs.push(clamp);
+
+            return g;
+        }
+
+        function buildWireStripper() {
+            const g = new THREE.Group();
+            // Body with notches
+            const bodyFrame = bx(0.9, 0.26, 0.16, 0x4a2a08, 0.45, 0.12); bodyFrame.position.set(-0.05, 0.55, 0); g.add(bodyFrame);
+            // Notch cuts
+            for (let i = 0; i < 7; i++) {
+                const n = bx(0.052, 0.2, 0.19, 0x1a1a1a, 0.8, 0.05); n.position.set(-0.36 + i * 0.12, 0.56, 0);
+                const nc = bx(0.055, 0.21, 0.20, i === 2 ? 0x00aaff : 0x252525, 0.7, 0.05); nc.position.set(-0.36 + i * 0.12, 0.56, 0);
+                g.add(n); if (i === 2) setRole(nc, 'notch12awg');
+                g.add(nc);
+            }
+            // Pivot
+            const piv = cy(0.08, 0.08, 0.18, 14, 0x888888, 0.2, 0.75); piv.rotation.x = Math.PI / 2; piv.position.set(-0.05, 0.22, 0); g.add(piv);
+            // Handles
+            const hA = new THREE.Group();
+            bx(0.17, 0.9, 0.13, 0x111111, 0.8, 0.03);
+            const hAb = bx(0.17, 0.9, 0.13, 0x111111, 0.8, 0.03); hA.add(hAb);
+            for (let i = 0; i < 5; i++) { const r = bx(0.19, 0.04, 0.15, 0x222222, 0.9, 0); r.position.set(0, 0.15 - i * 0.16, 0.005); hA.add(r); }
+            hA.position.set(-0.16, -0.24, 0); hA.rotation.z = 0.1; setRole(hA, 'hA'); g.add(hA);
+            const hB = new THREE.Group();
+            const hBb = bx(0.17, 0.9, 0.13, 0xdd6600, 0.7, 0.03); hB.add(hBb);
+            for (let i = 0; i < 5; i++) { const r = bx(0.19, 0.04, 0.15, 0xbb5500, 0.8, 0); r.position.set(0, 0.15 - i * 0.16, 0.005); hB.add(r); }
+            hB.position.set(0.16, -0.24, 0); hB.rotation.z = -0.1; setRole(hB, 'hB'); g.add(hB);
+
+            addShadow(g);
+            toolG = g; g.scale.setScalar(1.5); g.position.set(0, 0.3, 0.3);
+            scene.add(g);
+
+            // Wire to strip
+            const wireIns = wireMesh([[-0.5, -1.9, 0.55], [0.3, -1.9, 0.56], [1.1, -1.9, 0.55], [1.8, -1.9, 0.53]], 0xcc4400, 0.055);
+            setRole(wireIns, 'wireIns'); scene.add(wireIns); ctxObjs.push(wireIns);
+            const wireCopper = wireMesh([[0.85, -1.9, 0.55], [1.1, -1.9, 0.55], [1.8, -1.9, 0.53]], 0xd4a853, 0.038);
+            wireCopper.visible = false; setRole(wireCopper, 'wireCopper'); scene.add(wireCopper); ctxObjs.push(wireCopper);
+
+            return g;
+        }
+
+        function buildScrewdrivers() {
+            const g = new THREE.Group();
+            // Blade/shank — pointing DOWN initially
+            const shank = cy(0.028, 0.022, 1.55, 10, 0xcccccc, 0.18, 0.88); shank.position.set(0, -0.62, 0); setRole(shank, 'shank'); g.add(shank);
+            // Phillips tip (cross)
+            const tipH = bx(0.13, 0.025, 0.025, 0xaaaaaa, 0.15, 0.9); tipH.position.set(0, -1.41, 0); g.add(tipH);
+            const tipV = bx(0.025, 0.025, 0.13, 0xaaaaaa, 0.15, 0.9); tipV.position.set(0, -1.41, 0); g.add(tipV);
+            // Ferrule
+            const ferrule = cy(0.1, 0.1, 0.06, 18, 0xbbbbbb, 0.2, 0.8); ferrule.position.set(0, 0.14, 0); g.add(ferrule);
+            // Handle
+            const hdl = cy(0.15, 0.19, 0.55, 16, 0xdd3300, 0.6, 0.04); hdl.position.set(0, 0.52, 0); g.add(hdl);
+            for (let i = 0; i < 6; i++) { const f = cy(0.21, 0.21, 0.04, 16, 0xbb2800, 0.7, 0.04); f.position.set(0, 0.3 + i * 0.1, 0); g.add(f); }
+            const hdlTop = cy(0.14, 0.1, 0.35, 16, 0xcc2200, 0.65, 0.04); hdlTop.position.set(0, 0.88, 0); g.add(hdlTop);
+            const hdlCap = sp(0.11, 0xcc2200, 0.7, 0.04); hdlCap.position.set(0, 1.06, 0); g.add(hdlCap);
+            const chromCap = cy(0.1, 0.1, 0.025, 16, 0xaaaaaa, 0.1, 0.85); chromCap.position.set(0, 1.12, 0); g.add(chromCap);
+
+            addShadow(g);
+            toolG = g; g.scale.setScalar(1.5); g.position.set(0, 0.3, 0.3);
+            scene.add(g);
+
+            // Electrical box context
+            const box = bx(1.4, 1.1, 0.2, 0xeeeee0, 0.65, 0.02); box.position.set(0, -1.55, -2.2); box.castShadow = true; scene.add(box); ctxObjs.push(box);
+            const face = bx(1.1, 0.85, 0.04, 0xf5f5ec, 0.7, 0.01); face.position.set(0, -1.55, -2.09); scene.add(face); ctxObjs.push(face);
+            // 3 screws on box
+            const screwXs = [-0.38, 0, 0.38];
+            screwXs.forEach((sx, si) => {
+                const screwBody = cy(0.055, 0.05, 0.05, 14, 0x999999, 0.2, 0.7); screwBody.rotation.x = Math.PI / 2; screwBody.position.set(sx, -1.55, -2.075); setRole(screwBody, 'screw' + si); scene.add(screwBody); ctxObjs.push(screwBody);
+                // Phillips cross on screw
+                const sl1 = bx(0.09, 0.012, 0.025, 0x444444, 0.9, 0); sl1.position.set(sx, -1.55, -2.046); scene.add(sl1); ctxObjs.push(sl1);
+                const sl2 = bx(0.012, 0.09, 0.025, 0x444444, 0.9, 0); sl2.position.set(sx, -1.55, -2.046); scene.add(sl2); ctxObjs.push(sl2);
+            });
+
+            return g;
+        }
+
+        function buildVoltageTester() {
+            const g = new THREE.Group();
+            // Body — yellow top, black bottom, metal tip
+            const bodyTop = cy(0.09, 0.09, 0.7, 16, 0xeeee00, 0.55, 0.04); bodyTop.position.set(0, 0.45, 0); g.add(bodyTop);
+            const bodyBot = cy(0.085, 0.065, 0.8, 16, 0x111111, 0.7, 0.03); bodyBot.position.set(0, -0.28, 0); g.add(bodyBot);
+            const tipHousing = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.32, 14), mat(0x888888, 0.25, 0.65)); tipHousing.position.set(0, -0.88, 0); tipHousing.rotation.x = Math.PI; g.add(tipHousing);
+            const tipPoint = cy(0.012, 0.005, 0.18, 8, 0xaaaaaa, 0.15, 0.8); tipPoint.position.set(0, -1.18, 0); g.add(tipPoint);
+            // LED window
+            const ledWin = bx(0.14, 0.22, 0.1, 0x002200, 0.1, 0, 0x00ff00, 0.15); ledWin.position.set(0, 0.3, 0.09); setRole(ledWin, 'ledWin'); g.add(ledWin);
+            const led = bx(0.08, 0.1, 0.06, 0x00ff00, 0.05, 0, 0x00ff00, 0.4); led.position.set(0, 0.3, 0.14); setRole(led, 'led'); g.add(led);
+            // Clip
+            const clip = bx(0.06, 0.7, 0.04, 0xcccccc, 0.3, 0.65); clip.position.set(0.11, 0.22, 0.1); g.add(clip);
+            const clipTop = cy(0.045, 0.045, 0.06, 10, 0xbbbbbb, 0.3, 0.6); clipTop.rotation.x = Math.PI / 2; clipTop.position.set(0.11, 0.6, 0.1); g.add(clipTop);
+            // Band
+            const band = cy(0.093, 0.093, 0.07, 16, 0xffdd00, 0.5, 0.05); band.position.set(0, 0.05, 0); g.add(band);
+
+            addShadow(g);
+            toolG = g; g.scale.setScalar(1.5); g.position.set(0, 0.3, 0.3);
+            scene.add(g);
+
+            // Electrical panel context
+            const panel = bx(1.6, 2.4, 0.3, 0x888880, 0.5, 0.18); panel.position.set(2.5, 0.2, -2.2); scene.add(panel); ctxObjs.push(panel);
+            for (let i = 0; i < 5; i++) { const br = bx(0.9, 0.16, 0.1, i % 2 ? 0x1a1a2a : 0x222233, 0.45, 0.2); br.position.set(2.5, -0.55 + i * 0.28, -2.08); scene.add(br); ctxObjs.push(br); }
+            // Wires (red=live, black=neutral)
+            const redW = wireMesh([[2.4, 0.45, -2.08], [2.4, 0.5, -1.5], [2.4, 0.4, -0.5]], 0xcc2222); setRole(redW, 'redWire'); scene.add(redW); ctxObjs.push(redW);
+            const blkW = wireMesh([[2.4, -0.2, -2.08], [2.4, -0.15, -1.5], [2.4, -0.25, -0.5]], 0x111111); setRole(blkW, 'blkWire'); scene.add(blkW); ctxObjs.push(blkW);
+            // Outlet
+            const outlet = bx(0.5, 0.38, 0.12, 0xf0f0e0, 0.7, 0.01); outlet.position.set(-1.8, -1.7, -0.8); setRole(outlet, 'outlet'); scene.add(outlet); ctxObjs.push(outlet);
+            const slot1 = bx(0.06, 0.12, 0.05, 0x333333, 0.9, 0); slot1.position.set(-1.88, -1.72, -0.73); scene.add(slot1); ctxObjs.push(slot1);
+            const slot2 = bx(0.06, 0.12, 0.05, 0x333333, 0.9, 0); slot2.position.set(-1.72, -1.72, -0.73); scene.add(slot2); ctxObjs.push(slot2);
+
+            return g;
+        }
+
+        function buildMultimeter() {
+            const g = new THREE.Group();
+            // Body
+            const body = bx(0.9, 1.4, 0.32, 0x1a2850, 0.65, 0.12); g.add(body);
+            const face = bx(0.86, 1.35, 0.06, 0x1e2e5a, 0.55, 0.1); face.position.set(0, 0, 0.19); g.add(face);
+            // Display
+            const dispBg = bx(0.64, 0.54, 0.04, 0x001500, 0.15, 0); dispBg.position.set(0, 0.38, 0.22); g.add(dispBg);
+            const disp = bx(0.56, 0.46, 0.03, 0x003300, 0.04, 0, 0x00ff44, 0.3); disp.position.set(0, 0.38, 0.24); setRole(disp, 'display'); g.add(disp);
+            // "- - -" on display (tiny bars)
+            for (let i = 0; i < 3; i++) { const bar = bx(0.09, 0.02, 0.01, 0x00ff44, 0.1, 0, 0x00ff44, 0.8); bar.position.set(-0.14 + i * 0.14, 0.38, 0.255); setRole(bar, 'dispBar' + i); g.add(bar); }
+
+            // Dial base and pointer
+            const dialBase = cy(0.28, 0.28, 0.06, 32, 0x1a1a40, 0.5, 0.25); dialBase.rotation.x = Math.PI / 2; dialBase.position.set(0, -0.08, 0.22); g.add(dialBase);
+            // Dial markings (colored sectors)
+            const dialFace = cy(0.26, 0.26, 0.04, 32, 0x252545, 0.4, 0.2); dialFace.rotation.x = Math.PI / 2; dialFace.position.set(0, -0.08, 0.25); setRole(dialFace, 'dialFace'); g.add(dialFace);
+            // Pointer knob
+            const dialKnob = cy(0.14, 0.14, 0.08, 24, 0x333366, 0.4, 0.3); dialKnob.rotation.x = Math.PI / 2; dialKnob.position.set(0, -0.08, 0.28); setRole(dialKnob, 'dialKnob'); g.add(dialKnob);
+            // Pointer indicator
+            const ptr = bx(0.038, 0.2, 0.04, 0xff3300, 0.5, 0.1); ptr.position.set(0.0, 0.08, 0.31); setRole(ptr, 'ptr'); g.add(ptr);
+
+            // Ports
+            const portR = cy(0.038, 0.038, 0.06, 10, 0xdd2222, 0.4, 0.3); portR.rotation.x = Math.PI / 2; portR.position.set(0.2, -0.56, 0.22); g.add(portR);
+            const portB = cy(0.038, 0.038, 0.06, 10, 0x222222, 0.4, 0.3); portB.rotation.x = Math.PI / 2; portB.position.set(0, -0.56, 0.22); g.add(portB);
+            const portC = cy(0.038, 0.038, 0.06, 10, 0x444444, 0.4, 0.3); portC.rotation.x = Math.PI / 2; portC.position.set(-0.22, -0.56, 0.22); g.add(portC);
+
+            // Probe leads
+            const probeR = wireMesh([[0.2, -0.62, 0.25], [0.38, -0.95, 0.4], [0.58, -1.18, 0.42]], 0xcc2222, 0.032); setRole(probeR, 'probeR'); g.add(probeR);
+            const probeB = wireMesh([[-0.2, -0.62, 0.25], [-0.32, -0.95, 0.4], [-0.52, -1.18, 0.42]], 0x111111, 0.032); g.add(probeB);
+            // Probe tips
+            const tipR = cy(0.014, 0.007, 0.22, 8, 0xdddddd, 0.2, 0.8); tipR.position.set(0.58, -1.3, 0.42); setRole(tipR, 'tipR'); g.add(tipR);
+            const tipB = cy(0.014, 0.007, 0.22, 8, 0xdddddd, 0.2, 0.8); tipB.position.set(-0.52, -1.3, 0.42); g.add(tipB);
+
+            addShadow(g);
+            toolG = g; g.scale.setScalar(1.5); g.position.set(0, 0.3, 0.3);
+            scene.add(g);
+
+            // Terminal block context
+            const term = bx(1.5, 0.6, 0.28, 0xccccaa, 0.5, 0.12); term.position.set(2.2, 0.6, -2.2); scene.add(term); ctxObjs.push(term);
+            ['L', 'N', 'E'].forEach((lbl, i) => {
+                const tb = cy(0.055, 0.055, 0.08, 12, 0xbbbbbb, 0.3, 0.6); tb.rotation.x = Math.PI / 2; tb.position.set(2.0 + i * 0.38, 0.6, -2.08); setRole(tb, 'term' + lbl); scene.add(tb); ctxObjs.push(tb);
+                const twire = wireMesh([[2.0 + i * 0.38, 0.6, -2.08], [2.0 + i * 0.38, 0.6, -1.4]], [0xcc2222, 0x111111, 0x22aa55][i], 0.03); scene.add(twire); ctxObjs.push(twire);
+            });
+
+            return g;
+        }
+
+        function buildElectricalTape() {
+            const g = new THREE.Group();
+            // Tape roll — cylinder on its side
+            const core = cy(0.18, 0.18, 0.32, 32, 0x333333, 0.8, 0.04); core.rotation.x = Math.PI / 2; g.add(core);
+            const roll = cy(0.5, 0.5, 0.3, 32, 0x0d0d0d, 0.85, 0.02); roll.rotation.x = Math.PI / 2; g.add(roll);
+            const sideA = cy(0.51, 0.51, 0.02, 32, 0x1a1a1a, 0.6, 0.05); sideA.rotation.x = Math.PI / 2; sideA.position.set(0, 0, -0.17); g.add(sideA);
+            const sideB = cy(0.51, 0.51, 0.02, 32, 0x1a1a1a, 0.6, 0.05); sideB.rotation.x = Math.PI / 2; sideB.position.set(0, 0, 0.17); g.add(sideB);
+            // Tape strip hanging down
+            const strip = bx(0.62, 0.08, 0.28, 0x111111, 0.85, 0.02); strip.position.set(0.6, 0.52, 0); setRole(strip, 'strip'); g.add(strip);
+            const stripEnd = bx(0.08, 0.22, 0.3, 0x1a1a1a, 0.85, 0.01); stripEnd.position.set(0.95, 0.5, 0); g.add(stripEnd);
+
+            addShadow(g);
+            toolG = g; g.scale.setScalar(1.5); g.position.set(0, 0.3, 0.3);
+            scene.add(g);
+
+            // Wire joint context
+            const w1 = wireMesh([[-2.0, -1.88, 0.55], [-0.5, -1.88, 0.58], [0.95, -1.88, 0.52]], 0xcc2222); w1.castShadow = true; scene.add(w1); ctxObjs.push(w1);
+            const w2 = wireMesh([[-2.0, -2.0, 0.55], [-0.5, -2.0, 0.58], [0.95, -2.0, 0.52]], 0x2255cc); w2.castShadow = true; scene.add(w2); ctxObjs.push(w2);
+            // Exposed copper at joint
+            const cop1 = cy(0.034, 0.03, 0.4, 10, 0xd4a853, 0.3, 0.6); cop1.rotation.z = Math.PI / 2; cop1.position.set(-0.2, -1.88, 0.56); scene.add(cop1); ctxObjs.push(cop1);
+            const cop2 = cy(0.034, 0.03, 0.4, 10, 0xd4a853, 0.3, 0.6); cop2.rotation.z = Math.PI / 2; cop2.position.set(-0.2, -2.0, 0.56); scene.add(cop2); ctxObjs.push(cop2);
+            // Wire nut / joint
+            const wnut = bx(0.24, 0.22, 0.18, 0xff8800, 0.65, 0.08); wnut.position.set(-0.2, -1.94, 0.56); setRole(wnut, 'joint'); scene.add(wnut); ctxObjs.push(wnut);
+
+            return g;
+        }
+
+        function buildUtilityKnife() {
+            const g = new THREE.Group();
+            // Handle body
+            const hdl = bx(0.78, 0.22, 0.18, 0x666666, 0.55, 0.28); hdl.position.set(-0.2, 0, 0); g.add(hdl);
+            const hdlBot = bx(0.72, 0.13, 0.18, 0x555555, 0.6, 0.25); hdlBot.position.set(-0.2, -0.18, 0); g.add(hdlBot);
+            // Grip grooves
+            for (let i = 0; i < 6; i++) { const groove = bx(0.04, 0.26, 0.2, 0x444444, 0.8, 0.1); groove.position.set(-0.52 + i * 0.11, 0, 0.005); g.add(groove); }
+            // Slider
+            const slider = bx(0.14, 0.1, 0.09, 0x888888, 0.4, 0.35); slider.position.set(-0.06, 0.14, 0.1); g.add(slider);
+            // Blade housing
+            const housing = bx(0.36, 0.19, 0.13, 0x777777, 0.45, 0.32); housing.position.set(0.36, 0.03, 0); g.add(housing);
+            // Blade (silver with orange tip)
+            const blade = bx(0.82, 0.16, 0.055, 0xdddddd, 0.12, 0.88); blade.position.set(0.55, 0.04, 0); setRole(blade, 'blade'); g.add(blade);
+            // Score lines on blade
+            for (let i = 0; i < 4; i++) { const sc = bx(0.01, 0.17, 0.06, 0xaaaaaa, 0.2, 0.9); sc.position.set(0.22 + i * 0.14, 0.04, 0.03); g.add(sc); }
+            // Blade tip bevel
+            const bevel = bx(0.1, 0.08, 0.056, 0xcccccc, 0.15, 0.88); bevel.position.set(0.99, 0.09, 0); bevel.rotation.z = -0.35; g.add(bevel);
+            // Orange blade body accent
+            const bladeAccent = bx(0.3, 0.06, 0.057, 0xff8800, 0.3, 0.2); bladeAccent.position.set(0.3, 0.07, 0); g.add(bladeAccent);
+
+            addShadow(g);
+            toolG = g; g.scale.setScalar(1.5); g.position.set(0, 0.3, 0.3);
+            scene.add(g);
+
+            // Cable to cut
+            const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 3.2, 16), mat(0xf0f0c0, 0.65, 0.02));
+            cable.rotation.z = Math.PI / 2; cable.position.set(0, -1.9, 0.55);
+            setRole(cable, 'cable'); scene.add(cable); ctxObjs.push(cable);
+            // Score line (hidden initially)
+            const scoreLine = bx(0.03, 3.2, 0.06, 0xcccc88, 0.4, 0); scoreLine.rotation.z = Math.PI / 2; scoreLine.position.set(0, -1.84, 0.66); scoreLine.visible = false; setRole(scoreLine, 'scoreLine'); scene.add(scoreLine); ctxObjs.push(scoreLine);
+            // Peeled jacket (hidden initially)
+            const jacketPeel = bx(1.1, 0.19, 0.2, 0xf0f0c0, 0.65, 0.02); jacketPeel.position.set(1.15, -1.88, 0.55); jacketPeel.visible = false; setRole(jacketPeel, 'jacket'); scene.add(jacketPeel); ctxObjs.push(jacketPeel);
+            // Inner wires (hidden initially)
+            [[0xcc2222, 'inner0'], [0x111111, 'inner1'], [0x22aa55, 'inner2']].forEach(([col, role], i) => {
+                const iw = wireMesh([[0.6, -1.88 + i * 0.04, 0.55], [1.1, -1.88 + i * 0.04, 0.55], [1.75, -1.88 + i * 0.04, 0.55]], col, 0.03);
+                iw.visible = false; setRole(iw, role); scene.add(iw); ctxObjs.push(iw);
+            });
+
+            return g;
+        }
+
+        const BUILDERS = [buildLinemansPliers, buildWireStripper, buildScrewdrivers, buildVoltageTester, buildMultimeter, buildElectricalTape, buildUtilityKnife];
+
+        // ═══════════════════════════════════════════════
+        // STEP LOGIC — accurate per-tool animations
+        // ═══════════════════════════════════════════════
+        const STEPS = {
+            // ─── LINEMAN'S PLIERS ───
+            0: [
+                // Step 1: Grip wire bundle — pliers move down, jaws close
+                (done) => seq(
+                    n => animCam([0, 0, 7], [0, -1.85, 0.5], 700, n),
+                    n => activateInteraction('click', '✊', 'CLICK TO GRIP WIRES', n),
+                    n => seq(
+                        n2 => twPos(toolG, [0, -0.55, 0.58], 0.4, n2), // Move pliers down onto wires
+                        n2 => {
+                            // Jaws close — jawTop goes down, jawBot goes up toward each other
+                            const jT = getRole('jawTop'), jB = getRole('jawBot');
+                            if (jT) { const from = jT.position.y; tw(t => { jT.position.y = from - 0.18 * eOut(t); }, 0.25, null); }
+                            if (jB) { const from = jB.position.y; tw(t => { jB.position.y = from + 0.18 * eOut(t); }, 0.25, null); }
+                            // Wires slightly compress
+                            ctxObjs.slice(0, 3).forEach(o => emissiveFlash(o, 0xffffff, 400));
+                            wait(350, n2);
+                        },
+                        n2 => { flashFeedback('✊ GRIPPED!', 'ok'); wait(500, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.45, done)
+                    )
+                ),
+                // Step 2: Twist — pliers rotate around Z axis (spin the wire bundle)
+                (done) => seq(
+                    n => animCam([0.2, -0.5, 6.8], [0, -1.85, 0.55], 600, n),
+                    n => activateInteraction('rotate', '🔄', 'DRAG IN CIRCLE TO TWIST', n),
+                    n => seq(
+                        n2 => twPos(toolG, [0, -0.52, 0.58], 0.3, n2),
+                        n2 => {
+                            // Close jaws first
+                            const jT = getRole('jawTop'), jB = getRole('jawBot');
+                            if (jT) { tw(t => { jT.position.y = 0.22 - 0.18 * eOut(t); }, 0.2, null); }
+                            if (jB) { tw(t => { jB.position.y = 0.22 + 0.18 * eOut(t); }, 0.2, null); }
+                            wait(200, n2);
+                        },
+                        n2 => {
+                            // Rotate pliers+wires together around Y axis (twist motion)
+                            let k = 0;
+                            function doTwist() {
+                                tw(t => { toolG.rotation.y = rotY + (k % 2 === 0 ? 1 : -1) * Math.PI * 0.7 * eio(t); }, 0.35, () => {
+                                    if (++k < 4) doTwist(); else n2();
+                                });
+                            }
+                            doTwist();
+                            ctxObjs.slice(0, 3).forEach(o => emissiveFlash(o, 0xffd700, 1400));
+                        },
+                        n2 => {
+                            const jT = getRole('jawTop'), jB = getRole('jawBot');
+                            if (jT) tw(t => { jT.position.y = 0.04 + 0.18 * eOut(t); }, 0.2, null);
+                            if (jB) tw(t => { jB.position.y = 0.4 - 0.18 * eOut(t); }, 0.2, null);
+                            wait(220, n2);
+                        },
+                        n2 => { flashFeedback('🔄 TWISTED!', 'ok'); wait(500, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.4, done)
+                    )
+                ),
+                // Step 3: Cut — move near wire end, jaws snap shut, wire end disappears
+                (done) => seq(
+                    n => animCam([1.1, -0.2, 6.5], [1.0, -1.88, 0.5], 650, n),
+                    n => activateInteraction('click', '✂️', 'CLICK TO CUT WIRE', n),
+                    n => seq(
+                        n2 => twPos(toolG, [1.0, -0.52, 0.58], 0.35, n2), // Move to wire end
+                        n2 => {
+                            const jT = getRole('jawTop'), jB = getRole('jawBot');
+                            if (jT) tw(t => { jT.position.y = 0.04 + 0.18 * eOut(t) - 0.28 * eOut(t); }, 0.18, null);
+                            if (jB) tw(t => { jB.position.y = 0.4 - 0.18 * eOut(t) + 0.28 * eOut(t); }, 0.18, null);
+                            wait(200, n2);
+                        },
+                        n2 => {
+                            // Snip — copper tip disappears
+                            const tip = ctxObjs.find((o, i) => i === 4 || i === 7 || i === 10);
+                            ctxObjs.filter((_, i) => i >= 3 && i <= 11).forEach((o, i) => { if (i % 3 === 1) twScale(o, 1, 0, 0.22, null); });
+                            wait(250, n2);
+                        },
+                        n2 => { flashFeedback('✂️ CUT FLUSH!', 'ok'); wait(500, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.4, done)
+                    )
+                ),
+                // Step 4: Inspect — orbit camera, flash joint
+                (done) => seq(
+                    n => animCam([0, 0.6, 5.5], [0, -1.88, 0.55], 700, n),
+                    n => activateInteraction('click', '🔍', 'CLICK TO INSPECT JOINT', n),
+                    n => seq(
+                        n2 => {
+                            ctxObjs.slice(0, 3).forEach(o => emissiveFlash(o, 0x22ff88, 900));
+                            tw(t => { rotY = t * Math.PI * 0.6; }, 0.9, n2);
+                        },
+                        n2 => { flashFeedback('✓ PERFECT JOINT!', 'ok'); wait(700, n2); },
+                        n2 => { tw(t => { rotY = Math.PI * 0.6 * (1 - t); }, 0.5, done); }
+                    )
+                )
+            ],
+
+            // ─── WIRE STRIPPER ───
+            1: [
+                // Step 1: Click 12AWG notch — tool moves to wire, highlight correct notch
+                (done) => seq(
+                    n => animCam([-0.1, 0.3, 6.8], [-0.05, 0.55, 0], 700, n),
+                    n => activateInteraction('click', '🎯', 'CLICK THE 12 AWG NOTCH', n),
+                    n => seq(
+                        n2 => {
+                            const notch = getRole('notch12awg');
+                            if (notch) { emissiveFlash(notch, 0x00ccff, 600); }
+                            const hA = getRole('hA'), hB = getRole('hB');
+                            if (hA) twRot(hA, 'z', 0.1, -0.05, 0.22, eOut, null);
+                            if (hB) twRot(hB, 'z', -0.1, 0.05, 0.22, eOut, null);
+                            wait(300, n2);
+                        },
+                        n2 => { flashFeedback('✓ 12 AWG NOTCH!', 'ok'); wait(500, n2); },
+                        n2 => {
+                            const hA = getRole('hA'), hB = getRole('hB');
+                            if (hA) twRot(hA, 'z', -0.05, 0.1, 0.2, null, null);
+                            if (hB) twRot(hB, 'z', 0.05, -0.1, 0.2, null, null);
+                            wait(250, done);
+                        }
+                    )
+                ),
+                // Step 2: Squeeze to score — tool moves to wire end, jaws close
+                (done) => seq(
+                    n => animCam([0.4, 0.2, 6], [0.5, -1.9, 0.55], 650, n),
+                    n => activateInteraction('click', '✊', 'CLICK TO SCORE INSULATION', n),
+                    n => seq(
+                        n2 => twPos(toolG, [0.5, -0.55, 0.58], 0.4, n2), // Move to wire
+                        n2 => {
+                            const hA = getRole('hA'), hB = getRole('hB');
+                            if (hA) twRot(hA, 'z', 0.1, -0.22, 0.2, eOut, null);
+                            if (hB) twRot(hB, 'z', -0.1, 0.22, 0.2, eOut, null);
+                            const wire = getCtxRole('wireIns');
+                            if (wire) emissiveFlash(wire, 0xff5500, 500);
+                            wait(300, n2);
+                        },
+                        n2 => {
+                            const hA = getRole('hA'), hB = getRole('hB');
+                            if (hA) twRot(hA, 'z', -0.22, 0.1, 0.18, null, null);
+                            if (hB) twRot(hB, 'z', 0.22, -0.1, 0.18, null, null);
+                            wait(220, n2);
+                        },
+                        n2 => { flashFeedback('✓ SCORED!', 'ok'); wait(500, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.4, done)
+                    )
+                ),
+                // Step 3: Pull insulation off — tool slides right, insulation disappears, copper shows
+                (done) => seq(
+                    n => animCam([0.5, 0.2, 6.5], [0.5, -1.9, 0.55], 600, n),
+                    n => activateInteraction('swipe-right', '👋', 'DRAG RIGHT TO PULL OFF', n),
+                    n => seq(
+                        n2 => {
+                            // Tool slides right (pulling away), insulation segment disappears
+                            twPos(toolG, [1.2, -0.55, 0.58], 0.45, null);
+                            wait(200, () => {
+                                const ins = getCtxRole('wireIns');
+                                const cop = getCtxRole('wireCopper');
+                                if (ins) { twScale(ins, 1, 0, 0.3, null); wait(300, () => { if (ins) ins.visible = false; }); }
+                                if (cop) { cop.visible = true; emissiveFlash(cop, 0xffd700, 700); }
+                            });
+                            wait(600, n2);
+                        },
+                        n2 => { flashFeedback('✓ STRIPPED!', 'ok'); wait(500, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.4, done)
+                    )
+                ),
+                // Step 4: Inspect copper — glow and orbit
+                (done) => seq(
+                    n => animCam([0.4, 0.3, 5.8], [0.5, -1.9, 0.55], 600, n),
+                    n => activateInteraction('click', '🔍', 'CLICK TO INSPECT', n),
+                    n => seq(
+                        n2 => {
+                            const cop = getCtxRole('wireCopper');
+                            if (cop) emissiveFlash(cop, 0x22ff88, 1000);
+                            tw(t => { rotY = t * Math.PI * 0.4; }, 0.9, n2);
+                        },
+                        n2 => { flashFeedback('✓ CLEAN COPPER!', 'ok'); wait(600, n2); },
+                        n2 => { tw(t => { rotY = Math.PI * 0.4 * (1 - t); }, 0.5, done); }
+                    )
+                )
+            ],
+
+            // ─── SCREWDRIVERS ───
+            2: [
+                // Step 1: Seat bit — screwdriver descends vertically, tip touches screw cross
+                (done) => seq(
+                    n => animCam([-0.38, 1.5, 5.5], [-0.38, -1.55, -2.2], 750, n),
+                    n => activateInteraction('click', '🪛', 'CLICK TO SEAT THE BIT', n),
+                    n => seq(
+                        n2 => {
+                            // Move screwdriver directly above screw 0 (leftmost)
+                            twPos(toolG, [-0.38, 1.2, -2.1], 0.45, n2);
+                        },
+                        n2 => {
+                            // Descend straight down — tip aligns with screw head
+                            twPos(toolG, [-0.38, -0.85, -2.08], 0.5, n2);
+                        },
+                        n2 => {
+                            // Flash screw
+                            const screw = ctxObjs.find(o => o.userData.role === 'screw0');
+                            if (screw) emissiveFlash(screw, 0x00ccff, 500);
+                            wait(400, n2);
+                        },
+                        n2 => { flashFeedback('✓ BIT SEATED!', 'ok'); wait(500, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.5, done)
+                    )
+                ),
+                // Step 2: Drive screw — screwdriver spins around its own Y axis while moving down
+                (done) => seq(
+                    n => animCam([-0.38, 1.5, 5.5], [-0.38, -1.55, -2.2], 700, n),
+                    n => activateInteraction('rotate', '🔄', 'DRAG IN CIRCLE TO DRIVE', n),
+                    n => seq(
+                        n2 => twPos(toolG, [-0.38, 1.2, -2.1], 0.3, n2),
+                        n2 => twPos(toolG, [-0.38, -0.85, -2.08], 0.4, n2),
+                        n2 => {
+                            // Spin around local Y axis (self-rotation = screwing)
+                            let k = 0, spinY = 0;
+                            function spin() {
+                                tw(t => {
+                                    spinY += 0.18; // increment per tick
+                                    toolG.rotation.y = spinY;
+                                    // Move screw deeper slightly
+                                    const screw = ctxObjs.find(o => o.userData.role === 'screw0');
+                                    if (screw) screw.position.z = -2.075 + k * 0.008;
+                                }, 0.28, () => {
+                                    if (++k < 6) spin(); else n2();
+                                });
+                            }
+                            spin();
+                            const screw = ctxObjs.find(o => o.userData.role === 'screw0');
+                            if (screw) emissiveFlash(screw, 0x22ff88, 1800);
+                        },
+                        n2 => { flashFeedback('✓ SCREW DRIVEN!', 'ok'); rotY = 0; wait(500, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.5, done)
+                    )
+                ),
+                // Step 3: Tighten cover screw — same spin motion, middle screw
+                (done) => seq(
+                    n => animCam([0, 1.5, 5.5], [0, -1.55, -2.2], 700, n),
+                    n => activateInteraction('rotate', '🔄', 'DRAG IN CIRCLE TO TIGHTEN', n),
+                    n => seq(
+                        n2 => twPos(toolG, [0, 1.2, -2.1], 0.3, n2),
+                        n2 => twPos(toolG, [0, -0.85, -2.08], 0.4, n2),
+                        n2 => {
+                            let k = 0, spinY = 0;
+                            function spin() {
+                                tw(t => {
+                                    spinY += 0.2; toolG.rotation.y = spinY;
+                                    const screw = ctxObjs.find(o => o.userData.role === 'screw1');
+                                    if (screw) screw.position.z = -2.075 + k * 0.007;
+                                }, 0.28, () => { if (++k < 5) spin(); else n2(); });
+                            }
+                            spin();
+                            const screw = ctxObjs.find(o => o.userData.role === 'screw1');
+                            if (screw) emissiveFlash(screw, 0x22ff88, 1500);
+                        },
+                        n2 => { flashFeedback('✓ TIGHTENED!', 'ok'); rotY = 0; wait(500, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.5, done)
+                    )
+                ),
+                // Step 4: Verify — all screws flash green
+                (done) => seq(
+                    n => animCam([0, 1.0, 5], [0, -1.55, -2.2], 700, n),
+                    n => activateInteraction('click', '✅', 'CLICK TO VERIFY ALL SCREWS', n),
+                    n => seq(
+                        n2 => {
+                            ['screw0', 'screw1', 'screw2'].forEach((role, i) => {
+                                const s = ctxObjs.find(o => o.userData.role === role);
+                                if (s) wait(i * 200, () => emissiveFlash(s, 0x22ff88, 800));
+                            });
+                            wait(900, n2);
+                        },
+                        n2 => { flashFeedback('✓ ALL SECURE!', 'ok'); wait(700, done); }
+                    )
+                )
+            ],
+
+            // ─── VOLTAGE TESTER ───
+            3: [
+                // Step 1: Approach outlet — tester slides right toward outlet, LED flashes
+                (done) => seq(
+                    n => animCam([-1.8, -0.5, 6.5], [-1.8, -1.7, -0.8], 700, n),
+                    n => activateInteraction('swipe-right', '⚡', 'DRAG TOWARD OUTLET', n),
+                    n => seq(
+                        n2 => twPos(toolG, [-0.8, -1.2, -0.7], 0.5, n2), // Approach
+                        n2 => twPos(toolG, [-1.8, -1.2, -0.7], 0.4, n2), // Closer
+                        n2 => {
+                            const led = getRole('led');
+                            if (led) { led.material.emissive = new THREE.Color(0xff2200); }
+                            let k = 0;
+                            const iv = setInterval(() => {
+                                if (!led || !led.material) return;
+                                led.material.emissiveIntensity = k % 2 ? 0.1 : 2.8;
+                                if (++k > 7) { clearInterval(iv); if (led) led.material.emissiveIntensity = 2.5; }
+                            }, 130);
+                            const outlet = getCtxRole('outlet');
+                            if (outlet) emissiveFlash(outlet, 0xff8800, 700);
+                            wait(1100, n2);
+                        },
+                        n2 => { flashFeedback('⚡ LIVE — TESTER WORKS!', 'ok'); wait(600, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.5, done)
+                    )
+                ),
+                // Step 2: Test red wire
+                (done) => seq(
+                    n => animCam([2.0, 0.6, 6.5], [2.4, 0.45, -1.5], 700, n),
+                    n => activateInteraction('swipe-right', '🔴', 'DRAG TOWARD RED WIRE', n),
+                    n => seq(
+                        n2 => twPos(toolG, [1.2, 0.5, -0.8], 0.4, n2),
+                        n2 => twPos(toolG, [2.2, 0.45, -1.3], 0.4, n2), // Near red wire
+                        n2 => {
+                            const led = getRole('led');
+                            if (led) { led.material.emissive = new THREE.Color(0xff2200); led.material.emissiveIntensity = 2.8; }
+                            const rw = getCtxRole('redWire');
+                            if (rw) emissiveFlash(rw, 0xff4400, 900);
+                            wait(1000, n2);
+                        },
+                        n2 => { flashFeedback('⚡ VOLTAGE DETECTED!', 'ok'); wait(600, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.5, done)
+                    )
+                ),
+                // Step 3: Test black wire — no voltage
+                (done) => seq(
+                    n => animCam([1.8, 0.0, 6.5], [2.4, -0.2, -1.5], 700, n),
+                    n => activateInteraction('swipe-right', '⚫', 'DRAG TOWARD BLACK WIRE', n),
+                    n => seq(
+                        n2 => twPos(toolG, [1.2, -0.1, -0.8], 0.4, n2),
+                        n2 => twPos(toolG, [2.2, -0.2, -1.3], 0.4, n2),
+                        n2 => {
+                            const led = getRole('led');
+                            if (led) { led.material.emissive = new THREE.Color(0x00ff44); led.material.emissiveIntensity = 0.5; }
+                            const bw = getCtxRole('blkWire');
+                            if (bw) emissiveFlash(bw, 0x226622, 600);
+                            wait(900, n2);
+                        },
+                        n2 => { flashFeedback('✓ NO VOLTAGE — SAFE', 'ok'); wait(600, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.5, done)
+                    )
+                ),
+                // Step 4: Confirm safe — hold up, LED steady green
+                (done) => seq(
+                    n => animCam([0, 0.8, 7], [0, 0.2, 0], 700, n),
+                    n => activateInteraction('click', '✅', 'CLICK TO CONFIRM SAFE', n),
+                    n => seq(
+                        n2 => {
+                            tw(t => { rotY = t * Math.PI * 0.45; }, 0.7, n2);
+                            const led = getRole('led');
+                            if (led) { led.material.emissive = new THREE.Color(0x00ff44); led.material.emissiveIntensity = 1.5; }
+                        },
+                        n2 => { flashFeedback('✓ CIRCUIT SAFE!', 'ok'); wait(700, n2); },
+                        n2 => { tw(t => { rotY = Math.PI * 0.45 * (1 - t); }, 0.5, done); }
+                    )
+                )
+            ],
+
+            // ─── MULTIMETER ───
+            4: [
+                // Step 1: Rotate dial to V~ — dial and pointer rotate
+                (done) => seq(
+                    n => animCam([0.3, 0.8, 6.5], [0, 0.3, 0], 700, n),
+                    n => activateInteraction('rotate', '🎛️', 'DRAG DIAL TO V~ MODE', n),
+                    n => seq(
+                        n2 => {
+                            const kn = getRole('dialKnob'), p = getRole('ptr');
+                            if (kn) twRot(kn, 'z', 0, -Math.PI * 0.5, 0.55, eio, null);
+                            if (p) {
+                                // Pointer orbits with knob
+                                let startPX = p.position.x, startPY = p.position.y;
+                                tw(t => {
+                                    const a = -Math.PI * 0.5 * eio(t);
+                                    p.position.x = Math.sin(a) * 0.19;
+                                    p.position.y = Math.cos(a) * 0.19 - 0.08;
+                                }, 0.55, null);
+                            }
+                            // Display wakes up
+                            const disp = getRole('display');
+                            if (disp) {
+                                disp.material.emissive = new THREE.Color(0x00ff44);
+                                disp.material.emissiveIntensity = 0.9;
+                            }
+                            // Display bars show "V~"
+                            ['dispBar0', 'dispBar1', 'dispBar2'].forEach((r, i) => {
+                                const b = getRole(r);
+                                if (b) wait(i * 80, () => emissiveFlash(b, 0x00ff88, 600));
+                            });
+                            wait(700, n2);
+                        },
+                        n2 => { flashFeedback('✓ V~ AC VOLTAGE MODE', 'ok'); wait(600, done); }
+                    )
+                ),
+                // Step 2: Probe terminals — red probe sweeps to L terminal, display counts up
+                (done) => seq(
+                    n => animCam([2.2, 1.0, 6], [2.0, 0.6, -2.2], 700, n),
+                    n => activateInteraction('swipe-right', '🔴', 'DRAG RED PROBE TO LIVE', n),
+                    n => seq(
+                        n2 => {
+                            // Red probe tip moves toward L terminal
+                            const pR = getRole('probeR'), tR = getRole('tipR');
+                            const Lterm = ctxObjs.find(o => o.userData.role === 'termL');
+                            if (Lterm) emissiveFlash(Lterm, 0xff4400, 800);
+                            twPos(toolG, [1.8, 0.7, -1.6], 0.45, n2);
+                        },
+                        n2 => {
+                            // Display counts up 0 → 220
+                            const disp = getRole('display');
+                            let v = 0;
+                            const iv = setInterval(() => {
+                                v += 22;
+                                if (v >= 220) { clearInterval(iv); v = 220; }
+                                if (disp) { disp.material.emissive = new THREE.Color(0x00ff44); disp.material.emissiveIntensity = 0.5 + v / 220 * 2.0; }
+                            }, 80);
+                            wait(900, n2);
+                        },
+                        n2 => { flashFeedback('✓ 220V AC', 'ok'); wait(600, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.45, done)
+                    )
+                ),
+                // Step 3: Rotate dial to continuity
+                (done) => seq(
+                    n => animCam([0.3, 0.8, 6.5], [0, 0.3, 0], 700, n),
+                    n => activateInteraction('rotate', '🔊', 'DRAG DIAL TO CONTINUITY', n),
+                    n => seq(
+                        n2 => {
+                            const kn = getRole('dialKnob'), p = getRole('ptr');
+                            if (kn) twRot(kn, 'z', -Math.PI * 0.5, -Math.PI * 0.25, 0.45, eio, null);
+                            if (p) tw(t => {
+                                const a = (-Math.PI * 0.5 + Math.PI * 0.25 * eio(t));
+                                p.position.x = Math.sin(a) * 0.19;
+                                p.position.y = Math.cos(a) * 0.19 - 0.08;
+                            }, 0.45, null);
+                            // Display flashes green = continuity beep
+                            const disp = getRole('display');
+                            let k = 0;
+                            const iv = setInterval(() => {
+                                if (!disp || !disp.material) return;
+                                disp.material.emissiveIntensity = k % 2 ? 0.3 : 2.8;
+                                if (++k > 6) { clearInterval(iv); if (disp) disp.material.emissiveIntensity = 2.2; }
+                            }, 120);
+                            wait(850, n2);
+                        },
+                        n2 => { flashFeedback('🔊 BEEP! CONTINUITY OK', 'ok'); wait(700, done); }
+                    )
+                ),
+                // Step 4: Read display
+                (done) => seq(
+                    n => animCam([0, 1.2, 5.5], [0, 0.38, 0.3], 700, n),
+                    n => activateInteraction('click', '📝', 'CLICK DISPLAY TO RECORD', n),
+                    n => seq(
+                        n2 => {
+                            const disp = getRole('display');
+                            let k = 0;
+                            const iv = setInterval(() => {
+                                if (!disp || !disp.material) return;
+                                disp.material.emissiveIntensity = 2.5 - Math.sin(k * 0.35) * 0.9;
+                                if (++k > 14) clearInterval(iv);
+                            }, 80);
+                            ['dispBar0', 'dispBar1', 'dispBar2'].forEach((r, i) => {
+                                const b = getRole(r);
+                                if (b) wait(i * 100, () => emissiveFlash(b, 0x22ff88, 700));
+                            });
+                            wait(1200, n2);
+                        },
+                        n2 => { flashFeedback('✓ READING RECORDED!', 'ok'); wait(700, done); }
+                    )
+                )
+            ],
+
+            // ─── ELECTRICAL TAPE ───
+            5: [
+                // Step 1: Anchor — tape roll descends, end sticks to joint
+                (done) => seq(
+                    n => animCam([-0.2, 0.2, 6.5], [-0.2, -1.94, 0.56], 700, n),
+                    n => activateInteraction('click', '🗜️', 'CLICK TO ANCHOR TAPE', n),
+                    n => seq(
+                        n2 => twPos(toolG, [-0.2, -0.65, 0.65], 0.45, n2),
+                        n2 => {
+                            const joint = getCtxRole('joint');
+                            if (joint) emissiveFlash(joint, 0x00d4ff, 600);
+                            const strip = getRole('strip');
+                            if (strip) { strip.material.emissive = new THREE.Color(0x00d4ff); strip.material.emissiveIntensity = 0.8; }
+                            wait(500, n2);
+                        },
+                        n2 => { flashFeedback('✓ ANCHORED!', 'ok'); wait(500, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.4, done)
+                    )
+                ),
+                // Step 2: Wrap layer 1 — roll orbits joint area
+                (done) => seq(
+                    n => animCam([-0.2, -0.2, 6], [-0.2, -1.94, 0.56], 600, n),
+                    n => activateInteraction('rotate', '🔄', 'DRAG IN CIRCLE TO WRAP', n),
+                    n => seq(
+                        n2 => {
+                            // Orbit the tape roll around the joint
+                            let a = 0;
+                            const centerX = -0.2, centerY = -1.94, centerZ = 0.56;
+                            const iv = setInterval(() => {
+                                a += 0.07;
+                                toolG.position.x = centerX + Math.sin(a) * 0.7;
+                                toolG.position.z = centerZ + Math.cos(a) * 0.35 - 0.2;
+                                toolG.position.y = -0.65 + Math.sin(a * 2) * 0.06;
+                                toolG.rotation.z = a;
+                                if (a >= Math.PI * 2) { clearInterval(iv); n2(); }
+                            }, 16);
+                        },
+                        n2 => { flashFeedback('✓ LAYER 1 WRAPPED!', 'ok'); wait(500, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.4, done)
+                    )
+                ),
+                // Step 3: Wrap layers 2-3
+                (done) => seq(
+                    n => animCam([-0.2, -0.2, 6], [-0.2, -1.94, 0.56], 500, n),
+                    n => activateInteraction('rotate', '🔄', 'DRAG AGAIN (LAYERS 2-3)', n),
+                    n => seq(
+                        n2 => {
+                            let a = 0;
+                            const iv = setInterval(() => {
+                                a += 0.08;
+                                toolG.position.x = -0.2 + Math.sin(a) * 0.7;
+                                toolG.position.z = 0.56 + Math.cos(a) * 0.35 - 0.2;
+                                toolG.position.y = -0.65 + Math.sin(a * 2 + 1) * 0.05;
+                                toolG.rotation.z = a + Math.PI * 2;
+                                if (a >= Math.PI * 2.5) {
+                                    clearInterval(iv);
+                                    // Tape now covers joint — change joint color to black
+                                    const joint = getCtxRole('joint');
+                                    if (joint) { joint.material.color.setHex(0x111111); joint.material.emissiveIntensity = 0; }
+                                    n2();
+                                }
+                            }, 16);
+                        },
+                        n2 => { flashFeedback('✓ 3 LAYERS COMPLETE!', 'ok'); wait(500, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.4, done)
+                    )
+                ),
+                // Step 4: Tear — pull away, strip stretches, seals
+                (done) => seq(
+                    n => animCam([0, -0.2, 6.5], [-0.2, -1.94, 0.56], 600, n),
+                    n => activateInteraction('swipe-down', '✅', 'DRAG DOWN TO TEAR & SEAL', n),
+                    n => seq(
+                        n2 => twPos(toolG, [0.3, -0.65, 0.65], 0.3, n2), // Pull away
+                        n2 => {
+                            const strip = getRole('strip');
+                            if (strip) { twScale(strip, 1, 0, 0.28, null); }
+                            wait(300, n2);
+                        },
+                        n2 => {
+                            // Sealed tape on joint
+                            const sealed = bx(0.85, 0.22, 0.22, 0x0d0d0d, 0.85, 0.02);
+                            sealed.position.set(-0.2, -1.94, 0.56);
+                            scene.add(sealed); ctxObjs.push(sealed);
+                            emissiveFlash(sealed, 0x22ff88, 700);
+                            wait(400, n2);
+                        },
+                        n2 => { flashFeedback('✓ SEALED & INSULATED!', 'ok'); wait(600, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.4, done)
+                    )
+                )
+            ],
+
+            // ─── UTILITY KNIFE ───
+            6: [
+                // Step 1: Score cable — blade drags along cable, score line appears
+                (done) => seq(
+                    n => animCam([0.5, 0.5, 6.5], [0, -1.9, 0.55], 700, n),
+                    n => activateInteraction('swipe-right', '🔪', 'DRAG KNIFE ALONG CABLE', n),
+                    n => seq(
+                        n2 => {
+                            // Tilt knife horizontally, position above cable
+                            twRot(toolG, 'z', 0, -Math.PI * 0.5, 0.3, eOut, n2);
+                        },
+                        n2 => {
+                            // Blade descends to cable surface
+                            twPos(toolG, [-1.2, -1.82, 0.68], 0.3, n2);
+                        },
+                        n2 => {
+                            // Drag along cable
+                            twPos(toolG, [1.4, -1.82, 0.68], 0.55, n2);
+                            const cable = getCtxRole('cable');
+                            if (cable) wait(100, () => emissiveFlash(cable, 0xffd700, 500));
+                        },
+                        n2 => {
+                            const sl = ctxObjs.find(o => o.userData.role === 'scoreLine');
+                            if (sl) sl.visible = true;
+                            flashFeedback('✓ FIRST SCORE!', 'ok');
+                            wait(500, n2);
+                        },
+                        n2 => {
+                            twRot(toolG, 'z', -Math.PI * 0.5, 0, 0.3, null, null);
+                            twPos(toolG, [0, 0.3, 0.3], 0.4, done);
+                        }
+                    )
+                ),
+                // Step 2: Score other side — cable rotates 180, score again
+                (done) => seq(
+                    n => animCam([-0.5, 0.5, 6.5], [0, -1.9, 0.55], 650, n),
+                    n => activateInteraction('swipe-right', '➡️', 'DRAG ALONG CABLE AGAIN', n),
+                    n => seq(
+                        n2 => {
+                            // Cable rotates 180
+                            const cable = getCtxRole('cable');
+                            if (cable) twRot(cable, 'z', 0, Math.PI, 0.45, eio, null);
+                            wait(500, n2);
+                        },
+                        n2 => twRot(toolG, 'z', 0, -Math.PI * 0.5, 0.25, eOut, n2),
+                        n2 => twPos(toolG, [-1.2, -1.82, 0.68], 0.25, n2),
+                        n2 => {
+                            twPos(toolG, [1.4, -1.82, 0.68], 0.55, n2);
+                            const cable = getCtxRole('cable');
+                            if (cable) wait(100, () => emissiveFlash(cable, 0xffd700, 500));
+                        },
+                        n2 => {
+                            flashFeedback('✓ BOTH SIDES SCORED!', 'ok');
+                            twRot(toolG, 'z', -Math.PI * 0.5, 0, 0.3, null, null);
+                            wait(500, n2);
+                        },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.4, done)
+                    )
+                ),
+                // Step 3: Peel jacket — jacket mesh peels back, inner wires visible
+                (done) => seq(
+                    n => animCam([0.8, 0.5, 6], [0, -1.9, 0.55], 650, n),
+                    n => activateInteraction('swipe-up', '⬆️', 'DRAG UP TO PEEL JACKET', n),
+                    n => seq(
+                        n2 => {
+                            const cable = getCtxRole('cable');
+                            const jacket = ctxObjs.find(o => o.userData.role === 'jacket');
+                            // Cable shortens (jacket removed from right side)
+                            if (cable) tw(t => { cable.scale.x = 1 - t * 0.45; cable.position.x = -t * 0.72; }, 0.5, null);
+                            if (jacket) { jacket.visible = true; twPos(jacket, [1.7, -1.7, 0.52], 0.5, null); }
+                            wait(550, n2);
+                        },
+                        n2 => {
+                            // Show inner wires
+                            ['inner0', 'inner1', 'inner2'].forEach((role, i) => {
+                                const iw = ctxObjs.find(o => o.userData.role === role);
+                                if (iw) { iw.visible = true; wait(i * 150, () => emissiveFlash(iw, 0x22ff88, 700)); }
+                            });
+                            wait(700, n2);
+                        },
+                        n2 => { flashFeedback('✓ JACKET PEELED!', 'ok'); wait(500, n2); },
+                        n2 => twPos(toolG, [0, 0.3, 0.3], 0.4, done)
+                    )
+                ),
+                // Step 4: Inspect inner wires — glow each one
+                (done) => seq(
+                    n => animCam([0.8, 0.5, 5.5], [0.8, -1.88, 0.55], 700, n),
+                    n => activateInteraction('click', '🔍', 'CLICK TO INSPECT WIRES', n),
+                    n => seq(
+                        n2 => {
+                            ['inner0', 'inner1', 'inner2'].forEach((role, i) => {
+                                const iw = ctxObjs.find(o => o.userData.role === role);
+                                if (iw) wait(i * 220, () => emissiveFlash(iw, 0x00d4ff, 800));
+                            });
+                            wait(900, n2);
+                        },
+                        n2 => { flashFeedback('✓ WIRES INTACT!', 'ok'); wait(700, done); }
+                    )
+                )
+            ]
+        };
+
+        // ═══════════════════════════════════════════════
+        // GAME STATE
+        // ═══════════════════════════════════════════════
+        const S = { screen: 'sel', tool: null, step: 0, errors: 0, hints: 3, mastered: new Set() };
+        try { const sv = localStorage.getItem('eta7m3'); if (sv) JSON.parse(sv).forEach(id => S.mastered.add(id)); } catch (e) { }
+
+        function buildSel() {
+            S.screen = 'sel';
+            const done = S.mastered.size;
+            document.getElementById('sel-fill').style.width = (done / 7 * 100) + '%';
+            document.getElementById('sel-val').textContent = done + ' / 7 Mastered';
+            const grid = document.getElementById('tools-grid'); grid.innerHTML = '';
+            TOOLS.forEach(t => {
+                const c = document.createElement('div');
+                c.className = 'tool-card' + (S.mastered.has(t.id) ? ' done' : '');
+                c.innerHTML = '<div class="tc-num">#0' + (t.id + 1) + '</div>' + (S.mastered.has(t.id) ? '<div class="tc-done">✓</div>' : '') +
+                    '<div class="tc-icon">' + t.icon + '</div><div class="tc-name">' + t.name + '</div><div class="tc-cat">' + t.category + '</div>';
+                c.onclick = () => startTool(t.id);
+                grid.appendChild(c);
+            });
+            document.getElementById('sel-screen').style.display = 'flex';
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('success-screen').classList.remove('show');
+        }
+
+        function startTool(id) {
+            S.tool = TOOLS[id]; S.step = 0; S.errors = 0; S.hints = 3; S.screen = 'game';
+            TW.length = 0; cTw = false; rotY = 0; rotX = 0; interactionActive = false; pendingInteraction = null;
+            camera.position.set(0, 0.8, 9); camera.lookAt(0, 0, 0);
+            document.getElementById('sel-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'flex';
+            document.getElementById('success-screen').classList.remove('show');
+            document.getElementById('tb-mod').textContent = S.tool.module;
+            document.getElementById('tb-title').textContent = S.tool.name;
+            document.getElementById('hint-cnt').textContent = S.hints;
+            document.getElementById('feedback').classList.remove('show', 'ok', 'err');
+            hideHotspotDot();
+            document.getElementById('interact-overlay').classList.remove('active');
+            document.getElementById('gesture-prog-wrap').classList.remove('show');
+            const gc = document.getElementById('gesture-canvas');
+            gc.getContext('2d').clearRect(0, 0, gc.width, gc.height);
+            resize();
+            clearScene();
+            BUILDERS[id]();
+            buildTasks();
+            updateProgress();
+            updateStepUI();
+            setTimeout(() => showGuide(0), 500);
+        }
+
+        function buildTasks() {
+            const list = document.getElementById('task-list'); list.innerHTML = '';
+            S.tool.tasks.forEach((t, i) => {
+                const d = document.createElement('div');
+                d.className = 'task-item' + (i === 0 ? ' active-t' : ''); d.id = 't' + i;
+                d.innerHTML = '<div class="task-num">' + (i + 1) + '</div><div class="task-txt">' + t + '</div>';
+                list.appendChild(d);
+            });
+        }
+        function updateTasks() { S.tool.tasks.forEach((_, i) => { const el = document.getElementById('t' + i); if (!el) return; el.className = 'task-item' + (i === S.step ? ' active-t' : i < S.step ? ' done-t' : ''); }); }
+        function updateProgress() {
+            const total = S.tool.tasks.length;
+            const pct = Math.round(S.step / total * 100);
+            document.getElementById('tb-fill').style.width = pct + '%';
+            document.getElementById('tb-pct').textContent = pct + '%';
+            const stars = document.getElementById('tb-stars'); stars.innerHTML = '';
+            [0, 1, 2].forEach(i => { const sp = document.createElement('span'); sp.className = 'tb-star' + (pct >= (i + 1) * 33.4 ? ' on' : ''); sp.textContent = pct >= (i + 1) * 33.4 ? '★' : '☆'; stars.appendChild(sp); });
+        }
+        function updateStepUI() {
+            const total = S.tool.tasks.length;
+            const txt = 'STEP ' + (S.step + 1) + ' OF ' + total;
+            document.getElementById('step-lbl').textContent = txt;
+            document.getElementById('bb-info').textContent = txt;
+            const dots = document.getElementById('step-dots'); dots.innerHTML = '';
+            for (let i = 0; i < total; i++) { const d = document.createElement('div'); d.className = 'sdot' + (i < S.step ? ' done-s' : i === S.step ? ' act-s' : ''); dots.appendChild(d); }
+        }
+
+        // GUIDE SYSTEM
+        let _guideIdx = 0;
+        function showGuide(idx) {
+            _guideIdx = idx;
+            const g = S.tool.guide;
+            if (!g || idx >= g.length) { hideGuide(); beginStep(); return; }
+            const step = g[idx];
+            const overlay = document.getElementById('guide-overlay');
+            overlay.classList.add('show');
+            document.getElementById('guide-txt').innerHTML = step.txt.replace(/\n/g, '<br>');
+            document.getElementById('guide-step-lbl').textContent = idx === 0 ? 'Introduction' : 'Step ' + idx + ' of ' + (g.length - 1);
+            document.getElementById('guide-action-hint').textContent = '👆 ' + step.action;
+            const isLast = (idx === g.length - 1);
+            const btn = document.getElementById('btn-gnext');
+            btn.textContent = isLast ? "LET'S DO IT!" : 'NEXT';
+            btn.onclick = () => {
+                const cur = _guideIdx;
+                if (cur >= g.length - 1) { hideGuide(); beginStep(); }
+                else showGuide(cur + 1);
+            };
+        }
+        function skipGuide() { hideGuide(); beginStep(); }
+        function hideGuide() { document.getElementById('guide-overlay').classList.remove('show'); }
+        function showHint() {
+            if (S.hints <= 0) { showToast('No hints left!', 'err'); return; }
+            S.hints--; document.getElementById('hint-cnt').textContent = S.hints;
+            showGuide(S.step);
+        }
+
+        function beginStep() {
+            if (!toolG) return;
+            const stepSet = STEPS[S.tool.id];
+            if (stepSet && stepSet[S.step]) {
+                showToast('▶ ' + S.tool.tasks[S.step].replace(/<[^>]+>/g, ''), 'info');
+                stepSet[S.step](stepDone);
+            }
+        }
+        function stepDone() {
+            S.step++; updateTasks(); updateProgress(); updateStepUI();
+            if (S.step >= S.tool.tasks.length) { setTimeout(showSuccess, 800); }
+            else setTimeout(() => showGuide(S.step), 600);
+        }
+        function showSuccess() {
+            S.mastered.add(S.tool.id);
+            try { localStorage.setItem('eta7m3', JSON.stringify([...S.mastered])); } catch (e) { }
+            const stars = S.errors === 0 ? '★★★' : S.errors <= 1 ? '★★☆' : '★☆☆';
+            document.getElementById('ss-tool').textContent = S.tool.name;
+            document.getElementById('ss-tip').textContent = '💡 ' + S.tool.tip;
+            document.getElementById('ss-stars').textContent = stars;
+            const nb = document.getElementById('ss-next');
+            const nid = S.tool.id + 1;
+            if (nid < TOOLS.length) { nb.style.display = ''; nb.textContent = 'NEXT: ' + TOOLS[nid].name + ' →'; }
+            else nb.style.display = 'none';
+            document.getElementById('success-screen').classList.add('show');
+        }
+        function goBack() {
+            TW.length = 0; cTw = false; interactionActive = false; pendingInteraction = null;
+            clearScene(); hideGuide(); hideHotspotDot();
+            document.getElementById('interact-overlay').classList.remove('active');
+            const gc = document.getElementById('gesture-canvas');
+            gc.getContext('2d').clearRect(0, 0, gc.width, gc.height);
+            document.getElementById('gesture-prog-wrap').classList.remove('show');
+            document.getElementById('success-screen').classList.remove('show');
+            buildSel();
+        }
+        function nextTool() { const n = S.tool.id + 1; if (n < TOOLS.length) { document.getElementById('success-screen').classList.remove('show'); startTool(n); } else goBack(); }
+
+        let tT;
+        function showToast(msg, type) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'show ' + type; clearTimeout(tT); tT = setTimeout(() => t.classList.remove('show'), 2800); }
+
+        // ═══════════════════════════════════════════════
+        // RENDER LOOP
+        // ═══════════════════════════════════════════════
+        const clock = new THREE.Clock(); let idle = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta(); idle += dt;
+            for (let i = TW.length - 1; i >= 0; i--) { TW[i].tick(dt); if (TW[i].done) TW.splice(i, 1); }
+            if (cTw) {
+                cT += dt * 1000; const p = eio(Math.min(cT / cD, 1));
+                camera.position.lerpVectors(cFrom, cTo, p);
+                camera.lookAt(new THREE.Vector3().lerpVectors(cLF, cLT, p));
+                if (cT >= cD) { cTw = false; if (cCB) { const cb = cCB; cCB = null; cb(); } }
+            }
+            // Idle float (only when not animating)
+            if (toolG && TW.length === 0 && !cTw && !interactionActive) {
+                toolG.rotation.y = rotY + Math.sin(idle * 0.3) * 0.07;
+                toolG.rotation.x = rotX + Math.sin(idle * 0.45) * 0.025;
+                toolG.position.y = 0.3 + Math.sin(idle * 0.55) * 0.04;
+            }
+            // Update hotspot dot position using world→screen projection
+            if (hotspotVisible && toolG) {
+                const worldPos = toolG.position.clone();
+                const pt = worldPos.clone().project(camera);
+                const sa = document.getElementById('scene-area');
+                if (sa) {
+                    const x = (pt.x * 0.5 + 0.5) * sa.clientWidth;
+                    const y = (-pt.y * 0.5 + 0.5) * sa.clientHeight;
+                    const dot = document.getElementById('hotspot-dot');
+                    dot.style.left = Math.max(40, Math.min(sa.clientWidth - 40, x)) + 'px';
+                    dot.style.top = Math.max(40, Math.min(sa.clientHeight - 100, y)) + 'px';
+                }
+            }
+            renderer.render(scene, camera);
+        }
+        animate();
+        buildSel();
+    </script>
+</body>
+
+</html>

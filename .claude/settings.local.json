@@ -45,7 +45,28 @@
       "WebSearch",
       "WebFetch(domain:unsplash.com)",
       "WebFetch(domain:www.pexels.com)",
-      "PowerShell(Copy-Item \"c:\\\\MyProjects\\\\WireVerse V2\\\\android\\\\app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk\" \"c:\\\\MyProjects\\\\WireVerse V2\\\\Wireverse.apk\" -Force; Get-Item \"c:\\\\MyProjects\\\\WireVerse V2\\\\Wireverse.apk\" | Select-Object Name, @{N='Size MB';E={[math]::Round\\($_.Length/1MB,2\\)}})"
+      "PowerShell(Copy-Item \"c:\\\\MyProjects\\\\WireVerse V2\\\\android\\\\app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk\" \"c:\\\\MyProjects\\\\WireVerse V2\\\\Wireverse.apk\" -Force; Get-Item \"c:\\\\MyProjects\\\\WireVerse V2\\\\Wireverse.apk\" | Select-Object Name, @{N='Size MB';E={[math]::Round\\($_.Length/1MB,2\\)}})",
+      "PowerShell(vercel --version 2>&1)",
+      "PowerShell(vercel whoami 2>&1)",
+      "PowerShell(npm install -g vercel 2>&1)",
+      "PowerShell($env:NODE_TLS_REJECT_UNAUTHORIZED = \"0\"; vercel login 2>&1)",
+      "PowerShell($env:NODE_TLS_REJECT_UNAUTHORIZED = \"0\"; vercel whoami 2>&1)",
+      "PowerShell($env:NODE_TLS_REJECT_UNAUTHORIZED = \"0\"; vercel ls 2>&1)",
+      "PowerShell($env:NODE_TLS_REJECT_UNAUTHORIZED = \"0\"; vercel inspect wire-verse-a5p8piett-arvees-projects-396e5f76.vercel.app 2>&1)",
+      "PowerShell(Set-Location \"c:\\\\MyProjects\\\\WireVerse V2\"; $env:NODE_TLS_REJECT_UNAUTHORIZED = \"0\"; vercel --prod --yes --name wire-verse 2>&1)",
+      "PowerShell(Set-Location \"c:\\\\MyProjects\\\\WireVerse V2\"; $env:NODE_TLS_REJECT_UNAUTHORIZED = \"0\"; vercel --prod --yes 2>&1)",
+      "Bash(Select-String -Pattern \"script\" -Context 0,20)",
+      "Bash(.\\\\gradlew assembleDebug)",
+      "PowerShell($src = \"c:\\\\MyProjects\\\\WireVerse V2\\\\android\\\\app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk\"; $dst = \"c:\\\\MyProjects\\\\WireVerse V2\\\\WireVerse.apk\"; Copy-Item $src $dst -Force; Write-Output \"Done: $dst \\($\\(\\([System.IO.FileInfo]$dst\\).Length / 1MB -as [int]\\) MB\\)\")",
+      "Bash(vercel --version)",
+      "Bash(vercel --prod)",
+      "PowerShell(cd \"c:\\\\MyProjects\\\\WireVerse V2\"; $env:NODE_TLS_REJECT_UNAUTHORIZED = \"0\"; vercel --prod 2>&1; $env:NODE_TLS_REJECT_UNAUTHORIZED = $null)",
+      "PowerShell(Copy-Item \"c:\\\\MyProjects\\\\WireVerse V2\\\\android\\\\app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk\" \"c:\\\\MyProjects\\\\WireVerse V2\\\\WireVerse.apk\" -Force; $size = [math]::Round\\(\\(Get-Item \"c:\\\\MyProjects\\\\WireVerse V2\\\\WireVerse.apk\"\\).Length / 1MB, 1\\); Write-Output \"Done: WireVerse.apk \\($size MB\\)\")",
+      "Bash(node -e \"const p=require\\('c:/MyProjects/WireVerse V2/node_modules/three/package.json'\\);console.log\\(p.version\\)\")",
+      "Bash(npx vercel *)",
+      "Bash(Copy-Item \"c:\\\\MyProjects\\\\WireVerse V2\\\\learn-outlet.html\" \"c:\\\\MyProjects\\\\WireVerse V2\\\\public\\\\learn-outlet.html\" -Force)",
+      "Bash(Copy-Item \"c:\\\\MyProjects\\\\WireVerse V2\\\\switch_installation.html\" \"c:\\\\MyProjects\\\\WireVerse V2\\\\public\\\\switch_installation.html\" -Force)",
+      "Bash(Write-Host \"Copied\")"
     ]
   }
 }
