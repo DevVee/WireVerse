@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>PH Electrical Switch Sim</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&family=Share+Tech+Mono&display=swap');
@@ -443,7 +443,10 @@ canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0}
     <div class="s-sub">Single-pole switch installed per PEC 2017.</div>
     <div class="s-score" id="sscore">Score: 0 pts</div>
     <div class="s-recap" id="s-recap"></div>
-    <button class="s-btn" onclick="resetAll()">PLAY AGAIN</button>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <button class="s-btn" onclick="resetAll()">PLAY AGAIN</button>
+      <button class="s-btn" style="background:#22c55e;" onclick="if(window.parent!==window)window.parent.postMessage({type:'back'},'*');">✓ BACK TO STAGES</button>
+    </div>
   </div>
 </div>
 <div id="light-glow"></div>

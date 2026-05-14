@@ -61,7 +61,9 @@ export class HtmlLessonScreen {
   }
 
   _complete() {
+    const alreadyDone = Database.getLearnStage(this.cfg.key);
     Database.saveLearnStage(this.cfg.key);
+    if (!alreadyDone) Database.addXP(100);
   }
 
   onShow() {
