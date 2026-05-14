@@ -3,8 +3,8 @@
 
 const TUTORIAL_STEPS = [
   {
-    title: "Welcome to the Workshop!",
-    text:  "I'm <b>Volt</b>, your guide! Your mission: find and fix every broken outlet and light switch in this building.",
+    title: "Welcome to the Control Room!",
+    text:  "I'm <b>Electro</b>, your guide! Your mission: find and fix every broken outlet and light switch in this facility.",
   },
   {
     title: "How to Move",
@@ -23,11 +23,11 @@ const TUTORIAL_STEPS = [
 ];
 
 const TIPS = {
-  near_outlet:  "Broken outlet nearby! Press E (or tap ACT) to repair it.",
-  near_switch:  "Switch needs wiring! Press E (or tap ACT) to install it.",
+  near_outlet:  "Broken outlet detected! Press E (or tap ACT) to repair it.",
+  near_switch:  "Switch offline! Press E (or tap ACT) to install it.",
   near_breaker: "Tripped breaker panel! Press E (or tap ACT) to reset the circuit.",
-  after_fix:    "Nice fix! Keep exploring — find the rest and repair them all!",
-  all_done:     "ALL SYSTEMS GO! You fixed everything! You're a certified electrician! 🏆",
+  after_fix:    "System restored! Keep scanning — find all the faults!",
+  all_done:     "ALL SYSTEMS ONLINE! You fixed everything! You're a certified tech! ⚡",
   door:         "Tip: Get close to a door and press E to open it.",
 };
 
@@ -155,52 +155,65 @@ const CSS = `
   margin-bottom:4px;
 }
 
-/* ── CORNER TIP ─────────────────────────────────────────────── */
+/* ── CENTER TIP OVERLAY ─────────────────────────────────────── */
 .mg-tip{
-  position:absolute;bottom:24px;right:16px;
-  display:flex;align-items:flex-end;gap:0;
-  z-index:45;pointer-events:auto;
-  max-width:270px;
-  animation:mg-tip-in .35s cubic-bezier(.18,.89,.32,1.28) both;
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  z-index:55;pointer-events:auto;
+  background:rgba(0,4,14,.72);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  animation:mg-fade-in .28s ease both;
 }
-.mg-tip.hiding{animation:mg-tip-out .25s ease-in both;}
-@keyframes mg-tip-in {from{opacity:0;transform:translateY(16px) scale(.86);}to{opacity:1;transform:translateY(0) scale(1);}}
-@keyframes mg-tip-out{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(12px);}}
+.mg-tip.hiding{animation:mg-fade-out .2s ease both;}
 
-.mg-tip-bubble{
-  flex:1;
-  background:rgba(3,10,26,.97);
-  border:1px solid rgba(0,212,255,.5);
-  border-radius:14px 14px 4px 14px;
-  padding:10px 13px;
-  box-shadow:0 0 24px rgba(0,212,255,.2),0 8px 24px rgba(0,0,0,.65);
-  cursor:pointer;position:relative;
+.mg-tip-card{
+  display:flex;flex-direction:row;align-items:stretch;
+  background:linear-gradient(135deg,rgba(4,14,36,.99) 0%,rgba(2,8,24,.99) 100%);
+  border:1px solid rgba(0,212,255,.38);
+  border-radius:20px;
+  max-width:400px;width:calc(100% - 48px);
+  box-shadow:0 0 0 1px rgba(0,212,255,.08),0 0 50px rgba(0,212,255,.15),0 20px 50px rgba(0,0,0,.7);
+  overflow:hidden;
 }
-.mg-tip-bubble::after{
-  content:'';position:absolute;bottom:-8px;right:56px;
-  width:0;height:0;
-  border-left:8px solid transparent;
-  border-top:9px solid rgba(0,212,255,.5);
+.mg-tip-left{
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+  padding:22px 20px 20px 22px;
+}
+.mg-tip-right{
+  width:110px;flex-shrink:0;
+  display:flex;align-items:flex-end;justify-content:center;
+  background:linear-gradient(180deg,rgba(0,212,255,.04) 0%,rgba(0,212,255,.10) 100%);
+  border-left:1px solid rgba(0,212,255,.14);
+  padding:10px 6px 0;
+}
+.mg-tip-mascot{
+  width:100px;height:auto;object-fit:contain;
+  filter:drop-shadow(0 0 12px rgba(0,212,255,.5));
+  animation:mg-float 2.8s ease-in-out infinite;
 }
 .mg-tip-name{
   font-family:'Barlow Condensed',sans-serif;
   font-size:9px;font-weight:800;letter-spacing:.18em;
-  color:#00d4ff;text-transform:uppercase;margin-bottom:4px;
+  color:#00d4ff;text-transform:uppercase;margin-bottom:8px;
+  display:inline-flex;align-items:center;gap:4px;
+  background:rgba(0,212,255,.12);border:1px solid rgba(0,212,255,.3);
+  border-radius:20px;padding:3px 10px;width:fit-content;
 }
 .mg-tip-text{
   font-family:'Barlow Condensed',sans-serif;
-  font-size:12px;font-weight:600;line-height:1.5;
-  color:rgba(255,255,255,.88);
+  font-size:14px;font-weight:600;line-height:1.6;
+  color:rgba(255,255,255,.9);margin-bottom:16px;
 }
-.mg-tip-mascot-wrap{
-  width:56px;flex-shrink:0;
-  display:flex;align-items:flex-end;justify-content:center;
+.mg-tip-got-btn{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:13px;font-weight:800;letter-spacing:.1em;
+  color:#000;background:linear-gradient(135deg,#00d4ff 0%,#0096cc 100%);
+  border:none;border-radius:10px;padding:10px 22px;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  box-shadow:0 0 18px rgba(0,212,255,.45),0 4px 10px rgba(0,0,0,.4);
+  transition:transform .14s;text-transform:uppercase;width:100%;
 }
-.mg-tip-mascot{
-  width:52px;height:auto;object-fit:contain;
-  filter:drop-shadow(0 0 8px rgba(0,212,255,.45));
-  animation:mg-float 2.8s ease-in-out infinite;
-}
+.mg-tip-got-btn:active{transform:scale(.93);}
 `;
 
 export class MascotGuide {
@@ -237,7 +250,7 @@ export class MascotGuide {
     el.innerHTML = `
       <div class="mg-card">
         <div class="mg-card-left">
-          <div class="mg-volt-badge">⚡ Volt — Your Guide</div>
+          <div class="mg-volt-badge">⚡ ELECTRO — Your Guide</div>
           <div class="mg-step-counter"></div>
           <div class="mg-step-title"></div>
           <div class="mg-step-text"></div>
@@ -248,7 +261,7 @@ export class MascotGuide {
           </div>
         </div>
         <div class="mg-card-right">
-          <img class="mg-mascot-img" src="/Mascot.png" alt="Volt" />
+          <img class="mg-mascot-img" src="/Mascot.png" alt="Electro" />
         </div>
       </div>
     `;
@@ -286,7 +299,7 @@ export class MascotGuide {
     this._tutEl = el;
   }
 
-  // ── CORNER CONTEXTUAL TIP ────────────────────────────────────────────────────
+  // ── CENTERED CONTEXTUAL TIP ──────────────────────────────────────────────────
   show(key) {
     const text = TIPS[key];
     if (!text) return;
@@ -299,21 +312,26 @@ export class MascotGuide {
     const el = document.createElement('div');
     el.className = 'mg-tip';
     el.innerHTML = `
-      <div class="mg-tip-bubble">
-        <div class="mg-tip-name">⚡ Volt</div>
-        <div class="mg-tip-text">${text}</div>
-      </div>
-      <div class="mg-tip-mascot-wrap">
-        <img class="mg-tip-mascot" src="/Mascot.png" alt="Volt" />
+      <div class="mg-tip-card">
+        <div class="mg-tip-left">
+          <div class="mg-tip-name">⚡ ELECTRO</div>
+          <div class="mg-tip-text">${text}</div>
+          <button class="mg-tip-got-btn">Got It!</button>
+        </div>
+        <div class="mg-tip-right">
+          <img class="mg-tip-mascot" src="/Mascot.png" alt="Electro" />
+        </div>
       </div>
     `;
-    el.addEventListener('click',      () => this.hide());
-    el.addEventListener('touchstart', () => this.hide(), { passive: true });
+
+    const dismiss = () => this.hide();
+    el.querySelector('.mg-tip-got-btn').addEventListener('click', dismiss);
+    el.querySelector('.mg-tip-got-btn').addEventListener('touchend', e => { e.preventDefault(); dismiss(); });
 
     this._root.appendChild(el);
     this._tipEl = el;
 
-    const delay = key === 'all_done' ? 12000 : 6000;
+    const delay = key === 'all_done' ? 14000 : 8000;
     this._tipTimer = setTimeout(() => this.hide(), delay);
   }
 

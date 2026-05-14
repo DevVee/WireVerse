@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import { Database }      from '../systems/Database.js';
 import { SoundManager }  from '../systems/SoundManager.js';
-import { OutletScenario } from './OutletScenario.js';
-import { SwitchScenario } from './SwitchScenario.js';
 
 // ── WORLD CONSTANTS ───────────────────────────────────────────────────────────
 const FLOOR_Y = 0;
@@ -13,20 +11,20 @@ const SPAWN     = new THREE.Vector3(0, BASE_Y, 5);
 const SPAWN_YAW = Math.PI;
 
 const OUTLET_DEFS = [
-  { id: 1, pos: new THREE.Vector3(-7.7, 1.2,  3),    label: 'Entrance West'   },
-  { id: 2, pos: new THREE.Vector3( 7.7, 1.2,  0),    label: 'Entrance East'   },
-  { id: 3, pos: new THREE.Vector3(-7.7, 1.2, -8),    label: 'Workshop A West' },
-  { id: 4, pos: new THREE.Vector3( 7.7, 1.2,-14),    label: 'Workshop A East' },
-  { id: 5, pos: new THREE.Vector3( 0,   1.2,-31.8),  label: 'Workshop B North'},
-  { id: 6, pos: new THREE.Vector3(-7.7, 1.2,-20),    label: 'Workshop B West' },
-  { id: 7, pos: new THREE.Vector3( 7.7, 1.2,-28),    label: 'Workshop B East' },
+  { id: 1, pos: new THREE.Vector3(-7.97, 1.2,  3),    label: 'Entrance West'   },
+  { id: 2, pos: new THREE.Vector3( 7.97, 1.2,  0),    label: 'Entrance East'   },
+  { id: 3, pos: new THREE.Vector3(-7.97, 1.2, -8),    label: 'Workshop A West' },
+  { id: 4, pos: new THREE.Vector3( 7.97, 1.2,-14),    label: 'Workshop A East' },
+  { id: 5, pos: new THREE.Vector3( 0,    1.2,-31.97), label: 'Workshop B North'},
+  { id: 6, pos: new THREE.Vector3(-7.97, 1.2,-20),    label: 'Workshop B West' },
+  { id: 7, pos: new THREE.Vector3( 7.97, 1.2,-28),    label: 'Workshop B East' },
 ];
 const SWITCH_DEFS = [
-  { id: 1, pos: new THREE.Vector3(-7.7, 1.5, -5),   label: 'Workshop A Station 1' },
-  { id: 2, pos: new THREE.Vector3( 7.7, 1.5,-22),   label: 'Workshop B Station 2' },
-  { id: 3, pos: new THREE.Vector3(-7.7, 1.5,-28),   label: 'Workshop B Station 3' },
-  { id: 4, pos: new THREE.Vector3( 7.7, 1.5, -2),   label: 'Entrance Station 4'   },
-  { id: 5, pos: new THREE.Vector3(-7.7, 1.5,-20),   label: 'Workshop B Station 5' },
+  { id: 1, pos: new THREE.Vector3(-7.97, 1.5, -5),   label: 'Workshop A Station 1' },
+  { id: 2, pos: new THREE.Vector3( 7.97, 1.5,-22),   label: 'Workshop B Station 2' },
+  { id: 3, pos: new THREE.Vector3(-7.97, 1.5,-28),   label: 'Workshop B Station 3' },
+  { id: 4, pos: new THREE.Vector3( 7.97, 1.5, -2),   label: 'Entrance Station 4'   },
+  { id: 5, pos: new THREE.Vector3(-7.97, 1.5,-20),   label: 'Workshop B Station 5' },
 ];
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -62,8 +60,7 @@ export class ExploreScene {
     this._colBoxes = [];
     this._isMob    = navigator.maxTouchPoints > 0;
 
-    this._outletScenario  = null;
-    this._switchScenario  = null;
+    this._htmlRepairEl    = null;
 
     SoundManager.init();
     this._initThree();
@@ -88,16 +85,16 @@ export class ExploreScene {
     this._renderer.setPixelRatio(Math.min(devicePixelRatio, isMob ? 1.5 : 2));
     this._renderer.outputColorSpace = THREE.SRGBColorSpace;
     this._renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this._renderer.toneMappingExposure = isMob ? 1.7 : 1.9;
+    this._renderer.toneMappingExposure = isMob ? 2.6 : 2.2;
     this._renderer.shadowMap.enabled = !isMob;
     this._renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this._scene = new THREE.Scene();
-    this._scene.background = new THREE.Color(isMob ? 0x8fb8d0 : 0xa0c0d8);
+    this._scene.background = new THREE.Color(0x0e1624);
     if (isMob) {
-      this._scene.fog = new THREE.Fog(0x8fb8d0, 14, 36);
+      this._scene.fog = new THREE.Fog(0x0e1624, 22, 52);
     } else {
-      this._scene.fog = new THREE.FogExp2(0xa0c0d8, 0.020);
+      this._scene.fog = new THREE.FogExp2(0x0e1624, 0.016);
     }
 
     // PMREM env map (desktop only)
@@ -177,28 +174,43 @@ export class ExploreScene {
   _makeFloorTex() {
     const c = document.createElement('canvas'); c.width = c.height = 512;
     const x = c.getContext('2d');
-    // Warm cream base (Philippine white ceramic tile)
-    x.fillStyle = '#c8b89a'; x.fillRect(0,0,512,512);
-    const ts = 128, grout = 3;
+    // Dark concrete base — visible but not black
+    x.fillStyle = '#18202e'; x.fillRect(0,0,512,512);
+    // Subtle concrete noise
+    for (let i = 0; i < 2000; i++) {
+      const gx = Math.random()*512, gy = Math.random()*512;
+      const v = (Math.random()-.5)*14;
+      const b = 30+v|0;
+      x.fillStyle = `rgba(${b},${b+2},${b+4},.22)`;
+      x.fillRect(gx, gy, 1+Math.random()*2, 1+Math.random()*2);
+    }
+    // Large tile grid
+    const ts = 128, grout = 2;
     for (let row = 0; row < 4; row++) {
       for (let col = 0; col < 4; col++) {
         const tx = col*ts+grout, ty = row*ts+grout, tw = ts-grout*2, th = ts-grout*2;
-        const v = (Math.random()-.5)*12;
-        // Light cream/off-white tile
-        x.fillStyle=`rgb(${228+v|0},${220+v|0},${208+v|0})`; x.fillRect(tx,ty,tw,th);
-        const cx2=tx+tw/2,cy2=ty+th/2;
-        const gr = x.createRadialGradient(cx2,cy2,2,cx2,cy2,tw*.72);
-        gr.addColorStop(0,'rgba(255,255,255,.18)');
-        gr.addColorStop(.5,'rgba(255,255,255,.06)');
-        gr.addColorStop(1,'rgba(0,0,0,.04)');
-        x.fillStyle=gr; x.fillRect(tx,ty,tw,th);
-        x.strokeStyle='rgba(180,160,130,.25)'; x.lineWidth=1;
-        x.strokeRect(tx+1,ty+1,tw-2,th-2);
+        const v = (Math.random()-.5)*8;
+        const b = 28+v|0;
+        x.fillStyle = `rgb(${b},${b+3},${b+8})`; x.fillRect(tx,ty,tw,th);
+        const gr = x.createRadialGradient(tx+tw/2,ty+th/2,4,tx+tw/2,ty+th/2,tw*.6);
+        gr.addColorStop(0,'rgba(0,212,255,.04)');
+        gr.addColorStop(1,'rgba(0,0,0,0)');
+        x.fillStyle = gr; x.fillRect(tx,ty,tw,th);
       }
     }
-    // Warm grout lines
-    x.fillStyle='#c8b89a';
-    for (let i=0;i<=512;i+=ts){ x.fillRect(i,0,grout,512); x.fillRect(0,i,512,grout); }
+    // Red grid lines
+    x.strokeStyle = 'rgba(0,212,255,.28)'; x.lineWidth = grout;
+    for (let i = 0; i <= 512; i += ts) {
+      x.beginPath(); x.moveTo(i,0); x.lineTo(i,512); x.stroke();
+      x.beginPath(); x.moveTo(0,i); x.lineTo(512,i); x.stroke();
+    }
+    // Red node dots at grid intersections
+    x.fillStyle = 'rgba(0,212,255,.45)';
+    for (let i = 0; i <= 512; i += ts) {
+      for (let j = 0; j <= 512; j += ts) {
+        x.beginPath(); x.arc(i,j,2.5,0,Math.PI*2); x.fill();
+      }
+    }
     const t = this._mkTex(c); t.repeat.set(8,8);
     return t;
   }
@@ -206,28 +218,34 @@ export class ExploreScene {
   _makeWallTex() {
     const c = document.createElement('canvas'); c.width = c.height = 512;
     const x = c.getContext('2d');
-    x.fillStyle='#ddd8ce'; x.fillRect(0,0,512,512);
-    const bH=48, bW=128, mortar=4;
-    for (let row=0;row*bH<512;row++) {
-      const off = (row%2===0) ? 0 : bW/2;
-      for (let col=-1;col*bW+off<512;col++) {
-        const bx=col*bW+off+mortar/2, by=row*bH+mortar/2;
-        const bw=bW-mortar, bh=bH-mortar;
-        const v=(Math.random()-.5)*18;
-        const r=224+v|0,g=218+v|0,b=208+v|0;
-        x.fillStyle=`rgb(${r},${g},${b})`; x.fillRect(bx,by,bw,bh);
-        const gr=x.createLinearGradient(bx,by,bx,by+bh);
-        gr.addColorStop(0,'rgba(255,255,255,.08)'); gr.addColorStop(1,'rgba(0,0,0,.06)');
-        x.fillStyle=gr; x.fillRect(bx,by,bw,bh);
-        x.strokeStyle='rgba(0,0,0,.12)'; x.lineWidth=.8; x.strokeRect(bx+.5,by+.5,bw-1,bh-1);
+    // Dark panel base — visible charcoal
+    x.fillStyle = '#1c2535'; x.fillRect(0,0,512,512);
+    // Metal panel grid
+    const pH = 128, pW = 256, gap = 3;
+    for (let row = 0; row*pH < 512; row++) {
+      for (let col = 0; col*pW < 512; col++) {
+        const px = col*pW+gap, py = row*pH+gap, pw = pW-gap*2, ph = pH-gap*2;
+        const v = (Math.random()-.5)*8;
+        const b = 30+v|0;
+        x.fillStyle = `rgb(${b},${b+4},${b+10})`; x.fillRect(px,py,pw,ph);
+        const gr = x.createLinearGradient(px,py,px,py+ph);
+        gr.addColorStop(0,'rgba(255,255,255,.06)');
+        gr.addColorStop(.5,'rgba(0,0,0,0)');
+        gr.addColorStop(1,'rgba(0,0,0,.05)');
+        x.fillStyle = gr; x.fillRect(px,py,pw,ph);
+        // Red panel edge highlight
+        x.strokeStyle = 'rgba(0,212,255,.10)'; x.lineWidth = 1;
+        x.strokeRect(px+.5,py+.5,pw-1,ph-1);
       }
     }
-    x.fillStyle='#c8b89a';
-    for (let row=0;row<=512/bH;row++) {
-      x.fillRect(0,row*bH,512,mortar);
-      const off=(row%2===0)?0:bW/2;
-      for (let col=-1;col*bW+off<512;col++) x.fillRect(col*bW+off,0,mortar,512);
-    }
+    // Gap lines (dark seam)
+    x.fillStyle = '#101520';
+    for (let row = 0; row*pH <= 512; row++) x.fillRect(0,row*pH,512,gap);
+    for (let col = 0; col*pW <= 512; col++) x.fillRect(col*pW,0,gap,512);
+    // Red LED accent strip at top and bottom
+    x.strokeStyle = 'rgba(0,212,255,.30)'; x.lineWidth = 1;
+    x.beginPath(); x.moveTo(0,1); x.lineTo(512,1); x.stroke();
+    x.beginPath(); x.moveTo(0,511); x.lineTo(512,511); x.stroke();
     const t = this._mkTex(c); t.repeat.set(4,2);
     return t;
   }
@@ -235,16 +253,28 @@ export class ExploreScene {
   _makeCeilTex() {
     const c = document.createElement('canvas'); c.width = c.height = 256;
     const x = c.getContext('2d');
-    x.fillStyle='#d8e4ee'; x.fillRect(0,0,256,256);
-    const gs=64;
-    x.strokeStyle='rgba(100,130,160,.22)'; x.lineWidth=1.5;
-    for (let i=0;i<=256;i+=gs){ x.beginPath();x.moveTo(i,0);x.lineTo(i,256);x.stroke(); }
-    for (let i=0;i<=256;i+=gs){ x.beginPath();x.moveTo(0,i);x.lineTo(256,i);x.stroke(); }
-    for (let row=0;row<4;row++) for (let col=0;col<4;col++) {
-      const cx2=col*gs+gs/2,cy2=row*gs+gs/2;
-      const gr=x.createRadialGradient(cx2,cy2,2,cx2,cy2,gs*.4);
-      gr.addColorStop(0,'rgba(255,255,255,.12)'); gr.addColorStop(1,'rgba(0,0,0,0)');
-      x.fillStyle=gr; x.fillRect(col*gs,row*gs,gs,gs);
+    // Visible dark metal ceiling
+    x.fillStyle = '#161e2c'; x.fillRect(0,0,256,256);
+    const gs = 64;
+    // Exposed metal panel grid
+    for (let row = 0; row < 4; row++) for (let col = 0; col < 4; col++) {
+      const px = col*gs+1, py = row*gs+1, pw = gs-2, ph = gs-2;
+      const v = (Math.random()-.5)*6;
+      const b = 24+v|0;
+      x.fillStyle = `rgb(${b},${b+3},${b+7})`; x.fillRect(px,py,pw,ph);
+    }
+    // Red grid lines
+    x.strokeStyle = 'rgba(0,212,255,.20)'; x.lineWidth = 1.5;
+    for (let i = 0; i <= 256; i += gs) {
+      x.beginPath(); x.moveTo(i,0); x.lineTo(i,256); x.stroke();
+      x.beginPath(); x.moveTo(0,i); x.lineTo(256,i); x.stroke();
+    }
+    // Corner rivet dots
+    x.fillStyle = 'rgba(0,212,255,.35)';
+    for (let i = 0; i <= 256; i += gs) {
+      for (let j = 0; j <= 256; j += gs) {
+        x.beginPath(); x.arc(i,j,2,0,Math.PI*2); x.fill();
+      }
     }
     const t = this._mkTex(c); t.repeat.set(8,8);
     return t;
@@ -253,17 +283,19 @@ export class ExploreScene {
   _makeConcrTex() {
     const c = document.createElement('canvas'); c.width = c.height = 512;
     const x = c.getContext('2d');
-    x.fillStyle='#c4b8a8'; x.fillRect(0,0,512,512);
-    for (let i=0;i<3000;i++) {
-      const gx=Math.random()*512,gy=Math.random()*512;
-      const v=(Math.random()-.5)*24;
-      const base=196+v|0;
-      x.fillStyle=`rgba(${base},${base},${base},.18)`;
-      x.fillRect(gx,gy,1+Math.random()*3,1+Math.random()*3);
+    // Dark poured concrete — structural walls
+    x.fillStyle = '#0f141e'; x.fillRect(0,0,512,512);
+    for (let i = 0; i < 3000; i++) {
+      const gx = Math.random()*512, gy = Math.random()*512;
+      const v = (Math.random()-.5)*12;
+      const b = 18+v|0;
+      x.fillStyle = `rgba(${b},${b},${b},.22)`;
+      x.fillRect(gx, gy, 1+Math.random()*3, 1+Math.random()*3);
     }
-    x.strokeStyle='rgba(60,70,75,.3)'; x.lineWidth=1.5;
-    for (let y=0;y<512;y+=128) { x.beginPath();x.moveTo(0,y);x.lineTo(512,y);x.stroke(); }
-    for (let xi=0;xi<512;xi+=128) { x.beginPath();x.moveTo(xi,0);x.lineTo(xi,512);x.stroke(); }
+    // Formwork lines
+    x.strokeStyle = 'rgba(0,30,60,.55)'; x.lineWidth = 1.5;
+    for (let y = 0; y < 512; y += 128) { x.beginPath();x.moveTo(0,y);x.lineTo(512,y);x.stroke(); }
+    for (let xi = 0; xi < 512; xi += 128) { x.beginPath();x.moveTo(xi,0);x.lineTo(xi,512);x.stroke(); }
     const t = this._mkTex(c); t.repeat.set(4,2);
     return t;
   }
@@ -317,30 +349,30 @@ export class ExploreScene {
     // ── MATERIALS ───────────────────────────────────────────────────────────────
     const _nv2 = (a,b) => new THREE.Vector2(a,b);
     this._M = {
-      floor:    new THREE.MeshStandardMaterial({ map:fT, roughness:.62, metalness:.06, envMapIntensity:.4 }),
-      wall:     new THREE.MeshStandardMaterial({ map:wT, roughness:.85, metalness:.0,  envMapIntensity:.2 }),
-      ceil:     new THREE.MeshStandardMaterial({ map:cT, roughness:.90, metalness:.0,  envMapIntensity:.15 }),
-      concrete: new THREE.MeshStandardMaterial({ map:kT, color:0xd8d0c4, roughness:.90, metalness:.0, envMapIntensity:.20 }),
-      door:     new THREE.MeshStandardMaterial({ color:0xb08050, roughness:.68, metalness:.10, envMapIntensity:.3 }),
-      doorFrame:new THREE.MeshStandardMaterial({ map:mT, color:0x99aabb, roughness:.18, metalness:.92, envMapIntensity:.8 }),
-      panel:    new THREE.MeshStandardMaterial({ color:0x2a4a62, roughness:.52, metalness:.38, envMapIntensity:.5 }),
-      panelGrey:new THREE.MeshStandardMaterial({ map:mT, color:0x6a7a88, roughness:.44, metalness:.48, envMapIntensity:.6 }),
-      yellow:   new THREE.MeshStandardMaterial({ color:0xf0c060, emissive:new THREE.Color(0xf0c060), emissiveIntensity:1.2, roughness:.45 }),
-      red:      new THREE.MeshStandardMaterial({ color:0xdd4433, emissive:new THREE.Color(0xdd4433), emissiveIntensity:1.4, roughness:.40 }),
-      green:    new THREE.MeshStandardMaterial({ color:0x33dd66, emissive:new THREE.Color(0x33dd66), emissiveIntensity:1.6, roughness:.40 }),
-      orange:   new THREE.MeshStandardMaterial({ color:0xff8833, emissive:new THREE.Color(0xff8833), emissiveIntensity:1.2, roughness:.45 }),
-      bench:    new THREE.MeshStandardMaterial({ color:0x9a8065, roughness:.80, metalness:.0,  envMapIntensity:.2 }),
-      black:    new THREE.MeshStandardMaterial({ color:0x141414, roughness:.75, metalness:.15, envMapIntensity:.3 }),
-      chrome:   new THREE.MeshStandardMaterial({ map:mT, color:0xccddef, roughness:.04, metalness:1.0, envMapIntensity:1.4 }),
-      pipe:     new THREE.MeshStandardMaterial({ map:mT, color:0x7a8fa0, roughness:.12, metalness:.96, envMapIntensity:1.2 }),
+      floor:    new THREE.MeshStandardMaterial({ map:fT, roughness:.75, metalness:.20, envMapIntensity:.6 }),
+      wall:     new THREE.MeshStandardMaterial({ map:wT, roughness:.88, metalness:.05, envMapIntensity:.3 }),
+      ceil:     new THREE.MeshStandardMaterial({ map:cT, roughness:.85, metalness:.15, envMapIntensity:.25 }),
+      concrete: new THREE.MeshStandardMaterial({ map:kT, color:0x283848, roughness:.92, metalness:.05, envMapIntensity:.25 }),
+      door:     new THREE.MeshStandardMaterial({ color:0x1a3050, roughness:.55, metalness:.55, envMapIntensity:.6 }),
+      doorFrame:new THREE.MeshStandardMaterial({ map:mT, color:0x3a5a78, roughness:.14, metalness:.95, envMapIntensity:.9 }),
+      panel:    new THREE.MeshStandardMaterial({ color:0x0e1c2e, roughness:.48, metalness:.45, envMapIntensity:.6 }),
+      panelGrey:new THREE.MeshStandardMaterial({ map:mT, color:0x1e2c3c, roughness:.38, metalness:.58, envMapIntensity:.7 }),
+      yellow:   new THREE.MeshStandardMaterial({ color:0xf0c060, emissive:new THREE.Color(0xf0c060), emissiveIntensity:1.6, roughness:.45 }),
+      red:      new THREE.MeshStandardMaterial({ color:0xdd4433, emissive:new THREE.Color(0xdd4433), emissiveIntensity:1.8, roughness:.40 }),
+      green:    new THREE.MeshStandardMaterial({ color:0x00ff88, emissive:new THREE.Color(0x00ff88), emissiveIntensity:2.0, roughness:.40 }),
+      orange:   new THREE.MeshStandardMaterial({ color:0xff8833, emissive:new THREE.Color(0xff8833), emissiveIntensity:1.6, roughness:.45 }),
+      bench:    new THREE.MeshStandardMaterial({ color:0x1c2a3a, roughness:.82, metalness:.18, envMapIntensity:.3 }),
+      black:    new THREE.MeshStandardMaterial({ color:0x0a0e18, roughness:.72, metalness:.22, envMapIntensity:.4 }),
+      chrome:   new THREE.MeshStandardMaterial({ map:mT, color:0x8ab0cc, roughness:.04, metalness:1.0, envMapIntensity:1.6 }),
+      pipe:     new THREE.MeshStandardMaterial({ map:mT, color:0x2a4a68, roughness:.12, metalness:.98, envMapIntensity:1.4 }),
       copper:   new THREE.MeshStandardMaterial({ color:0xd97845, roughness:.18, metalness:.96, envMapIntensity:1.2 }),
-      eWhite:   new THREE.MeshBasicMaterial({ color:0xfff8e0 }),
-      eBlue:    new THREE.MeshBasicMaterial({ color:0x3388ff }),
-      eGreen:   new THREE.MeshBasicMaterial({ color:0x22ff88 }),
+      eWhite:   new THREE.MeshBasicMaterial({ color:0x00d4ff }),
+      eBlue:    new THREE.MeshBasicMaterial({ color:0x0066ff }),
+      eGreen:   new THREE.MeshBasicMaterial({ color:0x00ff88 }),
       eRed:     new THREE.MeshBasicMaterial({ color:0xff3322 }),
       eYellow:  new THREE.MeshBasicMaterial({ color:0xffee00 }),
-      window:   new THREE.MeshStandardMaterial({ color:0xd0ecff, emissive:new THREE.Color(0x88ccff), emissiveIntensity:0.55, transparent:true, opacity:.45, roughness:.02, metalness:.06, envMapIntensity:.5, side:THREE.DoubleSide }),
-      winFrame: new THREE.MeshStandardMaterial({ color:0xf5f2ee, roughness:.40, metalness:.15, envMapIntensity:.5 }),
+      window:   new THREE.MeshStandardMaterial({ color:0x001830, emissive:new THREE.Color(0x001840), emissiveIntensity:0.35, transparent:true, opacity:.38, roughness:.02, metalness:.12, envMapIntensity:.6, side:THREE.DoubleSide }),
+      winFrame: new THREE.MeshStandardMaterial({ color:0x1a2a3c, roughness:.35, metalness:.55, envMapIntensity:.7 }),
     };
     const M = this._M;
     if (!isMob) {
@@ -360,31 +392,33 @@ export class ExploreScene {
       });
     }
 
-    // Workshop wall mats — warm residential
+    // Workshop wall mats — visible dark tech panels
     const wsWallMat = new THREE.MeshStandardMaterial({
-      map:wT, color:0xd4ccbc, roughness:.88, metalness:.0, envMapIntensity:.25,
+      map:wT, color:0x22303e, roughness:.88, metalness:.08, envMapIntensity:.30,
     });
     const ws2WallMat = new THREE.MeshStandardMaterial({
-      map:wT, color:0xccc0aa, roughness:.88, metalness:.0, envMapIntensity:.20,
+      map:wT, color:0x1e2a38, roughness:.90, metalness:.08, envMapIntensity:.25,
     });
     if (isMob) {
       wsWallMat.normalMap = null; ws2WallMat.normalMap = null;
       wsWallMat.envMapIntensity = 0; ws2WallMat.envMapIntensity = 0;
     }
 
-    // ── LIGHTING — bright Philippine daytime interior ────────────────────────────
+    // ── LIGHTING — dark tech / control room industrial ───────────────────────────
     this._roomLightSets = {};
 
-    // Bright warm ambient (daylight fill)
-    scene.add(new THREE.AmbientLight(0xfff8e8, isMob ? 0.75 : 0.60));
+    // Strong ambient — whole space should be clearly visible
+    scene.add(new THREE.AmbientLight(0x3a5070, isMob ? 2.0 : 1.5));
     if (!isMob) {
-      // Natural sky light from above
-      scene.add(new THREE.HemisphereLight(0xb8d0ff, 0xd4bc8a, 0.55));
+      scene.add(new THREE.HemisphereLight(0x304a6a, 0x101820, 1.0));
+    } else {
+      // Mobile gets extra fill since no env maps / normal maps
+      scene.add(new THREE.AmbientLight(0x202840, 1.2));
     }
 
-    // Strong warm sunlight through windows (east side)
-    const sun = new THREE.DirectionalLight(0xfff8d0, isMob ? 2.2 : 3.5);
-    sun.position.set(12, 18, 8); sun.target.position.set(0, 0, -12);
+    // Key directional light — overhead industrial beam
+    const sun = new THREE.DirectionalLight(0xc0d8f0, isMob ? 3.0 : 3.5);
+    sun.position.set(4, 18, 2); sun.target.position.set(0, 0, -12);
     scene.add(sun); scene.add(sun.target);
     if (!isMob) {
       sun.castShadow = true;
@@ -395,21 +429,27 @@ export class ExploreScene {
       sun.shadow.bias = -0.0015; sun.shadow.normalBias = 0.03; sun.shadow.radius = 3.5;
     }
 
-    // Secondary window fill from west — bounced natural light
-    const winFill = new THREE.DirectionalLight(0xdceeff, isMob ? 0.9 : 1.5);
+    // Fill light from opposite side
+    const winFill = new THREE.DirectionalLight(0x607890, isMob ? 1.2 : 1.6);
     winFill.position.set(-10, 6, -5); winFill.target.position.set(0, 0, -10);
     scene.add(winFill); scene.add(winFill.target);
 
-    // Warm ceiling light fills per room (incandescent / fluorescent)
+    // White area fill lights per room — bright industrial
     const addRoom = (x, y, z, color, int) => {
-      const pl = new THREE.PointLight(color, int, 16, 1.5);
+      const pl = new THREE.PointLight(color, int, 22, 1.3);
       pl.position.set(x,y,z); scene.add(pl);
     };
-    addRoom(0,  3.6,   2,  0xfffce8, isMob ? 2.2 : 1.4);
-    addRoom(-2, 3.6,  -8,  0xfff8e0, isMob ? 2.0 : 1.2);
-    addRoom( 3, 3.6, -14,  0xfff8e0, isMob ? 2.0 : 1.2);
-    addRoom( 0, 3.6, -22,  0xfffce8, isMob ? 1.8 : 1.0);
-    addRoom( 0, 3.6, -28,  0xfffce8, isMob ? 1.8 : 1.0);
+    addRoom(0,  3.6,   2,  0xd0e8ff, isMob ? 3.8 : 2.4);
+    addRoom(-2, 3.6,  -8,  0xd0e8ff, isMob ? 3.5 : 2.2);
+    addRoom( 3, 3.6, -14,  0xd0e8ff, isMob ? 3.5 : 2.2);
+    addRoom( 0, 3.6, -22,  0xd0e8ff, isMob ? 3.2 : 2.0);
+    addRoom( 0, 3.6, -28,  0xd0e8ff, isMob ? 3.2 : 2.0);
+    // Extra mid-room fills for mobile
+    if (isMob) {
+      addRoom(-3, 2.0,   0,  0xb0c8e8, 2.0);
+      addRoom( 3, 2.0, -13,  0xb0c8e8, 2.0);
+      addRoom(-3, 2.0, -25,  0xb0c8e8, 2.0);
+    }
 
     // ── ROOM FLOORS / CEILINGS ──────────────────────────────────────────────────
     const _mkRoom = (cx, cz, w, d) => {
@@ -460,11 +500,11 @@ export class ExploreScene {
       this._mkDoor(2, 0, -18),
     ];
 
-    // ── CEILING LIGHTS — bright warm daylight + fluorescent fill ──────────────
-    this._mkLight(0,  H-.2,   3, 0xfffef5, 4.0, 'entrance');
-    this._mkLight( 0, H-.2, -10, 0xfffef5, 4.5, 'workshop');
-    this._mkLight( 0, H-.2, -18, 0xfffef5, 4.2, 'workshop');
-    this._mkLight( 0, H-.2, -28, 0xfffef5, 3.8, 'workshop');
+    // ── CEILING LIGHTS — bright white industrial panels ───────────────────────
+    this._mkLight(0,  H-.2,   3, 0xffffff, 5.5, 'entrance');
+    this._mkLight( 0, H-.2, -10, 0xffffff, 6.0, 'workshop');
+    this._mkLight( 0, H-.2, -18, 0xffffff, 5.5, 'workshop');
+    this._mkLight( 0, H-.2, -28, 0xffffff, 5.2, 'workshop');
 
     // ── CEILING CABLE TRAY (WS1) ─────────────────────────────────────────────────
     {
@@ -476,22 +516,16 @@ export class ExploreScene {
       });
     }
 
-    // ── ORANGE PVC CONDUIT (WS1 north divider wall) ──────────────────────────────
-    const conduitMat = new THREE.MeshStandardMaterial({ color:0xC84010, roughness:.55, metalness:.08 });
-    {
-      const hc = new THREE.Mesh(new THREE.CylinderGeometry(.028,.028,14,10), conduitMat);
-      hc.rotation.z = Math.PI/2; hc.position.set(0, 2.2, -17.88); scene.add(hc);
-    }
 
     // ── SAFETY POSTER (west wall entrance) ──────────────────────────────────────
-    this._place(this._mkBox(.03, 1.5, 1.1, new THREE.MeshStandardMaterial({ color:0xffeecc, roughness:.9 })), -7.97, 2.0, 2);
-    this._place(this._mkBox(.02, 1.58, 1.18, new THREE.MeshStandardMaterial({ color:0x222222, roughness:.5 })), -7.96, 2.0, 2);
-    [0xcc2200, 0x2244cc, 0x228822].forEach((clr, i) => {
+    this._place(this._mkBox(.03, 1.5, 1.1, new THREE.MeshStandardMaterial({ color:0x0a1428, roughness:.9 })), -7.97, 2.0, 2);
+    this._place(this._mkBox(.02, 1.58, 1.18, new THREE.MeshStandardMaterial({ color:0x001830, roughness:.5 })), -7.96, 2.0, 2);
+    [0xff3322, 0x00d4ff, 0x00ff88].forEach((clr, i) => {
       this._place(this._mkBox(.02, .01, .82, new THREE.MeshBasicMaterial({ color:clr })), -7.95, 1.7+i*.28, 2);
     });
 
     // ── NOTICE BOARD (north wall) ────────────────────────────────────────────────
-    this._place(this._mkBox(2.2, 1.3, .03, new THREE.MeshStandardMaterial({ color:0x7a5a1a, roughness:.9 })), -2.0, 2.2, 7.97);
+    this._place(this._mkBox(2.2, 1.3, .03, new THREE.MeshStandardMaterial({ color:0x091428, roughness:.9, emissive:new THREE.Color(0x001830), emissiveIntensity:.4 })), -2.0, 2.2, 7.97);
 
     // ── FIRE EXTINGUISHER ───────────────────────────────────────────────────────
     {
@@ -502,18 +536,18 @@ export class ExploreScene {
     // ── WALL CLOCK (east wall entrance) ─────────────────────────────────────────
     if (!isMob) {
       const cf = new THREE.Mesh(new THREE.CircleGeometry(.22,24),
-        new THREE.MeshStandardMaterial({ color:0xf0f0e8, roughness:.8 }));
+        new THREE.MeshStandardMaterial({ color:0x0a1428, emissive:new THREE.Color(0x001830), emissiveIntensity:.5, roughness:.8 }));
       cf.rotation.y = Math.PI/2; cf.position.set(7.88,2.4,7); scene.add(cf);
       const cr = new THREE.Mesh(new THREE.TorusGeometry(.22,.025,8,24),
-        new THREE.MeshStandardMaterial({ color:0x334455, roughness:.4, metalness:.9 }));
+        new THREE.MeshStandardMaterial({ color:0x00d4ff, emissive:new THREE.Color(0x00d4ff), emissiveIntensity:.8, roughness:.3, metalness:.9 }));
       cr.rotation.y = Math.PI/2; cr.position.set(7.87,2.4,7); scene.add(cr);
     }
 
     // ── RECEPTION DESK ───────────────────────────────────────────────────────────
     {
       const RX=-4, RZ=3.5;
-      const dkM = new THREE.MeshStandardMaterial({ color:0xb5813a, roughness:.75, metalness:.05 });
-      const dpM = new THREE.MeshStandardMaterial({ color:0x7a5520, roughness:.8 });
+      const dkM = new THREE.MeshStandardMaterial({ color:0x1a2840, roughness:.60, metalness:.45 });
+      const dpM = new THREE.MeshStandardMaterial({ color:0x0f1a2c, roughness:.70, metalness:.40 });
       this._place(this._mkBox(2.4,.07,.9,dkM), RX, .82, RZ);
       this._addCol(RX,.42,RZ,2.4,.82,.9);
       this._place(this._mkBox(2.4,.78,.05,dpM), RX, .41, RZ+.43);
@@ -532,8 +566,8 @@ export class ExploreScene {
     // ── COUCH (entrance west) ─────────────────────────────────────────────────
     {
       const CX=-5.0, CZ=1.2;
-      const couchM = new THREE.MeshStandardMaterial({ color:0x2d4a7c, roughness:.85 });
-      const couchLt= new THREE.MeshStandardMaterial({ color:0x3a5a96, roughness:.82 });
+      const couchM = new THREE.MeshStandardMaterial({ color:0x0e1c30, roughness:.85 });
+      const couchLt= new THREE.MeshStandardMaterial({ color:0x152438, roughness:.82 });
       this._place(this._mkBox(1.9,.45,.75,couchM), CX,.225,CZ);
       this._addCol(CX,.225,CZ,1.9,.45,.75);
       [-0.46,0.46].forEach(dx => this._place(this._mkBox(.88,.12,.68,couchLt), CX+dx,.5,CZ));
@@ -578,18 +612,31 @@ export class ExploreScene {
     this._place(this._mkBox(1.6,1.1,.03,new THREE.MeshStandardMaterial({ color:0x0a1f3a, roughness:.9 })), 4, 2.0, -31.97);
 
     // ── BREAKER PANEL (Workshop A east wall) ─────────────────────────────────
-    this._buildBreakerPanel(7.8, 0, -8, Math.PI/2, 6);
+    this._buildBreakerPanel(7.91, 0, -8, Math.PI/2, 6);
 
-    // ── LIGHT SHAFTS + window glow (desktop only) ──────────────────────────────
-    if (!isMob) {
-      const shaftMat = new THREE.MeshBasicMaterial({
-        color:0xfff8e8, transparent:true, opacity:.18, side:THREE.DoubleSide, depthWrite:false
+    this._buildRoomLife();
+
+    // ── RED LED FLOOR STRIPS along walls ────────────────────────────────────────
+    {
+      const ledStripMat = new THREE.MeshBasicMaterial({
+        color:0x00d4ff, transparent:true, opacity:.55, side:THREE.DoubleSide, depthWrite:false
       });
-      [[-6,-14]].forEach(([z1,z2]) => {
-        const s = new THREE.Mesh(new THREE.PlaneGeometry(2.0,2.0), shaftMat);
-        s.position.set(7.4,2.2,(z1+z2)/2); s.rotation.y = Math.PI/2; scene.add(s);
-        const wPt = new THREE.PointLight(0xfff0cc,1.2,5,1.8);
-        wPt.position.set(6.5,2.2,(z1+z2)/2); scene.add(wPt);
+      const ledPositions = [
+        { x:  7.9, z:  -2, len: 10 },
+        { x: -7.9, z:  -2, len: 10 },
+        { x:  7.9, z: -18, len: 16 },
+        { x: -7.9, z: -18, len: 16 },
+        { x:  7.9, z: -28, len: 14 },
+        { x: -7.9, z: -28, len: 14 },
+      ];
+      ledPositions.forEach(({ x, z, len }) => {
+        const strip = new THREE.Mesh(new THREE.PlaneGeometry(0.04, len), ledStripMat);
+        strip.rotation.y = Math.PI/2;
+        strip.position.set(x, 0.05, z);
+        scene.add(strip);
+        const ledPt = new THREE.PointLight(0x00a8cc, 0.5, 9, 2.0);
+        ledPt.position.set(x > 0 ? x-0.3 : x+0.3, 0.15, z);
+        scene.add(ledPt);
       });
     }
   }
@@ -646,7 +693,12 @@ export class ExploreScene {
     door.receiveShadow = !this._isMob;
     pivot.add(door);
     this._scene.add(pivot);
-    return { id, pivot, mesh: door, open: false, targetRot: 0, x, z };
+    // Pre-compute AABB for the door when it is fully closed (rotation.y === 0)
+    const closedBox = new THREE.Box3(
+      new THREE.Vector3(x - 0.9, 0,   z - 0.08),
+      new THREE.Vector3(x + 0.9, 2.6, z + 0.08),
+    );
+    return { id, pivot, mesh: door, open: false, targetRot: 0, x, z, closedBox };
   }
 
   _addWindow(x, y, z, w, h, isVertical) {
@@ -687,9 +739,9 @@ export class ExploreScene {
     const base = this._mkBox(.18,.05,1.58, this._M.panelGrey);
     base.position.set(x, y+.05, z); this._scene.add(base);
 
-    // Tube + disc emissive (visible glow geometry)
+    // Tube + disc emissive — bright white fluorescent
     const glowMat = new THREE.MeshStandardMaterial({
-      color:0xfff8e0, emissive:new THREE.Color(0xfff4c0), emissiveIntensity:isMob?3.5:4.0, roughness:1
+      color:0xffffff, emissive:new THREE.Color(0xf0f8ff), emissiveIntensity:isMob?5.0:6.0, roughness:1
     });
     const tube = new THREE.Mesh(new THREE.CylinderGeometry(.042,.042,1.48,8), glowMat);
     tube.rotation.z = Math.PI/2; tube.position.set(x,y-.01,z); this._scene.add(tube);
@@ -733,6 +785,120 @@ export class ExploreScene {
       this._place(this._mkBox(.06,.05,.38,M.panelGrey), x+dx,.74,z+bz*.15);
       this._place(this._mkBox(.10,.03,.32,cushM),       x+dx,.775,z+bz*.1);
     });
+  }
+
+  _buildRoomLife() {
+    const M = this._M;
+    const scene = this._scene;
+    const isMob = this._isMob;
+
+    // ── SERVER RACKS (Workshop B) ─────────────────────────────────────────────
+    const rackM  = new THREE.MeshStandardMaterial({ color:0x0c1520, roughness:.75, metalness:.55 });
+    const rackFrM= new THREE.MeshStandardMaterial({ color:0x141f30, roughness:.60, metalness:.65 });
+    [[6.1,-26],[6.1,-30],[-6.1,-24],[-6.1,-30]].forEach(([rx,rz]) => {
+      this._place(this._mkBox(.72,2.1,.82,rackM), rx, 1.05, rz);
+      this._addCol(rx, 1.05, rz, .72, 2.1, .82);
+      this._place(this._mkBox(.70,2.08,.04,rackFrM), rx, 1.05, rz + (rx>0?-.38:.38));
+      for (let i=0;i<5;i++) {
+        this._place(this._mkBox(.66,.018,.04,new THREE.MeshStandardMaterial({ color:0x0a1220 })),
+          rx, .38+i*.38, rz + (rx>0?-.37:.37));
+      }
+      if (!isMob) {
+        [[0x00ff44,.00],[0x00ff44,.06],[0xff2200,.12],[0x00d4ff,.18]].forEach(([clr,dy]) => {
+          const lm = new THREE.MeshStandardMaterial({ color:clr, emissive:new THREE.Color(clr), emissiveIntensity:3.0 });
+          this._place(this._mkBox(.03,.025,.04,lm), rx + (rx>0?-.20:.20), 1.82+dy, rz+(rx>0?-.37:.37));
+        });
+        const glow = new THREE.PointLight(0x00d4ff,.35,3.0,2.0);
+        glow.position.set(rx+(rx>0?-.5:.5),1.2,rz); scene.add(glow);
+      }
+    });
+
+    // ── UPS / BATTERY UNIT (Workshop B south wall) ────────────────────────────
+    {
+      const upsM = new THREE.MeshStandardMaterial({ color:0x0e1c2e, roughness:.72, metalness:.4 });
+      this._place(this._mkBox(.62,.92,.5,upsM), 3.5, .46, -31.5);
+      this._addCol(3.5,.46,-31.5,.62,.92,.5);
+      if (!isMob) {
+        const scrM = new THREE.MeshStandardMaterial({ color:0x001a28, emissive:new THREE.Color(0x00aa44), emissiveIntensity:1.4 });
+        this._place(this._mkBox(.28,.15,.04,scrM), 3.5, .66, -31.22);
+        const g = new THREE.PointLight(0x00aa44,.5,2.0,2.0);
+        g.position.set(3.5,.7,-31.2); scene.add(g);
+      }
+    }
+
+    // ── EQUIPMENT RACK (Workshop A east wall) ─────────────────────────────────
+    {
+      const eqM = new THREE.MeshStandardMaterial({ color:0x0d1b2a, roughness:.78, metalness:.5 });
+      this._place(this._mkBox(.55,1.6,.55,eqM), 6.8, .8, -10);
+      this._addCol(6.8,.8,-10,.55,1.6,.55);
+      if (!isMob) {
+        [[0x00d4ff,0],[0x00ff44,.08],[0xff8800,.16]].forEach(([clr,dy]) => {
+          const lm = new THREE.MeshStandardMaterial({ color:clr, emissive:new THREE.Color(clr), emissiveIntensity:2.5 });
+          this._place(this._mkBox(.03,.025,.04,lm), 6.54, 1.4+dy, -10);
+        });
+      }
+    }
+
+    // ── TRASH BIN ─────────────────────────────────────────────────────────────
+    {
+      const binM = new THREE.MeshStandardMaterial({ color:0x151f2e, roughness:.9 });
+      const bin = new THREE.Mesh(new THREE.CylinderGeometry(.14,.12,.36,8), binM);
+      bin.position.set(5.5,.18,-9); scene.add(bin);
+    }
+
+    // ── CEILING CABLE TRAY (Workshop B) ───────────────────────────────────────
+    {
+      const t = this._mkBox(16,.08,.38,M.panelGrey);
+      t.position.set(0, H-.45, -26); scene.add(t);
+      [-1,1].forEach(s => {
+        const r = this._mkBox(16,.1,.04,M.panelGrey);
+        r.position.set(0, H-.39, -26+s*.16); scene.add(r);
+      });
+    }
+
+    // ── WALL STATUS PANELS ────────────────────────────────────────────────────
+    if (!isMob) {
+      [[ 7.95, 2.2,-21, Math.PI/2],[-7.95, 2.2,-22,-Math.PI/2]].forEach(([x,y,z,ry]) => {
+        const pM = new THREE.MeshStandardMaterial({ color:0x001a2e, emissive:new THREE.Color(0x002244), emissiveIntensity:.7, roughness:.9 });
+        const pm = this._mkBox(.04,.62,.92,pM);
+        pm.position.set(x,y,z); pm.rotation.y=ry; scene.add(pm);
+        [[0x00d4ff,.18],[0x00ff44,-.06],[0xff8800,-.28]].forEach(([clr,dz]) => {
+          const lnM = new THREE.MeshBasicMaterial({ color:clr });
+          const ln = this._mkBox(.04,.04,.26,lnM);
+          ln.position.set(x,y+.14,z+dz); ln.rotation.y=ry; scene.add(ln);
+        });
+        const pg = new THREE.PointLight(0x004488,.55,3.2,2.0);
+        pg.position.set(x>0?x-.4:x+.4,y,z); scene.add(pg);
+      });
+    }
+
+    // ── FLOOR WARNING STRIPES (room dividers) ─────────────────────────────────
+    {
+      const wA = new THREE.MeshBasicMaterial({ color:0xffaa00, transparent:true, opacity:.30, depthWrite:false });
+      const wB = new THREE.MeshBasicMaterial({ color:0x111111, transparent:true, opacity:.25, depthWrite:false });
+      [-17.9,-1.9].forEach(wz => {
+        for (let i=-8;i<8;i++) {
+          const stripe = new THREE.Mesh(new THREE.PlaneGeometry(.9,.48),(i%2===0)?wA:wB);
+          stripe.rotation.x=-Math.PI/2;
+          stripe.position.set(i+.5, 0.003, wz);
+          scene.add(stripe);
+        }
+      });
+    }
+
+    // ── NETWORK PATCH PANEL (Workshop B west wall) ───────────────────────────
+    {
+      const ppM = new THREE.MeshStandardMaterial({ color:0x0c1828, roughness:.80, metalness:.4 });
+      this._place(this._mkBox(.04,.55,1.1,ppM), -7.95, 2.6, -26);
+      if (!isMob) {
+        for (let i=0;i<8;i++) {
+          const portM = new THREE.MeshStandardMaterial({ color:0x1a3050, roughness:.7 });
+          this._place(this._mkBox(.04,.06,.06,portM), -7.93, 2.42, -25.35+i*.12);
+        }
+        const pg = new THREE.PointLight(0x0044aa,.3,2.5,2.0);
+        pg.position.set(-7.6,2.4,-26); scene.add(pg);
+      }
+    }
   }
 
   _buildBreakerPanel(cx, cy, cz, ry, count=8) {
@@ -834,7 +1000,14 @@ export class ExploreScene {
       new THREE.Vector3(pos.x-.32, pos.y-1.65, pos.z-.32),
       new THREE.Vector3(pos.x+.32, pos.y+.12,  pos.z+.32),
     );
-    return this._colBoxes.some(b => b.intersectsBox(pb));
+    if (this._colBoxes.some(b => b.intersectsBox(pb))) return true;
+    // Dynamic door collision — only block when door is closed (not swung open)
+    if (this._doors) {
+      for (const d of this._doors) {
+        if (!d.open && Math.abs(d.pivot.rotation.y) < 0.15 && d.closedBox.intersectsBox(pb)) return true;
+      }
+    }
+    return false;
   }
 
   // ── INPUT SETUP ───────────────────────────────────────────────────────────────
@@ -1197,77 +1370,94 @@ export class ExploreScene {
     this._notify(d.open ? '🚪 Door opened' : '🚪 Door closed', 'info');
   }
 
-  // ── OUTLET REPAIR (full 3D scenario) ─────────────────────────────────────────
-  _openOutletRepair(id) {
+  // ── HTML LESSON IFRAME (outlet + switch repair screens) ──────────────────────
+  _openHtmlRepair(src, onComplete) {
+    if (this._htmlRepairEl) return;
     this._repairOpen = true;
-    this._repairType = 'outlet';
-    this._repairId   = id;
     if (document.exitPointerLock) document.exitPointerLock();
 
-    if (!this._outletScenario) {
-      this._outletScenario = new OutletScenario(
-        this.root,
-        (socketId, stars) => {
-          Database.saveExploreOutlet(socketId);
-          Database.addXP(150);
-          this._guide?.show('after_fix');
-          const o=this._outlets.find(x=>x.id===socketId);
-          if (o) o.fixed=true;
-          const om=this._outletMeshes.find(x=>x.id===socketId);
-          if (om) {
-            om.plate.material = this._M.green;
-            const glow=om.group.userData._glow;
-            if (glow) { glow.intensity=0; glow.color.set(0x44ff88); }
-            const spark=om.group.userData._spark;
-            if (spark) spark.visible=false;
-          }
-          this._updateScoreHUD();
-          SoundManager.play('success');
-          SoundManager.play('xp_gain');
-          this._notify('⚡ +150 XP — Outlet Fixed!', 'ok');
-        }
-      );
-    }
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:absolute;inset:0;z-index:80;background:#060a14;display:flex;flex-direction:column;';
 
-    this._outletScenario.open(id);
+    const backBar = document.createElement('div');
+    backBar.style.cssText = 'position:absolute;top:0;left:0;z-index:90;padding:8px;';
+    backBar.innerHTML = `<button style="background:rgba(4,8,20,.9);border:1px solid rgba(0,212,255,.35);color:#00d4ff;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;padding:8px 14px;border-radius:9px;cursor:pointer;letter-spacing:1px;display:flex;align-items:center;gap:6px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>BACK
+    </button>`;
+
+    const frame = document.createElement('iframe');
+    frame.style.cssText = 'flex:1;border:none;width:100%;height:100%;';
+    frame.src = src;
+
+    const close = () => {
+      window.removeEventListener('message', msgHandler);
+      overlay.remove();
+      this._htmlRepairEl = null;
+      this._repairOpen = false;
+    };
+
+    const msgHandler = e => {
+      if (e.data?.type === 'complete') { close(); onComplete(); }
+      if (e.data?.type === 'back')     { close(); }
+    };
+    window.addEventListener('message', msgHandler);
+
+    backBar.querySelector('button').addEventListener('click', close);
+    backBar.querySelector('button').addEventListener('touchend', e => { e.preventDefault(); close(); });
+
+    overlay.appendChild(frame);
+    overlay.appendChild(backBar);
+    this.root.appendChild(overlay);
+    this._htmlRepairEl = overlay;
+  }
+
+  // ── OUTLET REPAIR ─────────────────────────────────────────────────────────────
+  _openOutletRepair(id) {
+    this._openHtmlRepair('./learn-outlet.html', () => {
+      Database.saveExploreOutlet(id);
+      Database.addXP(150);
+      this._guide?.show('after_fix');
+      const o = this._outlets.find(x => x.id === id);
+      if (o) o.fixed = true;
+      const om = this._outletMeshes.find(x => x.id === id);
+      if (om) {
+        om.plate.material = this._M.green;
+        const glow = om.group.userData._glow;
+        if (glow) { glow.intensity = 0; glow.color.set(0x44ff88); }
+        const spark = om.group.userData._spark;
+        if (spark) spark.visible = false;
+      }
+      this._updateScoreHUD();
+      SoundManager.play('success');
+      SoundManager.play('xp_gain');
+      this._notify('⚡ +150 XP — Outlet Fixed!', 'ok');
+    });
   }
 
   // Called by ExploreScreen cancel button
   closeRepair() {
     this._repairOpen = false;
-    this._outletScenario?.close();
-    this._switchScenario?.close();
+    if (this._htmlRepairEl) { this._htmlRepairEl.remove(); this._htmlRepairEl = null; }
   }
 
-  // ── SWITCH REPAIR (full 3D scenario) ─────────────────────────────────────────
+  // ── SWITCH REPAIR ─────────────────────────────────────────────────────────────
   _openSwitchRepair(id) {
-    this._repairOpen = true;
-    this._repairType = 'switch';
-    this._repairId   = id;
-    if (document.exitPointerLock) document.exitPointerLock();
-
-    if (!this._switchScenario) {
-      this._switchScenario = new SwitchScenario(
-        this.root,
-        (switchId) => {
-          Database.saveExploreSwitch(switchId);
-          Database.addXP(200);
-          const s = this._switches.find(x => x.id === switchId);
-          if (s) s.fixed = true;
-          const sm = this._switchMeshes.find(x => x.id === switchId);
-          if (sm) sm.box.material = new THREE.MeshStandardMaterial({
-            color: 0xffdd44, roughness: .6,
-            emissive: new THREE.Color(0xffdd44), emissiveIntensity: .5,
-          });
-          SoundManager.play('success');
-          SoundManager.play('xp_gain');
-          this._notify(`✅ Switch #${switchId} installed! +200 XP`, 'ok');
-          this._updateScoreHUD();
-        }
-      );
-    }
-
-    this._switchScenario.open(id);
+    this._openHtmlRepair('./switch_installation.html', () => {
+      Database.saveExploreSwitch(id);
+      Database.addXP(200);
+      this._guide?.show('after_fix');
+      const s = this._switches.find(x => x.id === id);
+      if (s) s.fixed = true;
+      const sm = this._switchMeshes.find(x => x.id === id);
+      if (sm) sm.box.material = new THREE.MeshStandardMaterial({
+        color: 0x00ff88, roughness: .6,
+        emissive: new THREE.Color(0x00ff88), emissiveIntensity: .8,
+      });
+      SoundManager.play('success');
+      SoundManager.play('xp_gain');
+      this._notify(`✅ Switch #${id} installed! +200 XP`, 'ok');
+      this._updateScoreHUD();
+    });
   }
 
   // ── MINIMAP ───────────────────────────────────────────────────────────────────
@@ -1347,8 +1537,7 @@ export class ExploreScene {
     for (const [target,type,fn,opts] of this._listeners) target.removeEventListener(type,fn,opts);
     this._listeners=[];
     if (document.exitPointerLock) document.exitPointerLock();
-    this._outletScenario?.destroy(); this._outletScenario = null;
-    this._switchScenario?.destroy(); this._switchScenario = null;
+    if (this._htmlRepairEl) { this._htmlRepairEl.remove(); this._htmlRepairEl = null; }
     this._scene.traverse(obj=>{
       if (obj.geometry) obj.geometry.dispose();
       if (obj.material) {

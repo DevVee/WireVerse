@@ -296,7 +296,6 @@ canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0}
   font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;
   letter-spacing:.06em;border:none;cursor:pointer;transition:transform .15s;}
 .s-btn:hover{transform:scale(1.04);}
-.s-btn.green{background:#22c55e;}
 
 /* ── LIGHT GLOW ── */
 #light-glow{position:absolute;inset:0;pointer-events:none;
@@ -452,7 +451,6 @@ canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0}
     <div class="s-score" id="sscore">Score: 0 pts</div>
     <div class="s-recap" id="s-recap"></div>
     <button class="s-btn" onclick="resetAll()">PLAY AGAIN</button>
-    <button class="s-btn green" onclick="if(window.parent!==window)window.parent.postMessage({type:'back'},'*');">✓ BACK TO STAGES</button>
   </div>
 </div>
 <div id="light-glow"></div>

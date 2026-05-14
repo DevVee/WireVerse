@@ -90,11 +90,14 @@ export const SoundManager = {
 
       switch (id) {
         case 'footstep': {
-          // Throttle to ~0.38s intervals
+          // Throttle to ~0.40s intervals
           _footstepT = (_footstepT || 0) + (dt || 0.016);
-          if (_footstepT < 0.38) return;
+          if (_footstepT < 0.40) return;
           _footstepT = 0;
-          _noise(ctx, 0.055, 140 + Math.random() * 80, 0.12);
+          // Low thud — concrete impact
+          _noise(ctx, 0.08, 70 + Math.random() * 30, 0.32);
+          // Mid transient — foot slap
+          setTimeout(() => _noise(ctx, 0.04, 260 + Math.random() * 80, 0.14), 12);
           break;
         }
         case 'door': {

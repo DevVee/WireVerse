@@ -305,14 +305,6 @@ export class StagesHub {
               </div>
               <div id="sh-checklist"></div>
             </div>
-            <div class="sh-rcard">
-              <div class="sh-rlbl">STANDARD WIRING (PH)</div>
-              <div style="font-size:8.5px;color:rgba(255,255,255,.3);font-family:'Barlow',sans-serif;margin-bottom:8px;">TYPE A OUTLET</div>
-              <div class="sh-ph-row"><div class="sh-ph-dot" style="background:#ef4444"></div><div class="sh-ph-name">Red — Line (Hot)</div><div class="sh-ph-role">From MCB</div></div>
-              <div class="sh-ph-row"><div class="sh-ph-dot" style="background:#3b82f6"></div><div class="sh-ph-name">Blue — Neutral</div><div class="sh-ph-role">Return</div></div>
-              <div class="sh-ph-row"><div class="sh-ph-dot" style="background:#22c55e"></div><div class="sh-ph-name">Green — Ground</div><div class="sh-ph-role">Safety</div></div>
-              <div class="sh-ph-note">220V AC / 60Hz · PEC 2017<br>MERALCO grid</div>
-            </div>
           </div>
         </div>
       </div>`;
